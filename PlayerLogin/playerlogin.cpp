@@ -220,6 +220,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         //写入初始金钱
         sbd.Clear();
         sbd << "insert into t_playermoney values(" << t_roleInfo.RoleInfo.RoleID << ",0," << Money_1 << ");";
+        Logger::GetLogger()->Debug(sbd.str());
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
         {
@@ -361,6 +362,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         {
             (*t_nickSock)[t_nick.nick] = conn;
             memcpy(&(*smap)[conn].m_nick[0], t_nick.nick, sizeof(t_nick.nick));
+
             conn->Write_all(&(*smap)[conn].m_roleExp, sizeof(STR_PackRoleExperience));
         }
 
@@ -442,7 +444,7 @@ void PlayerLogin::SendRoleList(TCPConnection::Pointer conn, hf_char* userID)
         hf_uint32 j = 0;
         STR_PackHead t_packHead;
         t_packHead.Flag = FLAG_PlayerRoleList;
-        for(hf_uint32 i = 0; i < roleCount; i++)
+        for(hf_int32 i = 0; i < roleCount; i++)
         {
             memcpy(buff + sizeof(STR_PackHead) +  i*sizeof(STR_RoleBasicInfo),&(t_Rolelist.m_Role[i]),sizeof(STR_RoleBasicInfo));
             j++;
@@ -1145,7 +1147,6 @@ void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
             {
                 continue;
             }
-
             memcpy(comebuff + sizeof(STR_PackHead) + pushCount*len, &(it->second.m_RoleBaseInfo), sizeof(STR_RoleBasicInfo));
             memcpy(comebuff + sizeof(STR_PackHead) + pushCount*len + sizeof(STR_RoleBasicInfo), ((hf_char*)&(it->second.m_position)) + sizeof(STR_PackHead), sizeof(STR_OtherPlayerPosition));
             pushCount++;

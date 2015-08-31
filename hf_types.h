@@ -24,6 +24,14 @@
 #define     PostUpdate                 1     //更新
 #define     PostInsert                 2     //插入
 #define     PostDelete                 3     //删除
+
+//背包物品来源
+#define     Source_Bag                 0      //来自背包
+#define     Source_Trade               1      //来自交易
+#define     Source_Buy                 2      //来自购买
+#define     Source_Pick                3      //来自捡的
+
+
 namespace hf_types{
 
 typedef unsigned int            hf_uint32;

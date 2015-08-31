@@ -406,7 +406,7 @@ typedef struct _STR_MoveBagGoods
 typedef struct _STR_RemoveBagGoods
 {
     hf_uint32 GoodsID;   //物品ID
-    hf_uint16 Position;       //物品在背包里的位置
+    hf_uint8  Position;       //物品在背包里的位置
 }STR_RemoveBagGoods;
 
 //从商店购买东西
@@ -420,7 +420,7 @@ typedef struct _STR_BuyGoods
 typedef struct _STR_PackSellGoods
 {
     hf_uint32 GoodsID;
-    hf_uint16 Position;
+    hf_uint8  Position;
 }STR_PackSellGoods;
 
 //物品价格
@@ -470,7 +470,9 @@ typedef struct _STR_Goods
     hf_uint32 GoodsID;   //物品ID
     hf_uint32 TypeID;    //类型ID
     hf_uint16 Count;     //数量
-    hf_uint16 Position;  //位置
+    hf_uint8  Position;  //位置
+    hf_uint8  Source;    //来源  0 固有物品，1 来自交易，2 买的物品，3 捡的物品
+
 }STR_Goods;
 
 //玩家装备属性数据包
@@ -603,6 +605,11 @@ typedef struct _STR_PackOtherResult
 //角色基本信息
 typedef struct _STR_RoleBasicInfo
 {
+    _STR_RoleBasicInfo()
+    {
+        memset(Nick, 0, 32);
+    }
+
     hf_char   Nick[32];
     hf_uint32 RoleID;
     hf_uint16 ModeID;        //模型ID
@@ -903,6 +910,10 @@ typedef struct _AskTaskData
 
 typedef struct _RoleNick
 {
+    _RoleNick()
+    {
+        memset(nick, 0, 32);
+    }
     hf_char nick[32];
 }RoleNick;
 
@@ -1371,7 +1382,7 @@ typedef struct _interchangeOperGoods
     hf_uint32    goodsId;
     hf_uint32    goodsType;
     hf_uint16    goodsCount;
-    hf_uint16    position;
+    hf_uint8    position;
     hf_char      operType;
     _interchangeOperGoods()
     {
