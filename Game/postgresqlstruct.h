@@ -1234,6 +1234,11 @@ typedef struct _UpdateMoney             //更新金钱
     {
         memcpy(&Money, money, sizeof(STR_PlayerMoney));
     }
+    _UpdateMoney()
+    {
+
+    }
+
     hf_uint32 RoleID;
     STR_PlayerMoney Money;
 }UpdateMoney;
@@ -1244,6 +1249,10 @@ typedef struct _UpdateLevel             //更新等级
         :RoleID(roleid),Level(level)
     {
     }
+    _UpdateLevel()
+    {
+
+    }
     hf_uint32 RoleID;
     hf_uint8  Level;
 }UpdateLevel;
@@ -1252,6 +1261,9 @@ typedef struct _UpdateExp              //更新经验
 {
     _UpdateExp(hf_uint32 roleid, hf_uint32 exp)
         :RoleID(roleid),Exp(exp)
+    {
+    }
+    _UpdateExp()
     {
     }
     hf_uint32 RoleID;
@@ -1264,6 +1276,9 @@ typedef struct _UpdateGoods            //更新背包某位置的物品
         :RoleID(roleid), Operate(operate)
     {
         memcpy(&Goods, goods, sizeof(STR_Goods));
+    }
+    _UpdateGoods()
+    {
     }
     hf_uint32 RoleID;
     STR_Goods Goods;
@@ -1279,6 +1294,9 @@ typedef struct _UpdateEquAttr        //更新某装备的属性
     {
         memcpy(&EquAttr, equ, sizeof(STR_Equipment));
     }
+    _UpdateEquAttr()
+    {
+    }
     hf_uint32 RoleID;
     STR_Equipment EquAttr;
     hf_uint8  Operate;
@@ -1291,6 +1309,9 @@ typedef struct _UpdateTask         //更新任务进度
         :RoleID(roleid),Operate(operate)
     {
         memcpy(&TaskProcess, task, sizeof(STR_TaskProcess));
+    }
+    _UpdateTask()
+    {
     }
     hf_uint32     RoleID;
     STR_TaskProcess TaskProcess;

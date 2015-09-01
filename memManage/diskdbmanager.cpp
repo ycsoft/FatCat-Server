@@ -88,10 +88,8 @@ hf_int32 DiskDBManager::GetSqlResult(const hf_char* str)
 //得到玩家的登录信息
 hf_int32 DiskDBManager::GetPlayerUserId(STR_PlayerLoginUserId* user,const char *str)
 {
-
     mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-
     mtx.unlock();
 
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
@@ -407,6 +405,7 @@ hf_int32 DiskDBManager::GetTaskDescription(umap_taskDescription* TaskDesc)
         STR_PackTaskDescription t_desc;
         for(int i = 0; i < t_row; i++)
         {
+            memset(t_desc.Description, 0, sizeof(t_desc.Description));
             t_desc.TaskID = atoi(PQgetvalue(t_PGresult, i, 0));
             t_desc.TaskPropsID = atoi(PQgetvalue(t_PGresult, i, 1));
             t_desc.Time = atoi(PQgetvalue(t_PGresult, i, 2));
@@ -1097,5 +1096,25 @@ hf_uint32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
             (*equAttr)[t_equAttr.TypeID] = t_equAttr;
         }
         return t_row;
+    }
+}
+
+
+//查询数据库中装备现在的最大值
+hf_uint32 DiskDBManager::GetEquIDMaxValue()
+{
+    const hf_char* str = "select max(equid) from t_playerequ;";
+    Logger::GetLogger()->Debug(str);
+    mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    mtx.unlock();
+    ExecStatusType t_status = PQresultStatus(t_PGresult);
+    if(t_status != PGRES_TUPLES_OK)
+    {
+        return -1;
+    }
+    else
+    {
+        return atoi(PQgetvalue(t_PGresult, 0, 0));
     }
 }

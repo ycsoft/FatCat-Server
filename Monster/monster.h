@@ -137,6 +137,7 @@ private:
     umap_monsterType*               m_monsterType;      //怪物类型信息
     umap_npcInfo*                   m_npcInfo;          //NPC信息
     umap_monsterLoot*               m_monsterLoot;      //怪物掉落物品
+
     umap_monsterViewRole            m_monsterViewRole;  //怪物可视范围内的玩家
 };
 

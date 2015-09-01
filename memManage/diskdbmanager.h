@@ -168,6 +168,9 @@ public:
      hf_int32 GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char* str);
      //查询装备属性
      hf_uint32 GetEquAttr(umap_equAttr* equAttr, const hf_char* str);
+
+     //查询数据库中装备现在的最大值
+     hf_uint32 GetEquIDMaxValue();
 private:
 
     PGconn *m_PGconn;

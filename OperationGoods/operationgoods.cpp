@@ -9,6 +9,7 @@
 #include "server.h"
 
 
+
 hf_uint32 OperationGoods::m_equipmentID = EquipMentID;
 
 #define  Buy_NotEnoughMoney    1           //金钱不够
@@ -38,7 +39,7 @@ OperationGoods::~OperationGoods()
 //得到装备编号
 hf_uint32  OperationGoods::GetEquipmentID()
 {
-    return m_equipmentID++;
+    return ++m_equipmentID;
 }
 
 //使用位置
@@ -1044,4 +1045,11 @@ void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* bu
     memcpy(buff + sizeof(STR_PackHead), money, sizeof(STR_Goods));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     Server::GetInstance()->free(buff);
+}
+
+
+//test 查询数据库中装备编号的最大值
+void OperationGoods::SetEquIDInitialValue()
+{
+    m_equipmentID = Server::GetInstance()->getDiskDB()->GetEquIDMaxValue();
 }

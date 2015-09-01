@@ -71,7 +71,6 @@ void Server::InitDB()
 //       Logger::GetLogger()->Debug("Connect redis errorr");
 //   }
 
-
    m_monster->CreateMonster();
    m_monster->QueryMonsterLoot();
    m_monster->QueryNpcInfo();
@@ -79,6 +78,7 @@ void Server::InitDB()
    m_gameAttack->QuerySkillInfo();
    m_operationGoods->QueryGoodsPrice();
    m_operationGoods->QueryEquAttr();
+   m_operationGoods->SetEquIDInitialValue();
 
 }
 

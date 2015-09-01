@@ -44,6 +44,8 @@ public:
 
     //给新捡的装备属性 附初值
     void SetEquAttr(STR_Equipment* equAttr, hf_uint32 typeID);
+
+    void SetEquIDInitialValue();
 private:
     umap_goodsPrice    m_goodsPrice;   //物品价格
     umap_equAttr*      m_equAttr;      //装备属性
