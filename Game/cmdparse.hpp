@@ -1,4 +1,4 @@
-﻿#ifndef CMDPARSE_HPP
+#ifndef CMDPARSE_HPP
 #define CMDPARSE_HPP
 
 #include <boost/asio.hpp>
@@ -21,6 +21,7 @@
 
 void CommandParse(TCPConnection::Pointer conn , void *reg)
 {
+//     tcp::socket *sk =  &(conn->socket());
     char *buf = (char*)reg;
     STR_PackHead *head = (STR_PackHead*)buf;
     hf_uint16 flag = head->Flag;

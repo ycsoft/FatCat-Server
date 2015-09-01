@@ -201,6 +201,7 @@ void GameInterchange::operChanges(TCPConnection::Pointer conn, interchangeOperGo
             goods.Position = oper->position;
             goods.GoodsID = oper->goodsId;
             goods.TypeID = oper->goodsType;
+            goods.Source = Source_Trade;
             interchange->changes.push_back(goods);
         }
         else
@@ -515,6 +516,7 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
         goods.GoodsID = iter->GoodsID;
         goods.Position = i;
         goods.TypeID = iter->TypeID;
+        goods.Source = Source_Trade;
         vec.push_back(goods);
         iter->Position = i;
         opg->PushUpdateGoods(pInterchange->roleId,&goods,PostInsert);
@@ -562,6 +564,7 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
         goods.Position = i;
         goods.TypeID = iter->TypeID;
         iter->Position = i;
+        goods.Source = Source_Trade;
         vec.push_back(goods);
         opg->PushUpdateGoods(interchange->roleId,&goods,PostInsert);
 

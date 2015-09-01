@@ -116,6 +116,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
     t_pickResult.GoodsFlag = pickGoods->GoodsFlag;
 
     STR_Goods t_goods;
+    t_goods.Source = Source_Pick;
     STR_Equipment t_equipment;
     umap_roleGoods playerBagGoods = (*smap)[conn].m_playerGoods;
     umap_roleEqu   playerEquAttr = (*smap)[conn].m_playerEquAttr;
@@ -208,7 +209,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
         else   //普通物品
         {
             t_goods.GoodsID = pickGoods->LootGoodsID;
-            t_goods.TypeID = 0;
+            t_goods.TypeID = pickGoods->LootGoodsID;
 
             _umap_roleGoods::iterator it = playerBagGoods->find(pickGoods->LootGoodsID);
             if(it != playerBagGoods->end()) //物品已有位置
@@ -852,6 +853,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
     umap_roleGoods t_playerGoods = (*smap)[conn].m_playerGoods;
     umap_roleEqu  roleEqu = (*smap)[conn].m_playerEquAttr;
     STR_Goods t_goods;
+    t_goods.Source = Source_Buy;
     STR_Equipment t_equipment;
     vector<STR_Goods> t_vec;
     t_goods.TypeID = buyGoods->GoodsID;
@@ -933,6 +935,7 @@ void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* bu
     }
 
     STR_Goods t_goods;
+    t_goods.Source = Source_Buy;
     t_goods.GoodsID = buyGoods->GoodsID;
     t_goods.TypeID = buyGoods->GoodsID;
     hf_char* buff = (hf_char*)Server::GetInstance()->malloc();

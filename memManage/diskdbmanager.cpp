@@ -173,10 +173,6 @@ hf_int32 DiskDBManager::GetPlayerRegisterRoleInfo(STR_RoleBasicInfo* t_RoleInfo,
 
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
 
-    StringBuilder sbd;
-    sbd<<"Function GetPlayerRoleList :" << str;
-
-    Logger::GetLogger()->Debug(sbd.str());
     if(t_ExecStatusType != PGRES_TUPLES_OK) // PGRES_TUPLES_OK表示成功执行一个返回数据的查询查询
     {
         printf("PQexec error\n");
@@ -914,6 +910,7 @@ hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, const hf_char
     {
         hf_int32 t_row = PQntuples(t_PGresult);
         STR_Goods t_goods;
+        t_goods.Source = Source_Bag;
         vector<STR_Goods> t_vec;
         for(hf_int32 i = 0; i < t_row; i++)
         {

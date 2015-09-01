@@ -114,6 +114,7 @@ void TCPConnection::CallBack_Read_Head(const boost::system::error_code &ec,size_
         Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
         Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
         SessionMgr::Instance()->RemoveSession(shared_from_this());
+
         m_read_lock.unlock();
     }
 }

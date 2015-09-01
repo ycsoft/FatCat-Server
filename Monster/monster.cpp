@@ -260,7 +260,6 @@ void Monster::MonsterSpawns()
 
             for(SessionMgr::SessionMap::iterator role_it = smap->begin();role_it != smap->end(); role_it++)
             {
-                cout << "发送怪物" << endl;
                 STR_PackPlayerPosition* t_pos = &(role_it->second.m_position);
                 if (caculateDistanceWithMonster(t_pos,&t_MonsterBasicInfo) > PlayerView)
                 {
