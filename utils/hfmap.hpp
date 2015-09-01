@@ -12,7 +12,7 @@ class safe_map:boost::noncopyable
     typedef boost::unordered_map<Key,Value> map_type;
     typedef boost::shared_mutex rw_mutex;
     typedef boost::shared_lock<rw_mutex> read_lock;
-    typedef boost::shared_lock<rw_mutex> write_lock;
+    typedef boost::unique_lock<rw_mutex> write_lock;
 public:
     typedef typename map_type::key_type key_type;
     typedef typename map_type::mapped_type mapped_type;
