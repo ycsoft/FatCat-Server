@@ -30,7 +30,7 @@ private:
     map_type m_map;
     mutable rw_mutex m_mutex;
 public:
-    boos empty() const
+    bool empty() const
     {
         read_lock lock(m_mutex);
         return m_map.empty();
