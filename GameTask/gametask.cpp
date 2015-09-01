@@ -77,17 +77,17 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
     umap_taskAim::iterator iter= m_taskAim->find(taskid);
     if(iter != m_taskAim->end())
     {
-     t_taskProcess.TaskID = taskid;
-     t_taskProcess.AimID = iter->second.AimID;
-     t_taskProcess.AimCount = 0;  //此处要查找背包
-     t_taskProcess.AimAmount = iter->second.Amount;
-     t_taskProcess.ExeModeID = iter->second.ExeModeID;
-     (*umap_playerAcceptTask)[taskid] = t_taskProcess;
+         t_taskProcess.TaskID = taskid;
+         t_taskProcess.AimID = iter->second.AimID;
+         t_taskProcess.AimCount = 0;  //此处要查找背包
+         t_taskProcess.AimAmount = iter->second.Amount;
+         t_taskProcess.ExeModeID = iter->second.ExeModeID;
+         (*umap_playerAcceptTask)[taskid] = t_taskProcess;
 
-     Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &t_taskProcess, PostInsert); //将新任务添加到list
-     STR_PackTaskProcess process;
-     memcpy(&process.TaskProcess, &t_taskProcess, sizeof(STR_TaskProcess));
-     conn->Write_all(&process, sizeof(STR_PackTaskProcess));
+         Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &t_taskProcess, PostInsert); //将新任务添加到list
+         STR_PackTaskProcess process;
+         memcpy(&process.TaskProcess, &t_taskProcess, sizeof(STR_TaskProcess));
+         conn->Write_all(&process, sizeof(STR_PackTaskProcess));
     }
 }
 
