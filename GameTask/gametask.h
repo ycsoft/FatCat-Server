@@ -32,16 +32,19 @@ public:
      //请求任务奖励
      void TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid);
 
+     //
+     bool RewardGoods(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
+
      //发送已接取的任务进度
      void SendPlayerTaskProcess(TCPConnection::Pointer conn);
      //发送玩家所在地图的任务
      void SendPlayerViewTask(TCPConnection::Pointer conn);
 
      //查找此任务是否为任务进度里收集物品，如果是，更新任务进度
-     void UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, STR_PickGoods* t_pickGoods, hf_uint32 goodsCount);
+     void UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uint32 goodsID, hf_uint32 goodsCount);
 
      //查找此任务是否为任务进度里打怪任务，如果是，更新任务进度
-     void UpdateAttackMonsterTaskProcess(TCPConnection::Pointer conn, STR_MonsterBasicInfo* monster);
+     void UpdateAttackMonsterTaskProcess(TCPConnection::Pointer conn, hf_uint32 monstertypeID);
 
      //将任务相关数据保存到boost::unordered_map结构中，键值为任务编号，值为该任务的数据包，客户端查询某任务数据包时用任务编号查询相关数据包发送给客户端
      void QueryTaskData();

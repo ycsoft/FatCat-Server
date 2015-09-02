@@ -169,12 +169,13 @@ typedef struct _STR_PackFinishTaskResult
     _STR_PackFinishTaskResult()
     {
         bzero(&head, sizeof(_STR_PackFinishTaskResult));
-        head.Flag = FLAG_FinishTask;
+        head.Flag = FLAG_UserTaskResult;
         head.Len = sizeof(_STR_PackFinishTaskResult) - sizeof(STR_PackHead);
     }
 
     STR_PackHead head;
     hf_uint32 TaskID;
+    hf_uint8  Result;   //结果 1 成功,0 失败
 }STR_PackFinishTaskResult;
 
 //放弃任务 2015.05.06
@@ -189,26 +190,6 @@ typedef struct _STR_PackQuitTask
         head.Len = /*htons*/(sizeof(_STR_PackQuitTask)-sizeof(STR_PackHead));
     }
 }STR_PackQuitTask;
-
-//12.玩家任务结果数据
-/*result
- * 0 成功
- * 1 失败，请选择奖励
- * 2 失败，奖励物品不符合
- */
-typedef struct _STR_PackUserTaskResult
-{
-    STR_PackHead        head;
-    hf_uint32           TaskID;
-    hf_uint8            Result;    //根据Result值判断成功或者失败原因
-
-    _STR_PackUserTaskResult()
-    {
-        bzero(&head,sizeof(_STR_PackUserTaskResult));
-        head.Flag = /*htons*/(FLAG_UserTaskResult);
-        head.Len = /*htons*/(sizeof(_STR_PackUserTaskResult)-sizeof(STR_PackHead));
-    }
-}STR_PackUserTaskResult;
 
 
 //13，怪物信息数据
@@ -435,7 +416,7 @@ typedef struct _STR_GoodsPrice
 typedef struct _STR_PickGoods
 {
     hf_uint32 LootGoodsID; //物品ID
-    hf_uint32 GoodsFlag;   //掉落者
+    hf_uint32 GoodsFlag;   //掉落者 怪物ID
 }STR_PickGoods;
 
 //19.玩家捡取物品结果数据包
@@ -495,6 +476,19 @@ typedef struct _STR_PlayerMoney
     hf_uint32 Count;    //数量
     hf_uint8  TypeID;   //类型
 }STR_PlayerMoney;
+
+typedef struct _STR_PackPlayerMoney
+{
+    _STR_PackPlayerMoney()
+    {
+        bzero(&head, sizeof(_STR_PackPlayerMoney));
+        head.Flag = FLAG_PlayerMoney;
+        head.Len = sizeof(_STR_PackPlayerMoney) - sizeof(STR_PackHead);
+    }
+
+    STR_PackHead    head;
+    STR_PlayerMoney money;
+}STR_PackPlayerMoney;
 
 //玩家位置
 typedef struct _STR_PackPlayerPosition
@@ -921,7 +915,7 @@ typedef struct _STR_TaskProcess
 {
     hf_uint32  TaskID;
     hf_uint32  AimID;             //任务目标
-    hf_uint16  AimCount;          //已完成任务目标数量
+    hf_uint16  FinishCount;       //已完成任务目标数量
     hf_uint16  AimAmount;         //任务目标总数
     hf_uint8   ExeModeID;         //执行方式
 }STR_TaskProcess;

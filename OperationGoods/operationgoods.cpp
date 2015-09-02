@@ -57,7 +57,7 @@ void OperationGoods::ReleasePos(TCPConnection::Pointer conn, hf_uint16 pos)
 }
 
 //得到空位置总数
-hf_uint16 OperationGoods::GetEmptyPosCount(TCPConnection::Pointer conn)
+hf_uint8 OperationGoods::GetEmptyPosCount(TCPConnection::Pointer conn)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     hf_uint16 emptyPos = 0;
@@ -72,7 +72,7 @@ hf_uint16 OperationGoods::GetEmptyPosCount(TCPConnection::Pointer conn)
 }
 
 //查找空位置
-hf_uint16 OperationGoods::GetEmptyPos(TCPConnection::Pointer conn)
+hf_uint8 OperationGoods::GetEmptyPos(TCPConnection::Pointer conn)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     for(hf_int16 j = 1; j <= BAGCAPACITY;)   //找空位置
@@ -90,6 +90,22 @@ hf_uint16 OperationGoods::GetEmptyPos(TCPConnection::Pointer conn)
     }
 }
 
+
+//判断能否放下
+hf_uint8 OperationGoods::UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    for(hf_int32 j = 1; j <= BAGCAPACITY; j++)   //找空位置
+    {
+        if((*smap)[conn].m_goodsPosition[j] == POS_EMPTY)
+        {
+            --count;
+        }
+        if(count == 0)
+            return count;
+    }
+    return count;
+}
 
 //捡物品
 void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR_PickGoods* PickGoods)
@@ -170,7 +186,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
         }
         else if(20001 <= pickGoods->LootGoodsID && pickGoods->LootGoodsID <= 29999)  //直接生成装备ID存起来
         {
-            hf_uint8 empty_pos = GetEmptyPos(conn);
+            hf_uint8 empty_pos = OperationGoods::GetEmptyPos(conn);
             if(empty_pos == 0) //没有空位置
             {
                 t_pickResult.Count = 0;
@@ -205,7 +221,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
              memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
              num++;
              equCount++;
-             srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods, t_goods.Count);
+             srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_goods.Count);
         }
         else   //普通物品
         {
@@ -236,7 +252,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                          t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
                          memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
                          num++;
-                         srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods, t_goods.Count);
+                         srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_goods.Count);
                         break;
                     }
                     else //这个位置存放不下，存满当前位置，继续查找新位置
@@ -252,12 +268,12 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                         memcpy(newGoodsBuff + sizeof(STR_PackHead) + num*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
                         t_post->PushUpdateGoods(roleid, &t_goods, PostUpdate); //将新买的物品添加到list
                         num++;
-                        srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods, t_goods.Count);
+                        srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_goods.Count);
                     }
                 }
                 if(vec->Count != 0) //开辟新位置存放剩余的物品
                 {
-                    hf_uint8 empty_pos = GetEmptyPos(conn);
+                    hf_uint8 empty_pos = OperationGoods::GetEmptyPos(conn);
                     if(empty_pos == 0) //没有空位置
                     {
                         t_pickResult.Result = PICKPART_BAGFULL;
@@ -276,13 +292,13 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                      t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
                      num++;
                      //查找此任务是否为任务进度里收集物品，如果是，更新任务进度
-                     srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods, t_goods.Count);
+                     srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_goods.Count);
                 }
                 memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
             }
             else  //物品没有位置
             {
-                hf_uint8 empty_pos = GetEmptyPos(conn);
+                hf_uint8 empty_pos = OperationGoods::GetEmptyPos(conn);
                 if(empty_pos == 0) //没有空位置
                 {
                     t_pickResult.Count = 0;
@@ -307,7 +323,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
 
                  memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
                  num++;
-                 srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods, t_goods.Count);
+                 srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_goods.Count);
             }
         }
 
@@ -413,7 +429,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
                 Server::GetInstance()->free(removeGoods);
                 return;
             }
-            ReleasePos(conn, removeGoods->Position);
+            OperationGoods::ReleasePos(conn, removeGoods->Position);
             hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
             STR_PackHead t_packHead;
             t_packHead.Len = sizeof(STR_Goods);
@@ -536,7 +552,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
                 Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods((*smap)[conn].m_roleid, &(*curPos), PostDelete);
 
                 cur_goodsID->second.erase(curPos);
-                ReleasePos(conn, moveGoods->CurrentPos);
+                OperationGoods::ReleasePos(conn, moveGoods->CurrentPos);
             }
             memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_Goods), &(*tarPos), sizeof(STR_Goods));
             Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods((*smap)[conn].m_roleid, &(*tarPos), PostUpdate);
@@ -844,7 +860,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
     STR_PackOtherResult t_result;
     t_result.Flag = FLAG_BuyGoods;
 
-    hf_uint16 emptyPosCount = GetEmptyPosCount(conn);
+    hf_uint16 emptyPosCount = OperationGoods::GetEmptyPosCount(conn);
     if(buyGoods->Count > emptyPosCount) //背包满了
     {
         t_result.result = Buy_BagFull;
@@ -881,7 +897,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
     {
         t_vec.clear();
         t_goods.GoodsID = GetEquipmentID();
-        t_goods.Position = GetEmptyPos(conn);
+        t_goods.Position = OperationGoods::GetEmptyPos(conn);
         t_vec.push_back(t_goods);
         (*t_playerGoods)[t_goods.GoodsID] = t_vec;
         memcpy(buff + sizeof(STR_PackHead) + i * sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
@@ -924,7 +940,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
 void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGoods, STR_PlayerMoney* money, hf_uint32 price)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
-    hf_uint16 emptyPosCount = GetEmptyPosCount(conn);
+    hf_uint16 emptyPosCount = OperationGoods::GetEmptyPosCount(conn);
     hf_uint16 size = buyGoods->Count/GOODSMAXCOUNT + (buyGoods->Count % GOODSMAXCOUNT ? 1 : 0);
     if(size > emptyPosCount)
     {
@@ -952,7 +968,7 @@ void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* bu
         vector<STR_Goods> t_vec;
         for(hf_uint16 i = 0; i < size; i++)
         {
-            t_goods.Position = GetEmptyPos(conn);
+            t_goods.Position = OperationGoods::GetEmptyPos(conn);
             if(buyGoods->Count < GOODSMAXCOUNT)
             {
                 t_goods.Count = buyGoods->Count;
@@ -993,7 +1009,7 @@ void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* bu
     {
         if(buyGoods->Count >= GOODSMAXCOUNT)
         {
-            t_goods.Position = GetEmptyPos(conn);
+            t_goods.Position = OperationGoods::GetEmptyPos(conn);
             t_goods.Count = GOODSMAXCOUNT;
             buyGoods->Count -= GOODSMAXCOUNT;
             goods_it->second.push_back(t_goods);
@@ -1017,7 +1033,7 @@ void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* bu
             vec++;
             if(vec == goods_it->second.end()) //开辟新位置放下剩余的物品
             {
-                t_goods.Position = GetEmptyPos(conn);
+                t_goods.Position = OperationGoods::GetEmptyPos(conn);
                 t_goods.Count = buyGoods->Count;
                 goods_it->second.push_back(t_goods);
                 memcpy(buff + sizeof(STR_PackHead) + i * sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));

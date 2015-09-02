@@ -150,7 +150,9 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     case FLAG_AskFinishTask:  //玩家请求完成任务
     {
-
+        STR_FinishTask* finishTask = (STR_FinishTask*)srv->malloc();
+        memcpy(finishTask, buf + sizeof(STR_PackHead), len);
+        srv->RunTask(boost::bind(&GameTask::AskFinishTask, t_task, conn, finishTask));
         break;
     }
     case FLAG_AskTaskData:    //请求任务数据包

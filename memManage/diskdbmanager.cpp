@@ -570,7 +570,7 @@ hf_int32 DiskDBManager::GetPlayerTaskProcess(umap_taskProcess TaskProcess, const
             memset(&t_taskProcess, 0, sizeof(STR_TaskProcess));
             t_taskProcess.TaskID = atoi(PQgetvalue(t_PGresult, i, 1));
             t_taskProcess.AimID = atoi(PQgetvalue(t_PGresult, i, 2));
-            t_taskProcess.AimCount = atoi(PQgetvalue(t_PGresult, i, 3));
+            t_taskProcess.FinishCount = atoi(PQgetvalue(t_PGresult, i, 3));
             t_taskProcess.AimAmount = atoi(PQgetvalue(t_PGresult, i, 4));
             t_taskProcess.ExeModeID = atoi(PQgetvalue(t_PGresult, i, 5));
 
@@ -1103,7 +1103,7 @@ hf_uint32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
 //查询数据库中装备现在的最大值
 hf_uint32 DiskDBManager::GetEquIDMaxValue()
 {
-    const hf_char* str = "select max(equid) from t_playerequ;";
+    const hf_char* str = "select max(goodsid) from t_playergoods;";
     Logger::GetLogger()->Debug(str);
     mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);

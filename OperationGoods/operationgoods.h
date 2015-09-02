@@ -37,10 +37,11 @@ public:
     //得到新的装备编号
     static hf_uint32  GetEquipmentID();
 
-    void UsePos(TCPConnection::Pointer conn, hf_uint16 pos);      //使用位置
-    void ReleasePos(TCPConnection::Pointer conn, hf_uint16 pos);  //释放位置
-    hf_uint16 GetEmptyPosCount(TCPConnection::Pointer conn);      //得到空位置总数
-    hf_uint16 GetEmptyPos(TCPConnection::Pointer conn);           //查找空位置
+    static void UsePos(TCPConnection::Pointer conn, hf_uint16 pos);      //使用位置
+    static void ReleasePos(TCPConnection::Pointer conn, hf_uint16 pos);  //释放位置
+    static hf_uint8 GetEmptyPosCount(TCPConnection::Pointer conn);      //得到空位置总数
+    static hf_uint8 GetEmptyPos(TCPConnection::Pointer conn);           //查找空位置
+    static hf_uint8 UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count);
 
     //给新捡的装备属性 附初值
     void SetEquAttr(STR_Equipment* equAttr, hf_uint32 typeID);

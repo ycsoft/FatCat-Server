@@ -14,14 +14,6 @@
 #include "Game/log.hpp"
 #include "Game/cmdtypes.h"
 
-//位置的状态，0 空闲，1使用，2锁定
-#define  POS_EMPTY    0     //位置为空
-#define  POS_NONEMPTY 1     //位置非空
-#define  POS_LOCKED   2     //位置锁定
-
-#define  BAGCAPACITY          65             //背包容量
-#define  GOODSMAXCOUNT        99              //每个格子物品最大数量
-
 using boost::asio::ip::tcp;
 
 class Interchange
@@ -128,7 +120,7 @@ public:
     umap_roleGoods          m_playerGoods;       //玩家物品
     umap_roleEqu            m_playerEquAttr;     //玩家装备属性
     umap_roleMoney          m_playerMoney;       //玩家金币
-    STR_PackPlayerPosition      m_position;          //位置
+    STR_PackPlayerPosition  m_position;          //位置
     umap_lootGoods          m_lootGoods;         //掉落物品
     umap_lootPosition       m_lootPosition;      //掉落物品位置，时间
     boost::shared_ptr<Interchange> m_interchage;

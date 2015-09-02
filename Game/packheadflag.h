@@ -71,7 +71,6 @@
 #define FLAG_FinishTaskDlg    413   //任务结束对话Flag
 #define FLAG_TaskExeDlg       414   //任务执行对话数据包Flag
 #define FLAG_AskTaskData      415   //请求任务数据Flag
-#define FLAG_FinishTask       416
 
 
 #define FLAG_UserAttackAim    501   //玩家攻击信息数据包Flag

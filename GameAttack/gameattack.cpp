@@ -300,7 +300,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     Server* srv = Server::GetInstance();
     //查找此任务是否为任务进度里要打的怪，如果是，更新任务进度
-    srv->GetGameTask()->UpdateAttackMonsterTaskProcess(conn, monster);
+    srv->GetGameTask()->UpdateAttackMonsterTaskProcess(conn, monster->MonsterTypeID);
 
     //前15级怪物死亡不掉经验
      if(monster->Level > 15)
