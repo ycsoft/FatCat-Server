@@ -17,7 +17,7 @@ using namespace hf_types;
 
 typedef boost::unordered_map<hf_uint32,STR_PackTaskDlg>            umap_dialogue;
 typedef boost::unordered_map<hf_uint32,STR_PackTaskDescription>    umap_taskDescription;
-typedef boost::unordered_map<hf_uint32,STR_PackTaskAim>            umap_taskAim;
+typedef boost::unordered_map<hf_uint32,vector<STR_TaskAim> >       umap_taskAim;
 typedef boost::unordered_map<hf_uint32,STR_PackTaskReward>         umap_taskReward;
 
 //任务奖励
@@ -62,7 +62,7 @@ typedef boost::shared_ptr<_umap_skillTime> umap_skillTime;
 //任务编号，任务概述
 typedef boost::unordered_map<hf_uint32,STR_TaskProfile> _umap_taskProfile;
 //<任务编号，任务进度>
-typedef boost::unordered_map<hf_uint32,STR_TaskProcess> _umap_taskProcess;
+typedef boost::unordered_map<hf_uint32,vector<STR_TaskProcess> > _umap_taskProcess;
 
 typedef boost::shared_ptr<_umap_taskProfile> umap_taskProfile;
 typedef boost::shared_ptr<_umap_taskProcess> umap_taskProcess;
@@ -83,20 +83,24 @@ typedef boost::shared_ptr<_umap_monsterViewRole> umap_monsterViewRole;
 //装备属性
 typedef boost::unordered_map<hf_uint32, STR_EquipmentAttr> umap_equAttr;
 
-//玩家物品包<物品ID，属性>
+//玩家物品包<物品ID，基本信息>
 typedef boost::unordered_map<hf_uint32, vector<STR_Goods> >_umap_roleGoods;
 typedef boost::shared_ptr<_umap_roleGoods> umap_roleGoods;
 
-//玩家装备包 <装备ID，属性>
-typedef boost::unordered_map<hf_uint32, STR_Equipment> _umap_roleEqu;
-typedef boost::shared_ptr<_umap_roleEqu>umap_roleEqu;
+//玩家背包装备 <装备ID，基本信息>
+typedef boost::unordered_map<hf_uint32, STR_PlayerEqu> _umap_roleEqu;
+typedef boost::shared_ptr<_umap_roleEqu> umap_roleEqu;
+
+////玩家装备包 <装备ID，属性>
+//typedef boost::unordered_map<hf_uint32, STR_Equipment> _umap_roleEquAttr;
+//typedef boost::shared_ptr<_umap_roleEquAttr>umap_roleEquAttr;
 
 //玩家金币 <金币类型ID，金币属性>
 typedef boost::unordered_map<hf_uint8, STR_PlayerMoney>_umap_roleMoney;
 typedef boost::shared_ptr<_umap_roleMoney> umap_roleMoney;
 
 
-//掉落物品 <怪物ID/任务ID，掉落物品>
+//掉落物品 <怪物ID/任务ID，掉落物品> 如果是装备，则vector.size() = 1;
 typedef boost::unordered_map<hf_uint32, vector<STR_LootGoods> > _umap_lootGoods;
 typedef boost::shared_ptr<_umap_lootGoods> umap_lootGoods;
 
@@ -118,6 +122,9 @@ typedef boost::unordered_map<hf_uint32, STR_MonsterType> umap_monsterType;
 typedef boost::unordered_map<hf_uint32, MonsterDeath> _umap_monsterDeath;
 typedef boost::shared_ptr<_umap_monsterDeath> umap_monsterDeath;
 
+//保存玩家任务物品 <物品ID,vector<任务编号> >  一个物品同时可能为多个任务目标
+typedef boost::unordered_map<hf_uint32, vector<hf_uint32> > _umap_taskGoods;
+typedef boost::shared_ptr<_umap_taskGoods> umap_taskGoods;
 
 typedef struct _Configuration
 {

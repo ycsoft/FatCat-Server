@@ -70,22 +70,31 @@ typedef struct _STR_PackTaskDescription
     }
 }STR_PackTaskDescription;
 
-//5.任务目标数据
-typedef struct _STR_PackTaskAim
+
+typedef struct _STR_TaskAim
 {
-    STR_PackHead        head;
     hf_uint32 TaskID;
     hf_uint32 AimID;              //任务目标ID
     hf_uint32 Amount;             //任务数量ID
     hf_uint8  ExeModeID;          //执行方式ID
+}STR_TaskAim;
 
-    _STR_PackTaskAim()
-    {
-        bzero(&head,sizeof(_STR_PackTaskAim));
-        head.Flag = /*htons*/(FLAG_TaskAim);
-        head.Len = /*htons*/(sizeof(_STR_PackTaskAim)-sizeof(STR_PackHead));
-    }
-}STR_PackTaskAim;
+////5.任务目标数据
+//typedef struct _STR_PackTaskAim
+//{
+//    STR_PackHead        head;
+//    hf_uint32 TaskID;
+//    hf_uint32 AimID;              //任务目标ID
+//    hf_uint32 Amount;             //任务数量ID
+//    hf_uint8  ExeModeID;          //执行方式ID
+
+//    _STR_PackTaskAim()
+//    {
+//        bzero(&head,sizeof(_STR_PackTaskAim));
+//        head.Flag = /*htons*/(FLAG_TaskAim);
+//        head.Len = /*htons*/(sizeof(_STR_PackTaskAim)-sizeof(STR_PackHead));
+//    }
+//}STR_PackTaskAim;
 
 //6.任务奖励数据
 typedef struct _STR_PackTaskReward
@@ -453,8 +462,20 @@ typedef struct _STR_Goods
     hf_uint16 Count;     //数量
     hf_uint8  Position;  //位置
     hf_uint8  Source;    //来源  0 固有物品，1 来自交易，2 买的物品，3 捡的物品
-
 }STR_Goods;
+
+typedef struct _STR_PackGoods
+{
+    _STR_PackGoods(STR_Goods* _goods)
+    {
+        head.Flag = FLAG_BagGoods;
+        head.Len = sizeof(_STR_PackGoods) - sizeof(STR_PackHead);
+        memcpy(&goods, _goods, sizeof(STR_Goods));
+    }
+
+    STR_PackHead head;
+    STR_Goods    goods;
+}STR_PackGoods;
 
 //玩家装备属性数据包
 typedef struct _STR_Equipment
@@ -470,6 +491,18 @@ typedef struct _STR_Equipment
     hf_uint8  Durability;         //耐久度
 }STR_Equipment;
 
+//玩家装备信息
+typedef struct _STR_PlayerEqu
+{
+    _STR_PlayerEqu()
+    {
+        memset(&goods, 0, sizeof(_STR_PlayerEqu));
+    }
+
+    STR_Goods goods;
+    STR_Equipment equAttr;
+}STR_PlayerEqu;
+
 //玩家金币
 typedef struct _STR_PlayerMoney
 {
@@ -479,14 +512,14 @@ typedef struct _STR_PlayerMoney
 
 typedef struct _STR_PackPlayerMoney
 {
-    _STR_PackPlayerMoney()
+    _STR_PackPlayerMoney(STR_PlayerMoney* _money)
     {
-        bzero(&head, sizeof(_STR_PackPlayerMoney));
         head.Flag = FLAG_PlayerMoney;
         head.Len = sizeof(_STR_PackPlayerMoney) - sizeof(STR_PackHead);
+        memcpy(&money, _money, sizeof(STR_PlayerMoney));
     }
 
-    STR_PackHead    head;
+    STR_PackHead head;
     STR_PlayerMoney money;
 }STR_PackPlayerMoney;
 
@@ -540,12 +573,12 @@ typedef struct _STR_PackOtherPlayerPosition
 }STR_PackOtherPlayerPosition;
 
 //玩家刷新数据起始点
-typedef struct _PlayerStartPos
+typedef struct _STR_PlayerStartPos
 {
     hf_float Pos_x;
     hf_float Pos_y;
     hf_float Pos_z;
-}PlayerStartPos;
+}STR_PlayerStartPos;
 
 //玩家移动包
 typedef struct _STR_PlayerMove
@@ -921,18 +954,18 @@ typedef struct _STR_TaskProcess
 }STR_TaskProcess;
 
 //玩家角色单个任务进度数据
-typedef struct _STR_PackTaskProcess
-{
-    STR_PackHead        head;
-    STR_TaskProcess       TaskProcess;
+//typedef struct _STR_PackTaskProcess
+//{
+//    STR_PackHead        head;
+//    STR_TaskProcess       TaskProcess;
 
-    _STR_PackTaskProcess()
-    {
-        bzero(&head,sizeof(_STR_PackTaskProcess));
-        head.Flag = /*htons*/(FLAG_TaskProcess);
-        head.Len = /*htons*/(sizeof(_STR_PackTaskProcess)-sizeof(STR_PackHead));
-    }
-}STR_PackTaskProcess;
+//    _STR_PackTaskProcess()
+//    {
+//        bzero(&head,sizeof(_STR_PackTaskProcess));
+//        head.Flag = /*htons*/(FLAG_TaskProcess);
+//        head.Len = /*htons*/(sizeof(_STR_PackTaskProcess)-sizeof(STR_PackHead));
+//    }
+//}STR_PackTaskProcess;
 //角色信息
 typedef struct _STR_RoleInfo
 {
@@ -1352,10 +1385,10 @@ enum taskFinishMode
 //任务执行方式
 enum TaskExeMode
 {
-    EXE_attack_blame = 1,       // 打怪
+    EXE_attack_monster = 1,     //打怪
     EXE_dialogue,               //对话
-    EXE_collect_items,          //收集物品
-    EXE_use_items,              //使用物品
+    EXE_collect_goods,          //收集物品
+    EXE_use_goods,              //使用物品
     EXE_escort,                 //护送
     EXE_upgrade,                //升级
     EXE_choice,                 //选择

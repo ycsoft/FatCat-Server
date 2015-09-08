@@ -45,29 +45,18 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     else
     {
-        hf_char *pname =  & ( (*smap)[conn].m_usrid[0]);
-        if(*pname == 0)  //未登录用户，用来判断用户被迫下线时，只保留链接的情形
+        //已经登录用户不能登录或注册用户，只能退出用户后再登录或注册用户
+        if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+            return;
+        if(it->second.m_roleid == 0) //未登录角色，只能登录或注册或删除角色
         {
-            if(flag != FLAG_PlayerLoginUserId && flag != FLAG_PlayerRegisterUserId)
-            {
+            if(flag != FLAG_PlayerLoginRole && flag != FLAG_PlayerRegisterRole && flag != FLAG_UserDeleteRole)
                 return;
-            }
         }
-        else
+        else //已经登录角色不能再登录或注册或删除角色，只能退出角色后再登录或注册或删除角色
         {
-            //已经登录用户不能登录或注册用户，只能退出用户后再登录或注册用户
-            if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+            if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
                 return;
-            if(it->second.m_roleid == 0) //未登录角色，只能登录或注册或删除角色
-            {
-                if(flag != FLAG_PlayerLoginRole && flag != FLAG_PlayerRegisterRole && flag != FLAG_UserDeleteRole)
-                    return;
-            }
-            else //已经登录角色不能再登录或注册或删除角色，只能退出角色后再登录或注册或删除角色
-            {
-                if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
-                    return;
-            }
         }
     }
 

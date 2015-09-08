@@ -52,7 +52,7 @@ public:
 private:
     boost::lockfree::queue<UpdateMoney>     *m_UpdateMoney;   //更新金钱
     boost::lockfree::queue<UpdateLevel>     *m_UpdateLevel;   //更新等级
-    boost::lockfree::queue<UpdateExp>       *m_UpdateExp;     //更新经验经验
+    boost::lockfree::queue<UpdateExp>       *m_UpdateExp;     //更新经验
     boost::lockfree::queue<UpdateGoods>     *m_UpdateGoods;   //更新背包物品
     boost::lockfree::queue<UpdateEquAttr>   *m_UpdateEquAttr; //更新装备属性
     boost::lockfree::queue<UpdateTask>      *m_UpdateTask;    //更新任务进度

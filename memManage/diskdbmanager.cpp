@@ -431,14 +431,24 @@ hf_int32 DiskDBManager::GetTaskAim(umap_taskAim* TaskAim)
     else
     {
         hf_int32 t_row = PQntuples(t_PGresult);
-        STR_PackTaskAim t_Aim;
+        STR_TaskAim t_Aim;
         for(int i = 0; i < t_row; i++)
         {
             t_Aim.TaskID = atoi(PQgetvalue(t_PGresult, i, 0));
             t_Aim.AimID = atoi(PQgetvalue(t_PGresult, i, 1));
             t_Aim.Amount = atoi(PQgetvalue(t_PGresult, i, 2));
             t_Aim.ExeModeID = atoi(PQgetvalue(t_PGresult, i, 3));
-            (*TaskAim).insert(make_pair(t_Aim.TaskID,t_Aim));
+            umap_taskAim::iterator it = TaskAim->find(t_Aim.TaskID);
+            if(it == TaskAim->end())
+            {
+                vector<STR_TaskAim> vecAim;
+                vecAim.push_back(t_Aim);
+                (*TaskAim)[t_Aim.TaskID] = vecAim;
+            }
+            else
+            {
+                it->second.push_back(t_Aim);
+            }
         }
         return t_row;
     }
@@ -574,7 +584,17 @@ hf_int32 DiskDBManager::GetPlayerTaskProcess(umap_taskProcess TaskProcess, const
             t_taskProcess.AimAmount = atoi(PQgetvalue(t_PGresult, i, 4));
             t_taskProcess.ExeModeID = atoi(PQgetvalue(t_PGresult, i, 5));
 
-            (*TaskProcess).insert(make_pair(t_taskProcess.TaskID, t_taskProcess));
+            _umap_taskProcess::iterator it = TaskProcess->find(t_taskProcess.TaskID);
+            if(it != TaskProcess->end())
+            {
+                it->second.push_back(t_taskProcess);
+            }
+            else
+            {
+                vector<STR_TaskProcess> vec_process;
+                vec_process.push_back(t_taskProcess);
+                (*TaskProcess)[t_taskProcess.TaskID] = vec_process;
+            }
         }
         return t_row;
     }
@@ -895,7 +915,7 @@ hf_int32 DiskDBManager::GetPlayerMoney(umap_roleMoney playerMoney, const hf_char
 }
 
 //查询玩家物品
-hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, const hf_char* str)
+hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, umap_roleEqu playerEqu, const hf_char* str)
 {
     mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
@@ -909,6 +929,7 @@ hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, const hf_char
     {
         hf_int32 t_row = PQntuples(t_PGresult);
         STR_Goods t_goods;
+        STR_PlayerEqu t_equ;
         t_goods.Source = Source_Bag;
         vector<STR_Goods> t_vec;
         for(hf_int32 i = 0; i < t_row; i++)
@@ -918,6 +939,12 @@ hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, const hf_char
             t_goods.Count = atoi(PQgetvalue(t_PGresult, i, 2));
             t_goods.Position = atoi(PQgetvalue(t_PGresult, i, 3));
 
+            if(EquTypeMinValue <= t_goods.TypeID && t_goods.TypeID <= EquTypeMaxValue) //装备
+            {
+                memcpy(&t_equ.goods, &t_goods, sizeof(STR_Goods));
+                (*playerEqu)[t_goods.GoodsID] = t_equ;
+                continue;
+            }
             _umap_roleGoods::iterator it = playerGoods->find(t_goods.GoodsID);
             if(it != playerGoods->end())
             {
@@ -960,7 +987,7 @@ hf_int32 DiskDBManager::GetPlayerEqu(umap_roleEqu playerEqu, const hf_char* str)
             t_equ.AddHp = atoi(PQgetvalue(t_PGresult, i, 6));
             t_equ.AddMagic = atoi(PQgetvalue(t_PGresult, i, 7));
             t_equ.Durability = atoi(PQgetvalue(t_PGresult, i, 8));
-            (*playerEqu)[t_equ.EquID] = t_equ;
+            memcpy(&((*playerEqu)[t_equ.EquID].equAttr), &t_equ, sizeof(STR_Equipment));
         }
         return t_row;
     }

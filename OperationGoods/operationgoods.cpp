@@ -119,8 +119,8 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
         return;
     }   
     umap_lootGoods lootGoods = (*smap)[conn].m_lootGoods;
-    _umap_lootGoods::iterator goods_it = lootGoods->find(pickGoods->GoodsFlag);
-    if(goods_it == lootGoods->end())  //掉落者不存在
+    _umap_lootGoods::iterator loot_it = lootGoods->find(pickGoods->GoodsFlag);
+    if(loot_it == lootGoods->end())  //掉落者不存在
     {
         Server::GetInstance()->free(pickGoods);
         return;
@@ -134,9 +134,8 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
 
     STR_Goods t_goods;
     t_goods.Source = Source_Pick;
-    STR_Equipment t_equipment;
     umap_roleGoods playerBagGoods = (*smap)[conn].m_playerGoods;
-    umap_roleEqu   playerEquAttr = (*smap)[conn].m_playerEquAttr;
+    umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
     umap_roleMoney playerMoney = (*smap)[conn].m_playerMoney;
 
     hf_uint32 roleid = (*smap)[conn].m_roleid;
@@ -151,14 +150,14 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
     for(hf_uint32 i = 0; i < count; i++)  //捡取多种物品
     {
-        for(vec = goods_it->second.begin(); vec != goods_it->second.end(); vec++)
+        for(vec = loot_it->second.begin(); vec != loot_it->second.end(); vec++)
         {
             if(pickGoods->LootGoodsID == vec->LootGoodsID)
             {
                 break;
             }
         }
-        if(vec == goods_it->second.end())   //要捡的物品不存在
+        if(vec == loot_it->second.end())   //要捡的物品不存在
         {
             t_pickResult.Count = 0;
             t_pickResult.Result = PICK_GOODNOTEXIST;
@@ -184,7 +183,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
             memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
 
         }
-        else if(20001 <= pickGoods->LootGoodsID && pickGoods->LootGoodsID <= 29999)  //直接生成装备ID存起来
+        else if(EquTypeMinValue <= pickGoods->LootGoodsID && pickGoods->LootGoodsID <= EquTypeMaxValue)  //直接生成装备ID存起来
         {
             hf_uint8 empty_pos = OperationGoods::GetEmptyPos(conn);
             if(empty_pos == 0) //没有空位置
@@ -195,33 +194,30 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                 continue;
             }
 
-            t_goods.GoodsID = OperationGoods::GetEquipmentID();
-            t_goods.TypeID = pickGoods->LootGoodsID;
-            t_goods.Count = 1;
-
-            SetEquAttr(&t_equipment, pickGoods->LootGoodsID);   //给新捡装备属性附初值
-            t_equipment.EquID = t_goods.GoodsID;
+            STR_PlayerEqu t_equ;
+            t_equ.goods.GoodsID = OperationGoods::GetEquipmentID();
+            t_equ.goods.TypeID = pickGoods->LootGoodsID;
+            t_equ.goods.Position = empty_pos;
+            t_equ.goods.Count = 1;
+            t_equ.goods.Source = Source_Pick;
+            SetEquAttr(&t_equ.equAttr, pickGoods->LootGoodsID);   //给新捡装备属性附初值
+            t_equ.equAttr.EquID = t_equ.goods.GoodsID;
 
             t_pickResult.Count = 1;
             t_pickResult.Result = PICK_SUCCESS;
-            t_goods.Position = empty_pos;
 
-            vector<STR_Goods> t_vec;
-            t_vec.push_back(t_goods);
-           (*playerBagGoods)[t_goods.GoodsID] = t_vec;
+           (*playerEqu)[t_equ.goods.GoodsID] = t_equ;
 
-            goods_it->second.erase(vec);
+            loot_it->second.erase(vec);
+             memcpy(newGoodsBuff + sizeof(STR_PackHead) + num*sizeof(STR_Goods), &t_equ.goods, sizeof(STR_Goods));
+              t_post->PushUpdateGoods(roleid, &t_equ.goods, PostInsert); //将新买的物品添加到list
 
-            (*playerEquAttr)[t_equipment.EquID] = t_equipment;
-             memcpy(newGoodsBuff + sizeof(STR_PackHead) + num*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
-              t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
-
-             memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_Equipment), &t_equipment, sizeof(STR_Equipment));
-             t_post->PushUpdateEquAttr(roleid, &t_equipment, PostInsert); //将新买的物品添加到list
+             memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_Equipment), &t_equ.equAttr, sizeof(STR_Equipment));
+             t_post->PushUpdateEquAttr(roleid, &t_equ.equAttr, PostInsert); //将新买的物品添加到list
              memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
              num++;
              equCount++;
-             srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_goods.Count);
+             srv->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, pickGoods->LootGoodsID, t_equ.goods.Count);
         }
         else   //普通物品
         {
@@ -246,7 +242,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                         t_pickResult.Result = PICK_SUCCESS;
                         iter->Count += t_goods.Count;
 
-                        goods_it->second.erase(vec);
+                        loot_it->second.erase(vec);
 
                          memcpy(newGoodsBuff + sizeof(STR_PackHead) + num*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
                          t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
@@ -281,7 +277,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                         break;
                     }
                     t_goods.Count = vec->Count;
-                    goods_it->second.erase(vec);
+                    loot_it->second.erase(vec);
                     t_goods.Position = empty_pos;
                     t_pickResult.Count += t_goods.Count;
                     t_pickResult.Result = PICK_SUCCESS;
@@ -312,7 +308,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
                 t_pickResult.Count += t_goods.Count;
                 t_pickResult.Result = PICK_SUCCESS;
 
-                goods_it->second.erase(vec);
+                loot_it->second.erase(vec);
 
                 vector<STR_Goods> t_vec;
                 t_vec.push_back(t_goods);
@@ -327,9 +323,9 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
             }
         }
 
-        if(goods_it->second.empty())
+        if(loot_it->second.empty())
         {
-            lootGoods->erase(goods_it);
+            lootGoods->erase(loot_it);
         }
         pickGoods++;
     }
@@ -413,6 +409,34 @@ void OperationGoods::QueryEquAttr()
 void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGoods* removeGoods)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+
+    if(removeGoods->GoodsID >= EquipMentID)
+    {
+        _umap_roleEqu::iterator equ_it = (*smap)[conn].m_playerEqu->find(removeGoods->GoodsID);
+        if(equ_it == (*smap)[conn].m_playerEqu->end())
+        {
+            Server::GetInstance()->free(removeGoods);
+            return;
+        }
+        if((*smap)[conn].m_goodsPosition[removeGoods->Position] == POS_LOCKED)
+        {
+            Server::GetInstance()->free(removeGoods);
+            return;
+        }
+
+        OperationGoods::ReleasePos(conn, removeGoods->Position);
+        equ_it->second.goods.Count = 0;
+        STR_PackGoods t_goods(&equ_it->second.goods);
+        conn->Write_all(&t_goods, sizeof(STR_PackGoods));
+
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods((*smap)[conn].m_roleid, &(equ_it->second.goods), PostDelete);
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateEquAttr((*smap)[conn].m_roleid, &(equ_it->second.equAttr), PostDelete);
+
+        (*smap)[conn].m_playerEqu->erase(equ_it);
+        Server::GetInstance()->free(removeGoods);
+        return;
+    }
+
     umap_roleGoods  playerBagGoods = (*smap)[conn].m_playerGoods;
     _umap_roleGoods::iterator it = playerBagGoods->find(removeGoods->GoodsID);
     if(it == playerBagGoods->end())
@@ -430,30 +454,15 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
                 return;
             }
             OperationGoods::ReleasePos(conn, removeGoods->Position);
-            hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
-            STR_PackHead t_packHead;
-            t_packHead.Len = sizeof(STR_Goods);
-            t_packHead.Flag = FLAG_BagGoods;
+
             iter->Count = 0;
-            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
-            memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_Goods));
-            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+            STR_PackGoods t_goods(&(*iter));
+            conn->Write_all(&t_goods, sizeof(STR_PackGoods));
 
             Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods((*smap)[conn].m_roleid, &(*iter), PostDelete);
 
-            if(removeGoods->GoodsID >= EquipMentID)   //是装备清除属性
-            {
-                _umap_roleEqu::iterator equ_it = (*smap)[conn].m_playerEquAttr->find(removeGoods->GoodsID);
-                if(equ_it != (*smap)[conn].m_playerEquAttr->end())
-                {
-                    Server::GetInstance()->GetOperationPostgres()->PushUpdateEquAttr((*smap)[conn].m_roleid, &(equ_it->second), PostDelete);
-                    (*smap)[conn].m_playerEquAttr->erase(equ_it);
-                }
-            }
             it->second.erase(iter);
-            Server::GetInstance()->free(buff);
             Server::GetInstance()->free(removeGoods);
-            return;
         }
     }
 }
@@ -714,7 +723,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
         return;
     }
 
-    if(20001 <= buyGoods->GoodsID && buyGoods->GoodsID <= 29999)
+    if(EquTypeMinValue <= buyGoods->GoodsID && buyGoods->GoodsID <= EquTypeMaxValue)
     {
         BuyEquipment(conn, buyGoods, &(*t_playerMoney)[Money_1], price_it->second.BuyPrice);
     }
@@ -734,100 +743,71 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_PackSellGoods* s
         Server::GetInstance()->free(sellGoods);
         return;
     }
+
     umap_roleMoney t_playerMoney = (*smap)[conn].m_playerMoney;
-    umap_roleGoods t_playerGoods = (*smap)[conn].m_playerGoods;
-
-    _umap_roleGoods::iterator goods_it = t_playerGoods->find(sellGoods->GoodsID);
-    if(goods_it == t_playerGoods->end()) //背包没有这种物品
-    {
-        Server::GetInstance()->free(sellGoods);
-        return;
-    }
-
-    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    hf_uint32 roleid = (*smap)[conn].m_roleid;    
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
+
     if(sellGoods->GoodsID >= EquipMentID)   //出售装备
     {
-        umap_roleEqu  playerEqu = (*smap)[conn].m_playerEquAttr;
+        umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
         _umap_roleEqu::iterator equ_it = playerEqu->find(sellGoods->GoodsID);
         if(equ_it == playerEqu->end())
         {
             Server::GetInstance()->free(sellGoods);
             return;
         }
+        STR_GoodsPrice* equPrice = &(*m_goodsPrice)[equ_it->second.goods.TypeID]; //装备价格
+        STR_PackGoods t_goods(&(equ_it->second.goods));
+        conn->Write_all(&t_goods, sizeof(STR_PackGoods));
+        t_post->PushUpdateGoods(roleid, &(equ_it->second.goods), PostDelete);
+        //装备属性
+        t_post->PushUpdateEquAttr(roleid, &(equ_it->second.equAttr), PostDelete);
 
-        STR_GoodsPrice* equPrice = &(*m_goodsPrice)[equ_it->second.TypeID]; //装备价格
+        playerEqu->erase(equ_it);
 
-        vector<STR_Goods>::iterator pos_it = goods_it->second.begin();
-        if(pos_it != goods_it->second.end())
-        {
-            STR_PackHead t_packHead;
-            t_packHead.Len = sizeof(STR_Goods);
-            t_packHead.Flag = FLAG_BagGoods;
-            hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
-            pos_it->Count = 0;
-            memcpy(buff + sizeof(STR_PackHead), &(*pos_it), sizeof(STR_Goods));
-            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
-            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);  //发送物品变化数据包
-            t_post->PushUpdateGoods(roleid, &(*pos_it), PostDelete);
-            t_playerGoods->erase(goods_it);
-            //装备属性
-            t_post->PushUpdateEquAttr(roleid, &equ_it->second, PostDelete);
-            playerEqu->erase(equ_it);
+        (*t_playerMoney)[Money_1].Count += equPrice->SellPrice;
 
-            memset(buff, 0, CHUNK_SIZE);
-            t_packHead.Len = sizeof(STR_PlayerMoney);
-            t_packHead.Flag = FLAG_PlayerMoney;
-            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+        STR_PackPlayerMoney t_money(&(*t_playerMoney)[Money_1]);
+        conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
+        t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
 
-            (*t_playerMoney)[Money_1].Count += equPrice->SellPrice;
-            memcpy(buff + sizeof(STR_PackHead), &(*t_playerMoney)[Money_1], sizeof(STR_PlayerMoney));
-            t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
-            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
-
-            Server::GetInstance()->free(buff);
-            Server::GetInstance()->free(sellGoods);
-            return;
-        }
+        Server::GetInstance()->free(sellGoods);
+        return;
     }
 
-    STR_GoodsPrice* goodsPrice = &(*m_goodsPrice)[sellGoods->GoodsID];
+    umap_roleGoods t_playerGoods = (*smap)[conn].m_playerGoods;
+    _umap_roleGoods::iterator goods_it = t_playerGoods->find(sellGoods->GoodsID);
+    if(goods_it == t_playerGoods->end()) //背包没有这种物品
+    {
+        Server::GetInstance()->free(sellGoods);
+        return;
+    }
     for(vector<STR_Goods>::iterator pos_it = goods_it->second.begin(); pos_it != goods_it->second.end();)
     {
+        STR_GoodsPrice* goodsPrice = &(*m_goodsPrice)[sellGoods->GoodsID];
         if(pos_it->Position == sellGoods->Position)
         {          
-            STR_PackHead t_packHead;
-            t_packHead.Len = sizeof(STR_Goods);
-            t_packHead.Flag = FLAG_BagGoods;
-            hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
-            t_packHead.Len = sizeof(STR_Goods);
-            t_packHead.Flag = FLAG_BagGoods;
-            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
             pos_it->Count = 0;
-            memcpy(buff + sizeof(STR_PackHead), &(*pos_it), sizeof(STR_Goods));
             t_post->PushUpdateGoods(roleid, &(*pos_it), PostDelete);
-            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);  //发送物品变化数据包
+            STR_PackGoods t_goods(&(*pos_it));
+            conn->Write_all(&t_goods, sizeof(STR_PackGoods));
+
             goods_it->second.erase(pos_it);
             if(goods_it->second.begin() == goods_it->second.end())
             {
                 t_playerGoods->erase(goods_it);
             }
 
-            memset(buff, 0, CHUNK_SIZE);
-            t_packHead.Len = sizeof(STR_PlayerMoney);
-            t_packHead.Flag = FLAG_PlayerMoney;
-            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
-
             (*t_playerMoney)[Money_1].Count += goodsPrice->SellPrice * pos_it->Count;
-            memcpy(buff + sizeof(STR_PackHead), &(*t_playerMoney)[Money_1], sizeof(STR_PlayerMoney));
+            STR_PackPlayerMoney t_money(&(*t_playerMoney)[Money_1]);
+            conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
             t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
-            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
-            Server::GetInstance()->free(buff);
             Server::GetInstance()->free(sellGoods);
             return;
         }
         pos_it++;
-        if(pos_it == goods_it->second.end()) //此位置没有这种物品
+        if(pos_it == goods_it->second.end()) //到结尾了没找到这种物品
         {
             Server::GetInstance()->free(sellGoods);
             return;
@@ -835,6 +815,43 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_PackSellGoods* s
     }
 }
 
+//得到玩家背包中某种/某类物品的数量
+hf_uint32  OperationGoods::GetThisGoodsCount(TCPConnection::Pointer conn, hf_uint32 goodsID)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    umap_roleGoods playerGoods = (*smap)[conn].m_playerGoods;
+    if(EquTypeMinValue <= goodsID && EquTypeMaxValue <= goodsID)
+    {
+        umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
+        if(playerEqu->size() == 0)
+        {
+            return 0;
+        }
+        hf_uint32 count = 0;
+        for(_umap_roleEqu::iterator it = playerEqu->begin(); it != playerEqu->end(); it++)
+        {
+            if(it->second.goods.TypeID == goodsID)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+    _umap_roleGoods::iterator it = playerGoods->find(goodsID);
+    if(it == playerGoods->end())
+    {
+        return 0;
+    }
+    else
+    {
+        hf_uint32 count = 0;
+        for(vector<STR_Goods>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
+        {
+            count += iter->Count;
+        }
+        return count;
+    }
+}
 
 //给新捡的装备属性 附初值
 void OperationGoods::SetEquAttr(STR_Equipment* equAttr, hf_uint32 typeID)
@@ -867,49 +884,30 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
         conn->Write_all(&t_result, sizeof(STR_PackOtherResult));
         return;
     }
-    umap_roleGoods t_playerGoods = (*smap)[conn].m_playerGoods;
-    umap_roleEqu  roleEqu = (*smap)[conn].m_playerEquAttr;
-    STR_Goods t_goods;
-    t_goods.Source = Source_Buy;
-    STR_Equipment t_equipment;
-    vector<STR_Goods> t_vec;
-    t_goods.TypeID = buyGoods->GoodsID;
-    t_goods.Count = 1;
+    umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
     hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
     hf_char* attrbuff = (hf_char*)Server::GetInstance()->malloc();
 
-    STR_EquipmentAttr* t_attr = &(*m_equAttr)[t_goods.TypeID];
-
-    //以后装备的某些属性会固定值加上随机值，暂时都一样
-    t_equipment.TypeID = t_attr->TypeID;
-    t_equipment.PhysicalAttack = t_attr->PhysicalAttack;
-    t_equipment.PhysicalDefense = t_attr->PhysicalDefense;
-    t_equipment.MagicAttack = t_attr->MagicAttack;
-    t_equipment.MagicDefense = t_attr->MagicDefense;
-    t_equipment.AddHp = t_attr->AddHp;
-    t_equipment.AddMagic = t_attr->AddMagic;
-    t_equipment.Durability = t_attr->Durability;
-
+    STR_PlayerEqu t_equ;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
 
+    SetEquAttr(&t_equ.equAttr, buyGoods->GoodsID);
+    t_equ.goods.TypeID = buyGoods->GoodsID;
+    t_equ.goods.Count = 1;
+    t_equ.goods.Source = Source_Buy;
+
     for(hf_uint16 i = 0; i < buyGoods->Count; i++)
     {
-        t_vec.clear();
-        t_goods.GoodsID = GetEquipmentID();
-        t_goods.Position = OperationGoods::GetEmptyPos(conn);
-        t_vec.push_back(t_goods);
-        (*t_playerGoods)[t_goods.GoodsID] = t_vec;
-        memcpy(buff + sizeof(STR_PackHead) + i * sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
+        t_equ.goods.Position = OperationGoods::GetEmptyPos(conn);
+        t_equ.goods.GoodsID = GetEquipmentID();
+        (*playerEqu)[t_equ.goods.GoodsID] = t_equ;
 
-        t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
+        memcpy(buff + sizeof(STR_PackHead) + i * sizeof(STR_Goods), &t_equ.goods, sizeof(STR_Goods));
+        t_post->PushUpdateGoods(roleid, &t_equ.goods, PostInsert); //将新买的物品添加到list
 
-        //装备属性
-        t_equipment.EquID = t_goods.GoodsID;
-        (*roleEqu)[t_equipment.EquID] = t_equipment;
-        memcpy(attrbuff + sizeof(STR_PackHead) + i * sizeof(STR_Equipment), &t_equipment, sizeof(STR_Equipment));
-
-        t_post->PushUpdateEquAttr(roleid, &t_equipment, PostInsert); //将新买的物品添加到list
+        memcpy(attrbuff + sizeof(STR_PackHead) + i * sizeof(STR_Equipment), &t_equ.equAttr, sizeof(STR_Equipment)); //装备属性
+        t_post->PushUpdateEquAttr(roleid, &t_equ.equAttr, PostInsert); //将新买的物品添加到list
     }
 
     STR_PackHead t_packHead;
@@ -926,12 +924,8 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
     money->Count -= buyGoods->Count * price;
     t_post->PushUpdateMoney(roleid, money);  //将金钱变动插入到list
 
-    memset(buff, 0, CHUNK_SIZE);
-    t_packHead.Len = sizeof(STR_PlayerMoney);
-    t_packHead.Flag = FLAG_PlayerMoney;
-    memcpy(buff, &t_packHead, sizeof(STR_PackHead));
-    memcpy(buff + sizeof(STR_PackHead), money, sizeof(STR_Goods));
-    conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+    STR_PackPlayerMoney t_money(money);
+    conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
     Server::GetInstance()->free(buff);
     Server::GetInstance()->free(attrbuff);
 }

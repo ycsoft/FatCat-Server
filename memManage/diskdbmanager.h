@@ -153,7 +153,7 @@ public:
      hf_int32 GetPlayerMoney(umap_roleMoney playerMoney, const hf_char* str);
 
      //查询玩家物品
-     hf_int32 GetPlayerGoods(umap_roleGoods playerGoods, const hf_char* str);
+     hf_int32 GetPlayerGoods(umap_roleGoods playerGoods, umap_roleEqu playerEqu, const hf_char* str);
 
      //查询玩家装备属性
      hf_int32 GetPlayerEqu(umap_roleEqu playerEqu, const hf_char* str);

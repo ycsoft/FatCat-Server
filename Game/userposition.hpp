@@ -67,7 +67,7 @@ public:
         conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
         //给可视范围内的玩家发送位置
         BroadCastUserPosition(conn, pos);
-        PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
+        STR_PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
         hf_float dx = startPos->Pos_x - pos->Pos_x,
             dy = startPos->Pos_y - pos->Pos_y,
             dz = startPos->Pos_z - pos->Pos_z;
@@ -137,7 +137,7 @@ public:
         //给可视范围内的玩家发送位置
         BroadCastUserPosition(conn, pos);
 
-        PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
+        STR_PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
         hf_float dx = startPos->Pos_x - pos->Pos_x,
                  dy = startPos->Pos_y - pos->Pos_y,
                  dz = startPos->Pos_z - pos->Pos_z;

@@ -32,8 +32,14 @@ public:
      //请求任务奖励
      void TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid);
 
-     //
-     bool RewardGoods(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
+
+    bool AskFinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProcess* taskProcess);  //请求完成收集物品任务
+
+
+    //
+    bool TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
+    bool TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
+
 
      //发送已接取的任务进度
      void SendPlayerTaskProcess(TCPConnection::Pointer conn);
@@ -41,7 +47,7 @@ public:
      void SendPlayerViewTask(TCPConnection::Pointer conn);
 
      //查找此任务是否为任务进度里收集物品，如果是，更新任务进度
-     void UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uint32 goodsID, hf_uint32 goodsCount);
+     void UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uint32 goodsID, hf_uint32 goodsType);
 
      //查找此任务是否为任务进度里打怪任务，如果是，更新任务进度
      void UpdateAttackMonsterTaskProcess(TCPConnection::Pointer conn, hf_uint32 monstertypeID);

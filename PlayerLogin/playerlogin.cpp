@@ -289,17 +289,13 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
                 it->second->Write_all(&t_packHead, sizeof(STR_PackHead));
 
                 SavePlayerOfflineData(it->second);
-                DeleteNameSock(it->second);
-                SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
-                Session s;
-                (*smap)[it->second] = s;
+                SessionMgr::Instance()->RemoveSession(it->second);
             }
 
             t_PackResult.result = RESULT_SUCCESS;
             conn->Write_all(&t_PackResult, sizeof(STR_PackResult));
 
             SessionMgr::Instance()->SaveSession(conn, reg->userName);
-
             (*nameSock)[reg->userName] = conn;
             //发送角色列表
             SendRoleList(conn, reg->userName);
@@ -548,20 +544,26 @@ void PlayerLogin::SendRoleGoods(TCPConnection::Pointer conn, hf_uint32 RoleID)
     sbd << "select goodsid,typeid,count,position from t_playergoods where roleid = " << RoleID << ";";
     Logger::GetLogger()->Debug(sbd.str());
 
-    umap_roleGoods  t_playerGoods = (*smap)[conn].m_playerGoods;
-    hf_uint32 t_row = srv->getDiskDB()->GetPlayerGoods(t_playerGoods, sbd.str());
+    umap_roleGoods  playerGoods = (*smap)[conn].m_playerGoods;
+    umap_roleEqu    playerEqu = (*smap)[conn].m_playerEqu;
+    hf_uint32 t_row = srv->getDiskDB()->GetPlayerGoods(playerGoods, playerEqu, sbd.str());
     if(t_row > 0)
     {
         hf_char* buff = (hf_char*)srv->malloc();
 
         hf_int32 i = 0;
-        for(_umap_roleGoods::iterator it = t_playerGoods->begin(); it != t_playerGoods->end(); it++)
+        for(_umap_roleEqu::iterator it = playerEqu->begin(); it != playerEqu->end(); it++)
+        {
+            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(it->second), sizeof(STR_Goods));
+            OperationGoods::UsePos(conn, it->second.goods.Position);
+            i++;
+        }
+        for(_umap_roleGoods::iterator it = playerGoods->begin(); it != playerGoods->end(); it++)
         {
             for(vector<STR_Goods>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
             {
                 memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*iter), sizeof(STR_Goods));
-//                srv->GetOperationGoods()->UsePos(conn, (*iter).Position);
-                 OperationGoods::UsePos(conn, (*iter).Position);
+                 OperationGoods::UsePos(conn, iter->Position);
                 i++;
             }
         }
@@ -576,32 +578,35 @@ void PlayerLogin::SendRoleGoods(TCPConnection::Pointer conn, hf_uint32 RoleID)
 
 //发送角色背包里装备的属性
 void PlayerLogin::SendRoleEquAttr(TCPConnection::Pointer conn, hf_uint32 RoleID)
-{
-    StringBuilder sbd;
-    STR_PackHead t_packHead;
-    Server* srv = Server::GetInstance();
+{      
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    umap_roleEqu  playerEqu = (*smap)[conn].m_playerEqu;
+    if(playerEqu->size() == 0)
+    {
+        return;
+    }
+
+    StringBuilder sbd;
     sbd << "select equid,typeid,physicalattack,physicaldefense,magicattack,magicdefense,addhp,addmagic,durability from t_playerequ where roleid = " << RoleID << ";";
     Logger::GetLogger()->Debug(sbd.str());
-    umap_roleEqu  t_playerEqu = (*smap)[conn].m_playerEquAttr;
-    hf_uint32 t_row = srv->getDiskDB()->GetPlayerEqu(t_playerEqu, sbd.str());
+
+    STR_PackHead t_packHead;
+    hf_uint32 t_row = Server::GetInstance()->getDiskDB()->GetPlayerEqu(playerEqu, sbd.str());
     if(t_row > 0)
     {
-        hf_int32 count = t_playerEqu->size();
-        hf_char* buff = (hf_char*)srv->malloc();
-
+        hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
         memset(&t_packHead, 0, sizeof(STR_PackHead));
         t_packHead.Flag = FLAG_EquGoodsAttr;
-        t_packHead.Len = count * sizeof(STR_Equipment);
+        t_packHead.Len = playerEqu->size() * sizeof(STR_Equipment);
         memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         hf_int32 i = 0;
-        for(_umap_roleEqu::iterator it = t_playerEqu->begin(); it != t_playerEqu->end(); it++)
+        for(_umap_roleEqu::iterator it = playerEqu->begin(); it != playerEqu->end(); it++)
         {
-            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Equipment), &(it->second), sizeof(STR_Equipment));
+            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Equipment), &(it->second.equAttr), sizeof(STR_Equipment));
             i++;
         }
         conn->Write_all(buff, t_packHead.Len + sizeof(STR_PackHead));
-        srv->free(buff);
+        Server::GetInstance()->free(buff);
     }
 }
 
@@ -712,7 +717,7 @@ void PlayerLogin::SaveRoleBagGoods(TCPConnection::Pointer conn)
 void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
-    umap_roleEqu t_roleEqu = (*smap)[conn].m_playerEquAttr;
+    umap_roleEqu roleEqu = (*smap)[conn].m_playerEqu;
     StringBuilder sbd;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
@@ -726,15 +731,15 @@ void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
 
     sbd.Clear();
     sbd << "insert into t_playerequ values(";
-    hf_uint32 count = t_roleEqu->size();
+    hf_uint32 count = roleEqu->size();
     if(count == 0)
     {
         return;
     }
     hf_uint32 i = 0;
-    for(_umap_roleEqu::iterator it = t_roleEqu->begin(); it != t_roleEqu->end(); it++)
+    for(_umap_roleEqu::iterator it = roleEqu->begin(); it != roleEqu->end(); it++)
     {
-        sbd << roleid << "," << it->second.EquID << "," << it->second.TypeID << "," << it->second.PhysicalAttack << "," << it->second.PhysicalDefense << "," << it->second.MagicAttack << "," << it->second.MagicDefense << "," << it->second.AddHp << "," << it->second.AddMagic << "," << it->second.Durability << ")";
+        sbd << roleid << "," << it->second.equAttr.EquID << "," << it->second.equAttr.TypeID << "," << it->second.equAttr.PhysicalAttack << "," << it->second.equAttr.PhysicalDefense << "," << it->second.equAttr.MagicAttack << "," << it->second.equAttr.MagicDefense << "," << it->second.equAttr.AddHp << "," << it->second.equAttr.AddMagic << "," << it->second.equAttr.Durability << ")";
         if(count == i+1)
         {
             sbd << ";";
@@ -801,7 +806,7 @@ void PlayerLogin::SaveRoleMoney(TCPConnection::Pointer conn)
 void PlayerLogin::SaveRoleTaskProcess(TCPConnection::Pointer conn)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
-    umap_taskProcess umap_playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
+    umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
     StringBuilder sbd;
@@ -815,15 +820,22 @@ void PlayerLogin::SaveRoleTaskProcess(TCPConnection::Pointer conn)
 
     sbd.Clear();
     sbd << "insert into t_playertaskprocess values(";
-    hf_uint32 count = umap_playerAcceptTask->size();
+    hf_uint32 count = playerAcceptTask->size();
     if(count == 0)
     {
         return;
     }
     hf_uint32 i = 0;
-    for(_umap_taskProcess::iterator it = umap_playerAcceptTask->begin(); it != umap_playerAcceptTask->end(); it++)
+    for(_umap_taskProcess::iterator it = playerAcceptTask->begin(); it != playerAcceptTask->end(); it++)
     {
-        sbd << roleid << "," << it->second.TaskID << "," << it->second.AimID << "," << it->second.FinishCount << "," << it->second.AimAmount << "," << it->second.ExeModeID << ")";
+        for(vector<STR_TaskProcess>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
+        {
+            sbd << roleid << "," << iter->TaskID << "," << iter->AimID << "," << iter->FinishCount << "," << iter->AimAmount << "," << iter->ExeModeID << ")";
+            if(iter != it->second.end())
+            {
+                sbd << ",(";
+            }
+        }
         if(count == (i+1))
         {
             sbd << ";";

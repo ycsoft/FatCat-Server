@@ -424,234 +424,234 @@ void GameInterchange::operProCheckChange(TCPConnection::Pointer conn,  interchan
 void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方交易的物品
 {
 
-    Server* srv = Server::GetInstance();
-    SessionMgr::SessionPointer sp = SessionMgr::Instance()->GetSession();
-    boost::shared_ptr<Interchange> interchange = (*sp)[conn].m_interchage;
-    TCPConnection::Pointer partnerConn =  interchange->partnerConn;
-    boost::shared_ptr<Interchange> pInterchange = (*sp)[partnerConn].m_interchage;
-    OperationPostgres*  opg =  srv->GetOperationPostgres();
+//    Server* srv = Server::GetInstance();
+//    SessionMgr::SessionPointer sp = SessionMgr::Instance()->GetSession();
+//    boost::shared_ptr<Interchange> interchange = (*sp)[conn].m_interchage;
+//    TCPConnection::Pointer partnerConn =  interchange->partnerConn;
+//    boost::shared_ptr<Interchange> pInterchange = (*sp)[partnerConn].m_interchage;
+//    OperationPostgres*  opg =  srv->GetOperationPostgres();
 
 
-    //把本方要交易的物品从本方背包删除
-    for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
-    {
-        _umap_roleGoods::iterator iterGoods = (*sp)[conn].m_playerGoods->find(iter->GoodsID);
-        for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
-        {
-            if(iterIn->Position == iter->Position)
-            {
-                if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
-                {
-                    (*sp)[conn].m_goodsPosition[iter->Position] = POS_EMPTY;
-                    opg->PushUpdateGoods(interchange->roleId,&(*iter),PostDelete);
-                    (*sp)[conn].m_playerGoods->erase(iter->GoodsID);
-                    break;
-                }
+//    //把本方要交易的物品从本方背包删除
+//    for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
+//    {
+//        _umap_roleGoods::iterator iterGoods = (*sp)[conn].m_playerGoods->find(iter->GoodsID);
+//        for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
+//        {
+//            if(iterIn->Position == iter->Position)
+//            {
+//                if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
+//                {
+//                    (*sp)[conn].m_goodsPosition[iter->Position] = POS_EMPTY;
+//                    opg->PushUpdateGoods(interchange->roleId,&(*iter),PostDelete);
+//                    (*sp)[conn].m_playerGoods->erase(iter->GoodsID);
+//                    break;
+//                }
 
-                opg->PushUpdateGoods(interchange->roleId,&(*iter),PostDelete);
-                 (*sp)[conn].m_goodsPosition[iter->Position] = POS_EMPTY;
-                iterIn->Count -= iter->Count;
-                if(iterIn->Count == 0)
-                {
-                    iterGoods->second.erase(iterIn);
-                }
-                break;
-            }
-        }
-        if(0==iterGoods->second.size())
-        {
-            ((*sp)[conn].m_playerGoods)->erase(iter->GoodsID);
-        }
-    }
+//                opg->PushUpdateGoods(interchange->roleId,&(*iter),PostDelete);
+//                 (*sp)[conn].m_goodsPosition[iter->Position] = POS_EMPTY;
+//                iterIn->Count -= iter->Count;
+//                if(iterIn->Count == 0)
+//                {
+//                    iterGoods->second.erase(iterIn);
+//                }
+//                break;
+//            }
+//        }
+//        if(0==iterGoods->second.size())
+//        {
+//            ((*sp)[conn].m_playerGoods)->erase(iter->GoodsID);
+//        }
+//    }
 
-    //把对方要交易物品从对方背包中删除
-    for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
-    {
-        _umap_roleGoods::iterator iterGoods = (*sp)[partnerConn].m_playerGoods->find(iter->GoodsID);
-        for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
-        {
-            if(iterIn->Position == iter->Position)
-            {
-                if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
-                {
+//    //把对方要交易物品从对方背包中删除
+//    for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
+//    {
+//        _umap_roleGoods::iterator iterGoods = (*sp)[partnerConn].m_playerGoods->find(iter->GoodsID);
+//        for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
+//        {
+//            if(iterIn->Position == iter->Position)
+//            {
+//                if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
+//                {
 
-                    (*sp)[partnerConn].m_goodsPosition[iter->Position] = POS_EMPTY;
-                    opg->PushUpdateGoods(pInterchange->roleId,&(*iter),PostDelete);
-                    (*sp)[partnerConn].m_playerGoods->erase(iter->GoodsID);
-                    break;
-                }
-                opg->PushUpdateGoods(pInterchange->roleId,&(*iter),PostDelete);
+//                    (*sp)[partnerConn].m_goodsPosition[iter->Position] = POS_EMPTY;
+//                    opg->PushUpdateGoods(pInterchange->roleId,&(*iter),PostDelete);
+//                    (*sp)[partnerConn].m_playerGoods->erase(iter->GoodsID);
+//                    break;
+//                }
+//                opg->PushUpdateGoods(pInterchange->roleId,&(*iter),PostDelete);
 
-                (*sp)[partnerConn].m_goodsPosition[iter->Position] = POS_EMPTY;
-                iterIn->Count -= iter->Count;
-                if(iterIn->Count == 0)
-                {
-                    iterGoods->second.erase(iterIn);
-                }
-                break;
-            }
-        }
-        if(0==iterGoods->second.size())
-        {
-            ((*sp)[partnerConn].m_playerGoods)->erase(iter->GoodsID);
-        }
-    }
+//                (*sp)[partnerConn].m_goodsPosition[iter->Position] = POS_EMPTY;
+//                iterIn->Count -= iter->Count;
+//                if(iterIn->Count == 0)
+//                {
+//                    iterGoods->second.erase(iterIn);
+//                }
+//                break;
+//            }
+//        }
+//        if(0==iterGoods->second.size())
+//        {
+//            ((*sp)[partnerConn].m_playerGoods)->erase(iter->GoodsID);
+//        }
+//    }
 
-    //将本方要交易的物品添加到对方背包
-    for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
-    {
+//    //将本方要交易的物品添加到对方背包
+//    for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
+//    {
 
-        vector<STR_Goods> vec;
-        STR_Goods goods;
-        int i = 1;
-        for(; i <=BAGCAPACITY-1;++i)                     //查找空闲位置
-        {
-            if((*sp)[partnerConn].m_goodsPosition[i] == POS_EMPTY)
-            {
-                (*sp)[partnerConn].m_goodsPosition[i] = POS_NONEMPTY;
-                break;
-            }
-        }
-        goods.Count = iter->Count;
-        goods.GoodsID = iter->GoodsID;
-        goods.Position = i;
-        goods.TypeID = iter->TypeID;
-        goods.Source = Source_Trade;
-        vec.push_back(goods);
-        iter->Position = i;
-        opg->PushUpdateGoods(pInterchange->roleId,&goods,PostInsert);
+//        vector<STR_Goods> vec;
+//        STR_Goods goods;
+//        int i = 1;
+//        for(; i <=BAGCAPACITY-1;++i)                     //查找空闲位置
+//        {
+//            if((*sp)[partnerConn].m_goodsPosition[i] == POS_EMPTY)
+//            {
+//                (*sp)[partnerConn].m_goodsPosition[i] = POS_NONEMPTY;
+//                break;
+//            }
+//        }
+//        goods.Count = iter->Count;
+//        goods.GoodsID = iter->GoodsID;
+//        goods.Position = i;
+//        goods.TypeID = iter->TypeID;
+//        goods.Source = Source_Trade;
+//        vec.push_back(goods);
+//        iter->Position = i;
+//        opg->PushUpdateGoods(pInterchange->roleId,&goods,PostInsert);
 
-        if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
-        {
-            (*((*sp)[partnerConn].m_playerGoods))[iter->GoodsID] = vec;
-            STR_Equipment equip = (*((*sp)[conn].m_playerEquAttr))[iter->GoodsID];
-            interchange->vecEqui.push_back(equip);
-            (*((*sp)[partnerConn].m_playerEquAttr))[iter->GoodsID] = equip;
-            (*sp)[conn].m_playerEquAttr->erase(iter->GoodsID);
+//        if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
+//        {
+//            (*((*sp)[partnerConn].m_playerGoods))[iter->GoodsID] = vec;
+//            STR_Equipment equip = (*((*sp)[conn].m_playerEquAttr))[iter->GoodsID];
+//            interchange->vecEqui.push_back(equip);
+//            (*((*sp)[partnerConn].m_playerEquAttr))[iter->GoodsID] = equip;
+//            (*sp)[conn].m_playerEquAttr->erase(iter->GoodsID);
 
-            opg->PushUpdateEquAttr(pInterchange->roleId,&equip,PostUpdate);
-            continue;
-        }
+//            opg->PushUpdateEquAttr(pInterchange->roleId,&equip,PostUpdate);
+//            continue;
+//        }
 
-        _umap_roleGoods::iterator iterPartnerGoods = (*sp)[partnerConn].m_playerGoods->find(iter->GoodsID);
-        if(iterPartnerGoods != (*sp)[partnerConn].m_playerGoods->end())
-        {
-            iterPartnerGoods->second.push_back(goods);
-        }
-        else
-        {
-            (*((*sp)[partnerConn].m_playerGoods))[iter->GoodsID] = vec;
-        }
-    }
+//        _umap_roleGoods::iterator iterPartnerGoods = (*sp)[partnerConn].m_playerGoods->find(iter->GoodsID);
+//        if(iterPartnerGoods != (*sp)[partnerConn].m_playerGoods->end())
+//        {
+//            iterPartnerGoods->second.push_back(goods);
+//        }
+//        else
+//        {
+//            (*((*sp)[partnerConn].m_playerGoods))[iter->GoodsID] = vec;
+//        }
+//    }
 
-     //将对方要交易的物品添加到本方背包
-    for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
-    {
-        vector<STR_Goods> vec;
-        STR_Goods goods;
-        int i = 1;
-        for(; i <=BAGCAPACITY-1;++i)
-        {
-            if((*sp)[conn].m_goodsPosition[i] == POS_EMPTY )
-            {
-                (*sp)[conn].m_goodsPosition[i] = POS_NONEMPTY;
-                break;
-            }
+//     //将对方要交易的物品添加到本方背包
+//    for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
+//    {
+//        vector<STR_Goods> vec;
+//        STR_Goods goods;
+//        int i = 1;
+//        for(; i <=BAGCAPACITY-1;++i)
+//        {
+//            if((*sp)[conn].m_goodsPosition[i] == POS_EMPTY )
+//            {
+//                (*sp)[conn].m_goodsPosition[i] = POS_NONEMPTY;
+//                break;
+//            }
 
-        }
-        goods.Count = iter->Count;
-        goods.GoodsID = iter->GoodsID;
-        goods.Position = i;
-        goods.TypeID = iter->TypeID;
-        iter->Position = i;
-        goods.Source = Source_Trade;
-        vec.push_back(goods);
-        opg->PushUpdateGoods(interchange->roleId,&goods,PostInsert);
+//        }
+//        goods.Count = iter->Count;
+//        goods.GoodsID = iter->GoodsID;
+//        goods.Position = i;
+//        goods.TypeID = iter->TypeID;
+//        iter->Position = i;
+//        goods.Source = Source_Trade;
+//        vec.push_back(goods);
+//        opg->PushUpdateGoods(interchange->roleId,&goods,PostInsert);
 
-        if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
-        {
-            (*((*sp)[conn].m_playerGoods))[iter->GoodsID] = vec;
-            STR_Equipment equip = (*((*sp)[partnerConn].m_playerEquAttr))[iter->GoodsID];
-            (*((*sp)[conn].m_playerEquAttr))[iter->GoodsID] = equip;
-            pInterchange->vecEqui.push_back(equip);
-            (*sp)[partnerConn].m_playerEquAttr->erase(iter->GoodsID);
-            opg->PushUpdateEquAttr(interchange->roleId,&equip,PostUpdate);
-            continue;
-        }
+//        if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
+//        {
+//            (*((*sp)[conn].m_playerGoods))[iter->GoodsID] = vec;
+//            STR_Equipment equip = (*((*sp)[partnerConn].m_playerEquAttr))[iter->GoodsID];
+//            (*((*sp)[conn].m_playerEquAttr))[iter->GoodsID] = equip;
+//            pInterchange->vecEqui.push_back(equip);
+//            (*sp)[partnerConn].m_playerEquAttr->erase(iter->GoodsID);
+//            opg->PushUpdateEquAttr(interchange->roleId,&equip,PostUpdate);
+//            continue;
+//        }
 
-        _umap_roleGoods::iterator iterPartnerGoods = (*sp)[conn].m_playerGoods->find(iter->GoodsID);
-        if(iterPartnerGoods != (*sp)[conn].m_playerGoods->end())
-        {
-            iterPartnerGoods->second.push_back(goods);
-        }
-        else
-        {
-            (*((*sp)[conn].m_playerGoods))[iter->GoodsID] = vec;
-        }
-    }
+//        _umap_roleGoods::iterator iterPartnerGoods = (*sp)[conn].m_playerGoods->find(iter->GoodsID);
+//        if(iterPartnerGoods != (*sp)[conn].m_playerGoods->end())
+//        {
+//            iterPartnerGoods->second.push_back(goods);
+//        }
+//        else
+//        {
+//            (*((*sp)[conn].m_playerGoods))[iter->GoodsID] = vec;
+//        }
+//    }
 
-    //将本方交易的金钱添加到对方
-    if(interchange->money.MoneyCount != 0)
-    {
-        _umap_roleMoney::iterator iterMoney = (*sp)[conn].m_playerMoney->find(interchange->money.MoneyType);
-        iterMoney->second.Count -= interchange->money.MoneyCount;
-        STR_PlayerMoney money;
-        money.Count = iterMoney->second.Count;
-        money.TypeID = interchange->money.MoneyType;
-        opg->PushUpdateMoney(interchange->roleId,&money);
+//    //将本方交易的金钱添加到对方
+//    if(interchange->money.MoneyCount != 0)
+//    {
+//        _umap_roleMoney::iterator iterMoney = (*sp)[conn].m_playerMoney->find(interchange->money.MoneyType);
+//        iterMoney->second.Count -= interchange->money.MoneyCount;
+//        STR_PlayerMoney money;
+//        money.Count = iterMoney->second.Count;
+//        money.TypeID = interchange->money.MoneyType;
+//        opg->PushUpdateMoney(interchange->roleId,&money);
 
-        if(iterMoney->second.Count == 0)
-        {
-            (*sp)[conn].m_playerMoney->erase(iterMoney);
-        }
-        _umap_roleMoney::iterator iterMoneyPartner = (*sp)[partnerConn].m_playerMoney->find(interchange->money.MoneyType);
-        if(iterMoneyPartner != (*sp)[partnerConn].m_playerMoney->end())
-        {
-            iterMoneyPartner->second.Count += interchange->money.MoneyCount;
-            money.Count = iterMoneyPartner->second.Count;
-            opg->PushUpdateMoney(pInterchange->roleId,&money);
-        }
-        else
-        {
-            STR_PlayerMoney money;
-            money.Count = interchange->money.MoneyCount ;
-            money.TypeID = interchange->money.MoneyType;
-            opg->PushUpdateMoney(pInterchange->roleId,&money);
-            (*((*sp)[partnerConn].m_playerMoney))[money.TypeID] = money;
-        }
+//        if(iterMoney->second.Count == 0)
+//        {
+//            (*sp)[conn].m_playerMoney->erase(iterMoney);
+//        }
+//        _umap_roleMoney::iterator iterMoneyPartner = (*sp)[partnerConn].m_playerMoney->find(interchange->money.MoneyType);
+//        if(iterMoneyPartner != (*sp)[partnerConn].m_playerMoney->end())
+//        {
+//            iterMoneyPartner->second.Count += interchange->money.MoneyCount;
+//            money.Count = iterMoneyPartner->second.Count;
+//            opg->PushUpdateMoney(pInterchange->roleId,&money);
+//        }
+//        else
+//        {
+//            STR_PlayerMoney money;
+//            money.Count = interchange->money.MoneyCount ;
+//            money.TypeID = interchange->money.MoneyType;
+//            opg->PushUpdateMoney(pInterchange->roleId,&money);
+//            (*((*sp)[partnerConn].m_playerMoney))[money.TypeID] = money;
+//        }
 
-    }
+//    }
 
-    //将对方要交易的金钱添加到本方
-    if(pInterchange->money.MoneyCount != 0)
-    {
-        _umap_roleMoney::iterator iterMoney = (*sp)[partnerConn].m_playerMoney->find(pInterchange->money.MoneyType);
-        iterMoney->second.Count -= pInterchange->money.MoneyCount;
-        STR_PlayerMoney money;
-        money.Count = iterMoney->second.Count;
-        money.TypeID = pInterchange->money.MoneyType;
-        opg->PushUpdateMoney(pInterchange->roleId,&money);
+//    //将对方要交易的金钱添加到本方
+//    if(pInterchange->money.MoneyCount != 0)
+//    {
+//        _umap_roleMoney::iterator iterMoney = (*sp)[partnerConn].m_playerMoney->find(pInterchange->money.MoneyType);
+//        iterMoney->second.Count -= pInterchange->money.MoneyCount;
+//        STR_PlayerMoney money;
+//        money.Count = iterMoney->second.Count;
+//        money.TypeID = pInterchange->money.MoneyType;
+//        opg->PushUpdateMoney(pInterchange->roleId,&money);
 
-        if(iterMoney->second.Count == 0)
-        {
-            (*sp)[conn].m_playerMoney->erase(iterMoney);
-        }
-        _umap_roleMoney::iterator iterMoneyPartner = (*sp)[conn].m_playerMoney->find(pInterchange->money.MoneyType);
-        if(iterMoneyPartner != (*sp)[partnerConn].m_playerMoney->end())
-        {
-            iterMoneyPartner->second.Count += pInterchange->money.MoneyCount;
-            money.Count = iterMoneyPartner->second.Count;
-            opg->PushUpdateMoney(interchange->roleId,&money);
-        }
-        else
-        {
-            STR_PlayerMoney money;
-            money.Count = pInterchange->money.MoneyCount ;
-            money.TypeID = pInterchange->money.MoneyType;
-            opg->PushUpdateMoney(interchange->roleId,&money);
-            (*((*sp)[conn].m_playerMoney))[money.TypeID] = money;
-        }
-    }
+//        if(iterMoney->second.Count == 0)
+//        {
+//            (*sp)[conn].m_playerMoney->erase(iterMoney);
+//        }
+//        _umap_roleMoney::iterator iterMoneyPartner = (*sp)[conn].m_playerMoney->find(pInterchange->money.MoneyType);
+//        if(iterMoneyPartner != (*sp)[partnerConn].m_playerMoney->end())
+//        {
+//            iterMoneyPartner->second.Count += pInterchange->money.MoneyCount;
+//            money.Count = iterMoneyPartner->second.Count;
+//            opg->PushUpdateMoney(interchange->roleId,&money);
+//        }
+//        else
+//        {
+//            STR_PlayerMoney money;
+//            money.Count = pInterchange->money.MoneyCount ;
+//            money.TypeID = pInterchange->money.MoneyType;
+//            opg->PushUpdateMoney(interchange->roleId,&money);
+//            (*((*sp)[conn].m_playerMoney))[money.TypeID] = money;
+//        }
+//    }
 }
 
 void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 交换双方物品后向双方发送交易的物品变动
