@@ -755,6 +755,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_PackSellGoods* s
             return;
         }
         STR_GoodsPrice* equPrice = &(*m_goodsPrice)[equ_it->second.goods.TypeID]; //装备价格
+        equ_it->second.goods.Count = 0;
         STR_PackGoods t_goods(&(equ_it->second.goods));
         conn->Write_all(&t_goods, sizeof(STR_PackGoods));
         t_post->PushUpdateGoods(roleid, &(equ_it->second.goods), PostDelete);

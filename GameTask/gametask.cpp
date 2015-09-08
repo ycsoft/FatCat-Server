@@ -103,8 +103,17 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
                      t_vec.push_back(taskid);
                      (*(*smap)[conn].m_taskGoods)[aim_it->AimID] = t_vec;
                  }
+
                  //此数量从背包查得
-                 t_taskProcess.FinishCount = OperationGoods::GetThisGoodsCount(conn,aim_it->AimID);
+                 hf_uint32 t_count = OperationGoods::GetThisGoodsCount(conn,aim_it->AimID);
+                 if(t_count >= t_taskProcess.AimAmount)
+                 {
+                     t_taskProcess.FinishCount = t_taskProcess.AimAmount;
+                 }
+                 else
+                 {
+                     t_taskProcess.FinishCount = t_count;
+                 }
             }
             else if(aim_it->ExeModeID == EXE_upgrade) //升级任务
             {
@@ -470,6 +479,25 @@ void GameTask::FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProce
             playerGoods->erase(goods_it);
         }
     }
+
+    umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
+    _umap_taskGoods::iterator taskGoods_it = taskGoods->find(taskProcess->AimID);
+    if(taskGoods_it != taskGoods->end())
+    {
+        for(vector<hf_uint32>::iterator taskID_it = taskGoods_it->second.begin(); taskID_it != taskGoods_it->second.end(); taskID_it++)
+        {
+            if(*taskID_it == taskProcess->TaskID)
+            {
+                taskGoods_it->second.erase(taskID_it);
+                break;
+            }
+        }
+        if(taskGoods_it->second.size() == 0)
+        {
+            taskGoods->erase(taskGoods_it);
+        }
+    }
+
     t_packHead.Len = sizeof(STR_TaskProcess)*i;
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
@@ -722,23 +750,33 @@ void GameTask::UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uin
         {
             if(iter->AimID == goodstype && iter->ExeModeID == EXE_collect_goods)
             {
-                if(iter->FinishCount == iter->AimAmount && iter->FinishCount <= count)
+                if(iter->FinishCount > count)
                 {
-                    continue;
-                }
-                else if(iter->FinishCount > count)
-                {
-                    iter->FinishCount = iter->AimAmount;
+                    iter->FinishCount = count;
                     Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*iter), PostUpdate);
                     memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_TaskProcess));
                     t_packHead.Len += sizeof(STR_TaskProcess);
                 }
                 else
                 {
-                    iter->FinishCount = count;
-                     Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*iter), PostUpdate);
-                    memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_TaskProcess));
-                    t_packHead.Len += sizeof(STR_TaskProcess);
+                    if(iter->AimAmount <= count)
+                    {
+                        if(iter->FinishCount == iter->AimAmount)
+                        {
+                            continue;
+                        }
+                        iter->FinishCount = iter->AimAmount;
+                        Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*iter), PostUpdate);
+                        memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_TaskProcess));
+                        t_packHead.Len += sizeof(STR_TaskProcess);
+                    }
+                    else
+                    {
+                        iter->FinishCount = count;
+                         Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*iter), PostUpdate);
+                        memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_TaskProcess));
+                        t_packHead.Len += sizeof(STR_TaskProcess);
+                    }
                 }
             }
         }
