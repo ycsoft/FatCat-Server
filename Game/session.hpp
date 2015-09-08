@@ -108,7 +108,6 @@ public:
     Buff                    m_usrid;             //用户名
     Buff                    m_nick;              //昵称
     hf_uint32               m_roleid;            //角色ID
-    hf_uint32               m_goodCount;         //玩家现有的物品数量
     hf_double               m_publicCoolTime;    //公共冷却时间
     hf_double               m_skillUseTime;      //再次使用技能的时间
     STR_RoleInfo            m_roleInfo;          //角色攻击属性

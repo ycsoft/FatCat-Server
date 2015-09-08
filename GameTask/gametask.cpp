@@ -197,159 +197,159 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
             return;
     }
 
+    vector<hf_uint32> reduceGoods;//用来保存任务完成时从背包删除的物品ID
     for(vector<STR_TaskProcess>::iterator process_it = it->second.begin(); process_it != it->second.end(); process_it++)
     {
         if(process_it->ExeModeID == EXE_collect_goods)
         {//在背包去掉目标数量的物品
-
+            FinishCollectGoodsTask(conn, &(*process_it));
+            reduceGoods.push_back(process_it->AimID);
         }
-         Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
+        if(!TaskFinishGoodsReward(conn, finishTask)) //物品奖励
+        {
+            Server::GetInstance()->free(finishTask);
+            return;
+        }
+        TaskFinishTaskReward(conn, finishTask);  //任务奖励
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
     }
 
-    if(!TaskFinishGoodsReward(conn, finishTask)) //物品奖励
+    for(vector<hf_uint32>::iterator reduce_it = reduceGoods.begin(); reduce_it != reduceGoods.end(); reduce_it++)
     {
-        Server::GetInstance()->free(finishTask);
-        return;
+        UpdateCollectGoodsTaskProcess(conn, *reduce_it);
     }
-    if(TaskFinishTaskReward(conn, finishTask))  //任务奖励
-    {
-
-        (*smap)[conn].m_playerAcceptTask->erase(it);
-    }
+    (*smap)[conn].m_playerAcceptTask->erase(it);
     Server::GetInstance()->free(finishTask);
 }
 
 bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
 {
-//    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
-//    umap_goodsReward::iterator goodsReward_it = m_goodsReward->find(finishTask->TaskID);
-//    if(goodsReward_it == m_goodsReward->end()) //没有物品奖励
-//    {
-//        return true;
-//    }
-//    hf_uint32 roleid = (*smap)[conn].m_roleid;
-//    hf_uint8   PosCount = 0;  //需要的空格子
-//    //判断能否放下
-////    PosCount = goodsReward_it->second.size();
-//    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
-//    {
-//        if(EquTypeMinValue <= good_it->GoodsID && good_it->GoodsID <= EquTypeMaxValue) //装备
-//        {
-//            PosCount++;
-//        }
-//        else
-//        {
-//            PosCount = PosCount + good_it->Count/GOODSMAXCOUNT + 1;
-//        }
-//    }
-//    if(OperationGoods::UseEmptyPos(conn, PosCount) > 0) //空格子不够
-//    {
-//        STR_PackFinishTaskResult t_taskResult;
-//        t_taskResult.TaskID = finishTask->TaskID;
-//        t_taskResult.Result = FINISH_TASKFAIL;
-//        conn->Write_all(&t_taskResult, sizeof(STR_PackFinishTaskResult));
-//        return false;
-//    }
+    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    umap_goodsReward::iterator goodsReward_it = m_goodsReward->find(finishTask->TaskID);
+    if(goodsReward_it == m_goodsReward->end()) //没有物品奖励
+    {
+        return true;
+    }
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    hf_uint8   PosCount = 0;  //需要的空格子
+    //判断能否放下
+//    PosCount = goodsReward_it->second.size();
+    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
+    {
+        if(EquTypeMinValue <= good_it->GoodsID && good_it->GoodsID <= EquTypeMaxValue) //装备
+        {
+            PosCount++;
+        }
+        else
+        {
+            PosCount = PosCount + good_it->Count/GOODSMAXCOUNT + 1;
+        }
+    }
+    if(OperationGoods::UseEmptyPos(conn, PosCount) > 0) //空格子不够
+    {
+        STR_PackFinishTaskResult t_taskResult;
+        t_taskResult.TaskID = finishTask->TaskID;
+        t_taskResult.Result = FINISH_TASKFAIL;
+        conn->Write_all(&t_taskResult, sizeof(STR_PackFinishTaskResult));
+        return false;
+    }
 
-//    hf_char* newGoodsBuff = (hf_char*)Server::GetInstance()->malloc();
-//    hf_char* equAttrBuff = (hf_char*)Server::GetInstance()->malloc();
-//    hf_uint8 goodsCount = 0;
-//    hf_uint8 equCount = 0;
-//    umap_roleGoods  playerBagGoods = (*smap)[conn].m_playerGoods;
-//    umap_roleEquAttr    playerEquAttr = (*smap)[conn].m_playerEquAttr;
+    hf_char* newGoodsBuff = (hf_char*)Server::GetInstance()->malloc();
+    hf_char* equAttrBuff = (hf_char*)Server::GetInstance()->malloc();
+    hf_uint8 goodsCount = 0;
+    hf_uint8 equCount = 0;
+    umap_roleGoods  playerGoods = (*smap)[conn].m_playerGoods;
+    umap_roleEqu    playerEqu = (*smap)[conn].m_playerEqu;
 
-//    OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
+    OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
 
-//    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
-//    {
-//        if(good_it->Type == DefaultGoods || finishTask->SelectGoodsID == good_it->GoodsID)
-//        {
-//            if(EquTypeMinValue <= good_it->GoodsID && good_it->GoodsID <= EquTypeMaxValue) //装备
-//            {
-//                STR_Goods t_goods;
-//                t_goods.GoodsID = OperationGoods::GetEquipmentID();
+    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
+    {
+        if(good_it->Type == DefaultGoods || finishTask->SelectGoodsID == good_it->GoodsID)
+        {
+            if(EquTypeMinValue <= good_it->GoodsID && good_it->GoodsID <= EquTypeMaxValue) //装备
+            {
+                STR_PlayerEqu t_equ;
+                t_equ.goods.Count = 1;
+                t_equ.goods.Position = OperationGoods::GetEmptyPos(conn);
+                t_equ.goods.Source = Source_Task;
+                t_equ.goods.GoodsID = OperationGoods::GetEquipmentID();
+                t_equ.goods.TypeID = good_it->GoodsID; //可选装备奖励只有一件
+                Server::GetInstance()->GetOperationGoods()->SetEquAttr(&t_equ.equAttr, t_equ.goods.TypeID);   //给新捡装备属性附初值
+                t_equ.equAttr.EquID = t_equ.goods.GoodsID;
 
-//                if(good_it->Type == DefaultGoods)
-//                {
-//                    t_goods.TypeID = good_it->GoodsID;
-//                }
-//                else
-//                {
-//                    t_goods.TypeID = finishTask->SelectGoodsID;
-//                }
-//                t_goods.Count = 1;
-//                t_goods.Position = OperationGoods::GetEmptyPos(conn);
-//                t_goods.Source = Source_Task;
+               (*playerEqu)[t_equ.goods.GoodsID] = t_equ;
 
-//                STR_Equipment t_equipment;
+                 memcpy(newGoodsBuff + sizeof(STR_PackHead) + goodsCount*sizeof(STR_Goods), &t_equ.goods, sizeof(STR_Goods));
+                 goodsCount++;
+                  t_post->PushUpdateGoods(roleid, &t_equ.goods, PostInsert); //将新买的物品添加到list
+                 memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_Equipment), &t_equ.equAttr, sizeof(STR_Equipment));
+                 equCount++;
+                 t_post->PushUpdateEquAttr(roleid, &t_equ.equAttr, PostInsert); //将新买的物品添加到list
+                 UpdateCollectGoodsTaskProcess(conn, t_equ.goods.TypeID);
+            }
+            else
+            {
+                STR_Goods t_goods;
+                if(good_it->Type == DefaultGoods)
+                {
+                    t_goods.GoodsID = good_it->GoodsID;
+                    t_goods.TypeID = good_it->GoodsID;
+                }
+                else
+                {
+                    t_goods.GoodsID = finishTask->SelectGoodsID;
+                    t_goods.TypeID = finishTask->SelectGoodsID;
+                }
+                t_goods.Position = OperationGoods::GetEmptyPos(conn);
+                t_goods.Source = Source_Task;
+                for(hf_uint8 i = 0; i < good_it->Count/GOODSMAXCOUNT + 1; i++)
+                {
+                    if(good_it->Count - i*GOODSMAXCOUNT >= GOODSMAXCOUNT)
+                        t_goods.Count = GOODSMAXCOUNT;
+                    else
+                        t_goods.Count = good_it->Count - i*GOODSMAXCOUNT;
 
-//                Server::GetInstance()->GetOperationGoods()->SetEquAttr(&t_equipment, t_goods.TypeID);   //给新捡装备属性附初值
-//                t_equipment.EquID = t_goods.GoodsID;
-
-//                vector<STR_Goods> t_vec;
-//                t_vec.push_back(t_goods);
-//               (*playerBagGoods)[t_goods.GoodsID] = t_vec;
-
-//                (*playerEquAttr)[t_equipment.EquID] = t_equipment;
-//                 memcpy(newGoodsBuff + sizeof(STR_PackHead) + goodsCount*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
-//                 goodsCount++;
-//                  t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
-//                 memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_Equipment), &t_equipment, sizeof(STR_Equipment));
-//                 equCount++;
-//                 t_post->PushUpdateEquAttr(roleid, &t_equipment, PostInsert); //将新买的物品添加到list
-//                 UpdateCollectGoodsTaskProcess(conn, t_goods.TypeID, t_goods.Count);
-//            }
-//            else
-//            {
-//                STR_Goods t_goods;
-//                if(good_it->Type == DefaultGoods)
-//                {
-//                    t_goods.GoodsID = good_it->GoodsID;
-//                    t_goods.TypeID = good_it->GoodsID;
-//                }
-//                else
-//                {
-//                    t_goods.GoodsID = finishTask->SelectGoodsID;
-//                    t_goods.TypeID = finishTask->SelectGoodsID;
-//                }
-//                t_goods.Position = OperationGoods::GetEmptyPos(conn);
-//                t_goods.Source = Source_Task;
-//                for(hf_uint8 i = 0; i < good_it->Count/GOODSMAXCOUNT + 1; i++)
-//                {
-//                    if(good_it->Count - i*GOODSMAXCOUNT >= GOODSMAXCOUNT)
-//                        t_goods.Count = GOODSMAXCOUNT;
-//                    else
-//                        t_goods.Count = good_it->Count - i*GOODSMAXCOUNT;
-
-//                   memcpy(newGoodsBuff + sizeof(STR_PackHead) + goodsCount*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
-//                   goodsCount++;
-//                   t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
-//                   UpdateCollectGoodsTaskProcess(conn, t_goods.TypeID, t_goods.Count);
-//                }
-//            }
-//        }
-//    }
-//    STR_PackHead t_packHead;
-//    if(goodsCount)
-//    {
-//        t_packHead.Len = sizeof(STR_Goods) * goodsCount;
-//        t_packHead.Flag = FLAG_BagGoods;
-//        memcpy(newGoodsBuff, &t_packHead, sizeof(STR_PackHead));
-//        conn->Write_all(newGoodsBuff, sizeof(STR_PackHead) + t_packHead.Len);
-//    }
-//    if(equCount)
-//    {
-//        t_packHead.Len = sizeof(STR_Equipment) * equCount;
-//        t_packHead.Flag = FLAG_EquGoodsAttr;
-//        memcpy(equAttrBuff, &t_packHead, sizeof(STR_PackHead));
-//        conn->Write_all(equAttrBuff, sizeof(STR_PackHead) + t_packHead.Len);
-//    }
-//    Server::GetInstance()->free(newGoodsBuff);
-//    Server::GetInstance()->free(equAttrBuff);
-//    return true;
+                   memcpy(newGoodsBuff + sizeof(STR_PackHead) + goodsCount*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
+                   goodsCount++;
+                   t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
+                   _umap_roleGoods::iterator playerGoods_it = playerGoods->find(t_goods.GoodsID);
+                   if(playerGoods_it == playerGoods->end())
+                   {
+                       vector<STR_Goods> vec;
+                       vec.push_back(t_goods);
+                       (*playerGoods)[t_goods.GoodsID] = vec;
+                   }
+                   else
+                   {
+                       playerGoods_it->second.push_back(t_goods);
+                   }
+                   UpdateCollectGoodsTaskProcess(conn, t_goods.TypeID);
+                }
+            }
+        }
+    }
+    STR_PackHead t_packHead;
+    if(goodsCount)
+    {
+        t_packHead.Len = sizeof(STR_Goods) * goodsCount;
+        t_packHead.Flag = FLAG_BagGoods;
+        memcpy(newGoodsBuff, &t_packHead, sizeof(STR_PackHead));
+        conn->Write_all(newGoodsBuff, sizeof(STR_PackHead) + t_packHead.Len);
+    }
+    if(equCount)
+    {
+        t_packHead.Len = sizeof(STR_Equipment) * equCount;
+        t_packHead.Flag = FLAG_EquGoodsAttr;
+        memcpy(equAttrBuff, &t_packHead, sizeof(STR_PackHead));
+        conn->Write_all(equAttrBuff, sizeof(STR_PackHead) + t_packHead.Len);
+    }
+    Server::GetInstance()->free(newGoodsBuff);
+    Server::GetInstance()->free(equAttrBuff);
+    return true;
 }
 
-bool GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
+void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
 {
     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
     umap_taskReward::iterator taskReward_it = m_taskReward->find(finishTask->TaskID);
@@ -392,82 +392,88 @@ bool GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask*
      t_taskResult.TaskID = finishTask->TaskID;
      t_taskResult.Result = FINISH_TASKSUCCESS;
      conn->Write_all(&t_taskResult, sizeof(STR_PackFinishTaskResult));
-     return true;
 }
 
 //请求完成收集物品任务
-bool GameTask::AskFinishCollectGoodsTask(TCPConnection::Pointer conn, /*STR_FinishTask* finishTask,*/ STR_TaskProcess* taskProcess)
+void GameTask::FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProcess* taskProcess)
 {
-//    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
+    hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
 
-//    umap_goodsReward::iterator goodsReward_it = m_goodsReward->find(taskProcess->TaskID);
-//    if(goodsReward_it == m_goodsReward->end()) //没有物品奖励
-//    {
-//        return true;
-//    }
-//    hf_uint32 roleid = (*smap)[conn].m_roleid;
-//    hf_uint8   PosCount = 0;  //需要的空格子
-//    //判断能否放下
-//    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
-//    {
-//        if(EquTypeMinValue <= good_it->GoodsID && good_it->GoodsID <= EquTypeMaxValue) //装备
-//        {
-//            PosCount++;
-//        }
-//        else
-//        {
-//            PosCount = PosCount + good_it->Count/GOODSMAXCOUNT + 1;
-//        }
-//    }
-//    if(OperationGoods::UseEmptyPos(conn, PosCount) > 0) //空格子不够
-//    {
-//        STR_PackFinishTaskResult t_taskResult;
-//        t_taskResult.TaskID = taskProcess->TaskID;
-//        t_taskResult.Result = FINISH_TASKFAIL;
-//        conn->Write_all(&t_taskResult, sizeof(STR_PackFinishTaskResult));
-//        return false;
-//    }
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    STR_PackHead t_packHead;
+    t_packHead.Flag = FLAG_TaskProcess;
+    hf_uint32 i = 0;
 
-//    OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
-//    umap_roleEquAttr playerEquAttr = (*smap)[conn].m_playerEquAttr;
-//    umap_roleGoods playerGoods = (*smap)[conn].m_playerGoods;
-//    if(EquTypeMinValue <= taskProcess->AimID && taskProcess->AimID <= EquTypeMaxValue)
-//    {
-//        for(_umap_roleGoods::iterator goods_it = playerGoods->begin(); goods_it != playerGoods->end(); goods_it++)
-//        {
-//            vector<STR_Goods>::iterator iter= goods_it->second.begin();
-//            if(iter->TypeID == taskProcess->AimID)
-//            {
-//                taskProcess->AimAmount -= 1;
-//                t_post->PushUpdateGoods(roleid, &(*iter), PostDelete); //将任务从list中删除
-//                _umap_roleEquAttr::iterator equ_it = playerEquAttr->find(iter->GoodsID);
-//                t_post->PushUpdateEquAttr(roleid, &equ_it->second, PostDelete);
-//                if(taskProcess->AimAmount == 0) //完成
-//                {
-//                    break;
-//                }
-//            }
-//        }
-//    }
-//    else
-//    {
-//        _umap_roleGoods::iterator goods_it = playerGoods->find(taskProcess->AimID);
-//        for(vector<STR_Goods>::iterator iter = goods_it->second.begin(); iter != goods_it->second.end();)
-//        {
-//            if(iter->Count == taskProcess->AimAmount)
-//            {
-
-//            }
-//            else if(iter->Count > taskProcess->AimAmount)
-//            {
-
-//            }
-//            else
-//            {
-
-//            }
-//        }
-//    }
+    if(EquTypeMinValue <= taskProcess->AimID  && taskProcess->AimID <= EquTypeMaxValue) //装备
+    {
+        umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
+        for(_umap_roleEqu::iterator it = playerEqu->begin(); it != playerEqu->end(); it++)
+        {
+            if(it->second.goods.TypeID == taskProcess->AimID)
+            {
+                it->second.goods.Count = 0;
+                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(it->second.goods), sizeof(STR_Goods));
+                i++;
+                t_post->PushUpdateGoods(roleid, &(it->second.goods), PostDelete);
+                t_post->PushUpdateEquAttr(roleid, &(it->second.equAttr), PostDelete);
+                _umap_roleEqu::iterator _it = it;
+                playerEqu->erase(_it);
+            }
+            if(i == taskProcess->AimAmount)
+            {
+                break;
+            }
+        }
+    }
+    else  //其他物品
+    {
+        umap_roleGoods playerGoods = (*smap)[conn].m_playerGoods;
+        _umap_roleGoods::iterator goods_it = playerGoods->find(taskProcess->AimID);
+        if(goods_it != playerGoods->end())
+        {
+            hf_uint32 count = taskProcess->AimAmount;
+            for(vector<STR_Goods>::iterator it = goods_it->second.begin(); it != goods_it->second.end(); it++)
+            {
+                if(it->Count > count)
+                {
+                    it->Count -= count;
+                    memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*it), sizeof(STR_Goods));
+                    i++;
+                    t_post->PushUpdateGoods(roleid, &(*it), PostUpdate);
+                    break;
+                }
+                else if(it->Count < count)
+                {
+                    it->Count = 0;
+                    count -= it->Count;
+                    memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*it), sizeof(STR_Goods));
+                    i++;
+                    t_post->PushUpdateGoods(roleid, &(*it), PostDelete);
+                    vector<STR_Goods>::iterator _it = it;
+                    goods_it->second.erase(_it);
+                }
+                else
+                {
+                    it->Count -= count;
+                    memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*it), sizeof(STR_Goods));
+                    i++;
+                    t_post->PushUpdateGoods(roleid, &(*it), PostUpdate);
+                    goods_it->second.erase(it);
+                    break;
+                }
+            }
+        }
+        if(goods_it->second.size() == 0)
+        {
+            playerGoods->erase(goods_it);
+        }
+    }
+    t_packHead.Len = sizeof(STR_TaskProcess)*i;
+    memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+    conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+    Server::GetInstance()->free(buff);
 }
 
  //请求任务对话
@@ -588,6 +594,7 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
     //发送已接取的任务进度
     if(playerAcceptTask->size() > 0)
     {
+        umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
         hf_char* buff = (hf_char*)srv->malloc();
         hf_char* probuff = (hf_char*)srv->malloc();
         hf_uint32 i = 0;
@@ -601,6 +608,20 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
             {
                 memcpy(buff + sizeof(STR_PackHead) + j*sizeof(STR_TaskProcess), &(*iter), sizeof(STR_TaskProcess));
                 j++;
+                if(iter->ExeModeID == EXE_collect_goods)
+                {
+                    _umap_taskGoods::iterator taskGoods_it = taskGoods->find(iter->AimID);
+                    if(taskGoods_it == taskGoods->end())
+                    {
+                        vector<hf_uint32> vec;
+                        vec.push_back(iter->TaskID);
+                        (*taskGoods)[iter->AimID] = vec;
+                    }
+                    else
+                    {
+                        taskGoods_it->second.push_back(iter->TaskID);
+                    }
+                }
             }
             i++;
         }
@@ -673,7 +694,7 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
 }
 
 //查找此任务是否为任务进度里收集物品，如果是，更新任务进度
-void GameTask::UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uint32 goodsID, hf_uint32 goodstype)
+void GameTask::UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uint32 goodstype)
 {
     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();    
     umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
@@ -699,7 +720,7 @@ void GameTask::UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uin
 
         for(vector<STR_TaskProcess>::iterator iter = process_it->second.begin(); iter != process_it->second.end(); iter++)
         {
-            if(iter->AimID == goodsID && iter->ExeModeID == EXE_collect_goods)
+            if(iter->AimID == goodstype && iter->ExeModeID == EXE_collect_goods)
             {
                 if(iter->FinishCount == iter->AimAmount && iter->FinishCount <= count)
                 {
@@ -722,6 +743,7 @@ void GameTask::UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uin
             }
         }
     }
+    memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     Server::GetInstance()->free(buff);
 }

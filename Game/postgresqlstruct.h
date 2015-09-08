@@ -453,7 +453,6 @@ typedef struct _STR_EquipmentAttr
     hf_uint8  Durability;         //耐久度
 }STR_EquipmentAttr;
 
-
 //玩家普通物品数据包
 typedef struct _STR_Goods
 {
@@ -498,7 +497,6 @@ typedef struct _STR_PlayerEqu
     {
         memset(&goods, 0, sizeof(_STR_PlayerEqu));
     }
-
     STR_Goods goods;
     STR_Equipment equAttr;
 }STR_PlayerEqu;
