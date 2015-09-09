@@ -33,7 +33,7 @@ public:
     //购买其他物品
     void BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGoods, STR_PlayerMoney* money, hf_uint32 price);
     //出售物品
-    void SellGoods(TCPConnection::Pointer conn, STR_PackSellGoods* moveGoods);
+    void SellGoods(TCPConnection::Pointer conn, STR_SellGoods* moveGoods);
     //得到新的装备编号
 
     //得到玩家背包中某种/某类物品的数量

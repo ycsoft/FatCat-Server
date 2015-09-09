@@ -44,8 +44,9 @@ public:
     //增加物品任务
     void AddGoodsTask(umap_taskGoods taskGoods, hf_uint32 GoodsID, hf_uint32 taskID);
 
-    //
+    //任务完成物品奖励
     bool TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
+    //任务完成任务奖励
     void TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
 
 
@@ -59,6 +60,9 @@ public:
 
      //查找此任务是否为任务进度里打怪任务，如果是，更新任务进度
      void UpdateAttackMonsterTaskProcess(TCPConnection::Pointer conn, hf_uint32 monstertypeID);
+
+     //查找此任务是否为任务进度里升级任务，如果是，更新任务进度
+     void UpdateAttackUpgradeTaskProcess(TCPConnection::Pointer conn, hf_uint32 Level);
 
      //将任务相关数据保存到boost::unordered_map结构中，键值为任务编号，值为该任务的数据包，客户端查询某任务数据包时用任务编号查询相关数据包发送给客户端
      void QueryTaskData();

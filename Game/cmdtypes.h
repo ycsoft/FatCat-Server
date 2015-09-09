@@ -15,14 +15,14 @@
 using namespace std;
 using namespace hf_types;
 
-typedef boost::unordered_map<hf_uint32,STR_PackTaskDlg>            umap_dialogue;
+typedef boost::unordered_map<hf_uint32,STR_TaskDlg>            umap_dialogue;
 typedef boost::unordered_map<hf_uint32,STR_PackTaskDescription>    umap_taskDescription;
 typedef boost::unordered_map<hf_uint32,vector<STR_TaskAim> >       umap_taskAim;
-typedef boost::unordered_map<hf_uint32,STR_PackTaskReward>         umap_taskReward;
+typedef boost::unordered_map<hf_uint32,STR_TaskReward>         umap_taskReward;
 
 //任务奖励
 // <任务ID，物品奖励>
-typedef boost::unordered_map<hf_uint32, vector<STR_PackGoodsReward> >  umap_goodsReward;
+typedef boost::unordered_map<hf_uint32, vector<STR_GoodsReward> >  umap_goodsReward;
 
 typedef boost::unordered_map<hf_uint32,STR_TaskPremise>              umap_taskPremise;
 

@@ -108,7 +108,14 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
             }
             else if(aim_it->ExeModeID == EXE_upgrade) //升级任务
             {
-                t_taskProcess.FinishCount = (*smap)[conn].m_RoleBaseInfo.Level;
+                if((*smap)[conn].m_RoleBaseInfo.Level > t_taskProcess.AimAmount)
+                {
+                    t_taskProcess.FinishCount = t_taskProcess.AimAmount;
+                }
+                else
+                {
+                    t_taskProcess.FinishCount = (*smap)[conn].m_RoleBaseInfo.Level;
+                }
             }
             else  //EXE_attack_monster
             {
@@ -219,7 +226,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
     hf_uint8   PosCount = 0;  //需要的空格子
     //判断能否放下
 //    PosCount = goodsReward_it->second.size();
-    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
+    for(vector<STR_GoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
     {
         if(EquTypeMinValue <= good_it->GoodsID && good_it->GoodsID <= EquTypeMaxValue) //装备
         {
@@ -248,7 +255,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
 
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
 
-    for(vector<STR_PackGoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
+    for(vector<STR_GoodsReward>::iterator good_it = goodsReward_it->second.begin(); good_it != goodsReward_it->second.end(); good_it++)
     {
         if(good_it->Type == DefaultGoods || finishTask->SelectGoodsID == good_it->GoodsID)
         {
@@ -355,6 +362,7 @@ void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask*
             {
                 t_RoleExp->Level += 1;
                 Server::GetInstance()->GetOperationPostgres()->PushUpdateLevel((*smap)[conn].m_roleid, t_RoleExp->Level);
+                UpdateAttackUpgradeTaskProcess(conn, t_RoleExp->Level);
                 t_RoleExp->CurrentExp = t_RoleExp->CurrentExp + t_RewardExp.Experience - t_RoleExp->UpgradeExp;
                 t_RoleExp->UpgradeExp = GetUpgradeExprience(t_RoleExp->Level);
             }
@@ -380,7 +388,7 @@ void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask*
      conn->Write_all(&t_taskResult, sizeof(STR_PackFinishTaskResult));
 }
 
-//请求完成收集物品任务
+//完成收集物品任务
 void GameTask::FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProcess* taskProcess)
 {
     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
@@ -551,7 +559,7 @@ void GameTask::StartTaskDlg(TCPConnection::Pointer conn, hf_uint32 taskid)
     if(it != (*m_dialogue).end())
     {
         hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
-        STR_PackTaskDlg t_dlg= (*m_dialogue)[taskid];
+        STR_TaskDlg t_dlg= (*m_dialogue)[taskid];
         STR_PackHead t_packHead;
         t_packHead.Len =  t_dlg.StartLen + sizeof(t_dlg.TaskID);
         t_packHead.Flag = FLAG_StartTaskDlg;
@@ -571,7 +579,7 @@ void GameTask::FinishTaskDlg(TCPConnection::Pointer conn, hf_uint32 taskid)
     if(it != (*m_dialogue).end())
     {
         hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
-        STR_PackTaskDlg t_dlg= (*m_dialogue)[taskid];
+        STR_TaskDlg t_dlg= (*m_dialogue)[taskid];
         STR_PackHead t_packHead;
         t_packHead.Len = t_dlg.FinishLen + sizeof(t_dlg.TaskID) ;
         t_packHead.Flag = FLAG_FinishTaskDlg;
@@ -623,20 +631,20 @@ void GameTask::TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid)
     umap_taskReward::iterator it = (*m_taskReward).find(taskid);  //其他奖励
     if(it != (*m_taskReward).end())
     {
-        memcpy(buff + sizeof(STR_PackHead), &(*m_taskReward)[taskid], sizeof(STR_PackTaskReward));
+        memcpy(buff + sizeof(STR_PackHead), &(*m_taskReward)[taskid], sizeof(STR_TaskReward));
     }
 
     umap_goodsReward::iterator iter = (*m_goodsReward).find(taskid);  //奖励物品
     hf_uint8 i = 0;
     if(iter != (*m_goodsReward).end())
     {
-        for(vector<STR_PackGoodsReward>::iterator itt = iter->second.begin(); itt != iter->second.end(); itt++)
+        for(vector<STR_GoodsReward>::iterator itt = iter->second.begin(); itt != iter->second.end(); itt++)
         {
-            memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_PackTaskReward) + i*sizeof(STR_PackGoodsReward), &itt->GoodsID, sizeof(STR_PackGoodsReward));
+            memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_TaskReward) + i*sizeof(STR_GoodsReward), &itt->GoodsID, sizeof(STR_GoodsReward));
             i++;
         }
     }
-    t_packHead.Len = sizeof(STR_PackTaskReward) + i*sizeof(STR_PackGoodsReward);
+    t_packHead.Len = sizeof(STR_TaskReward) + i*sizeof(STR_GoodsReward);
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     srv->free(buff);
@@ -856,6 +864,35 @@ void GameTask::UpdateAttackMonsterTaskProcess(TCPConnection::Pointer conn, hf_ui
     }
     Server::GetInstance()->free(buff);
 }
+
+
+//查找此任务是否为任务进度里升级任务，如果是，更新任务进度
+void GameTask::UpdateAttackUpgradeTaskProcess(TCPConnection::Pointer conn, hf_uint32 Level)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_taskProcess playerAcceptTask = ((*smap)[conn]).m_playerAcceptTask;
+    hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
+    STR_PackHead t_packHead;
+    t_packHead.Flag = FLAG_TaskProcess;
+    t_packHead.Len = 0;
+    for(_umap_taskProcess::iterator t_task = playerAcceptTask->begin(); t_task != playerAcceptTask->end(); t_task++)
+    {
+        for(vector<STR_TaskProcess>::iterator iter = t_task->second.begin(); iter != t_task->second.end(); iter++)
+        {
+            if(iter->ExeModeID == EXE_upgrade && iter->AimAmount >= iter->AimAmount)
+            {
+                iter->FinishCount = Level;
+                 Server::GetInstance()->GetOperationPostgres()->PushUpdateLevel((*smap)[conn].m_roleid, Level);
+                memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_TaskProcess));
+                t_packHead.Len += sizeof(STR_TaskProcess);
+            }
+        }
+        memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+        conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+    }
+    Server::GetInstance()->free(buff);
+}
+
 
 //将任务相关数据查虚保存到boost::unordered_map结构中，键值为任务编号，值为该任务的数据包，客户端查询某任务数据包时用任务编号查询相关数据包发送给客户端
 void GameTask::QueryTaskData()

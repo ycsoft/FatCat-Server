@@ -246,7 +246,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     case FLAG_SellGoods:   //出售物品
     {
-        STR_PackSellGoods* t_sell = (STR_PackSellGoods*)srv->malloc();
+        STR_SellGoods* t_sell = (STR_SellGoods*)srv->malloc();
         memcpy(t_sell, buf + sizeof(STR_PackHead), len);
         srv->RunTask(boost::bind(&OperationGoods::SellGoods, t_operationGoods, conn, t_sell));
         break;

@@ -168,7 +168,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
 
         if(pickGoods->LootGoodsID == Money_1)  //掉落的是金钱
         {
-            STR_PlayerMoney* money = &(*playerMoney)[Money_1];
+            STR_PlayerMoney* money = &(*playerMoney)[Money_1];           
             money->Count += vec->Count;
             memcpy(moneyBuff + sizeof(STR_PackHead), money, sizeof(STR_PlayerMoney));
             t_post->PushUpdateMoney(roleid, money); //将金钱变动插入到list
@@ -732,7 +732,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
 }
 
 //出售物品
-void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_PackSellGoods* sellGoods)
+void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellGoods)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     if((*(*smap)[conn].m_interchage).isInchange == true)

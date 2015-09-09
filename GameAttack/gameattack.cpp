@@ -1,4 +1,5 @@
 #include "OperationPostgres/operationpostgres.h"
+#include "GameTask/gametask.h"
 #include "memManage/diskdbmanager.h"
 #include "Game/getdefinevalue.h"
 #include "GameTask/gametask.h"
@@ -303,32 +304,31 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
     srv->GetGameTask()->UpdateAttackMonsterTaskProcess(conn, monster->MonsterTypeID);
 
     //前15级怪物死亡不掉经验
-     if(monster->Level > 15)
+     if(monster->Level >= 15)
      {
         STR_PackRewardExperience t_RewardExp;
         t_RewardExp.ID = monster->MonsterID;
         t_RewardExp.Experience = GetRewardExperience(monster->Level);
         conn->Write_all(&t_RewardExp, sizeof(STR_PackRewardExperience));
 
-        STR_PackRoleExperience t_RoleExp;
-        memcpy(&t_RoleExp, &(*smap)[conn].m_roleExp, sizeof(STR_PackRoleExperience));
+        STR_PackRoleExperience* t_RoleExp = &(*smap)[conn].m_roleExp;
 
         //玩家升级
-        if(t_RoleExp.CurrentExp + t_RewardExp.Experience >= t_RoleExp.UpgradeExp)
+        if(t_RoleExp->CurrentExp + t_RewardExp.Experience >= t_RoleExp->UpgradeExp)
         {
-            t_RoleExp.Level += 1;
-            Server::GetInstance()->GetOperationPostgres()->PushUpdateLevel((*smap)[conn].m_roleid, t_RoleExp.Level);
-            t_RoleExp.UpgradeExp = GetUpgradeExprience(t_RoleExp.Level);
-            t_RoleExp.CurrentExp = t_RoleExp.CurrentExp + t_RewardExp.Experience - t_RoleExp.UpgradeExp;
-            memcpy(&(*smap)[conn].m_roleExp, &t_RoleExp, sizeof(STR_PackRoleExperience));
+            t_RoleExp->Level += 1;
+            Server::GetInstance()->GetOperationPostgres()->PushUpdateLevel((*smap)[conn].m_roleid, t_RoleExp->Level);
+            srv->GetGameTask()->UpdateAttackUpgradeTaskProcess(conn, t_RoleExp->Level);
+            t_RoleExp->UpgradeExp = GetUpgradeExprience(t_RoleExp->Level);
+            t_RoleExp->CurrentExp = t_RoleExp->CurrentExp + t_RewardExp.Experience - t_RoleExp->UpgradeExp;
         }
         else
         {
-            t_RoleExp.CurrentExp = t_RoleExp.CurrentExp + t_RewardExp.Experience;
+            t_RoleExp->CurrentExp = t_RoleExp->CurrentExp + t_RewardExp.Experience;
             memcpy(&(*smap)[conn].m_roleExp, &t_RoleExp, sizeof(STR_PackRoleExperience));
         }
-        Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp.UpgradeExp);
-        conn->Write_all(&t_RoleExp, sizeof(STR_PackRoleExperience));
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp->UpgradeExp);
+        conn->Write_all(t_RoleExp, sizeof(STR_PackRoleExperience));
       }
 
     umap_monsterLoot* t_monsterLoot = Server::GetInstance()->GetMonster()->GetMonsterLoot();
@@ -339,6 +339,20 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
         hf_char* buff = (hf_char*)srv->malloc();
         hf_int32 i = 0;
         umap_lootGoods lootGoods = (*smap)[conn].m_lootGoods;
+
+        t_lootGoods.Count = GetRewardMoney(monster->Level);;
+        //暂时只取奖励的金钱，后面会加一些计算公式，计算后奖励的金钱可能为0
+
+        if(t_lootGoods.Count > 0)
+        {
+            t_lootGoods.LootGoodsID = Money_1;
+            vector<STR_LootGoods> t_vec;
+            t_vec.push_back(t_lootGoods);
+            (*lootGoods)[monster->MonsterID] = t_vec;
+            memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_LootGoodsPos) + i* sizeof(STR_LootGoods), &t_lootGoods, sizeof(STR_LootGoods));
+            i++;
+        }
+
         //可能掉落多个物品，分别判断
         for(vector<STR_MonsterLoot>::iterator vec = iter->second.begin(); vec != iter->second.end(); vec++)
         {
@@ -364,7 +378,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
                     (*lootGoods)[monster->MonsterID] = t_vec;
                 }
             }
-        }
+        }                
 
         STR_PackHead t_packHead;
         t_packHead.Flag = FLAG_LootGoods;

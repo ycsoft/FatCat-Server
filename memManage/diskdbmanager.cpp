@@ -316,8 +316,6 @@ hf_int32 DiskDBManager::GetMonsterType(umap_monsterType* monsterType)
             t_monsterType.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 9));
             t_monsterType.Attackrate = atoi(PQgetvalue(t_PGresult, i, 10));
             t_monsterType.MoveRate = atoi(PQgetvalue(t_PGresult, i, 11));
-            t_monsterType.Experience = atoi(PQgetvalue(t_PGresult, i, 12));
-            t_monsterType.Money = atoi(PQgetvalue(t_PGresult, i, 13));
             (*monsterType)[t_monsterType.MonsterTypeID] = t_monsterType;
         }
         return t_row;
@@ -371,10 +369,10 @@ hf_int32 DiskDBManager::GetTaskDialogue(umap_dialogue* TaskDialogue)
     else
     {
         int t_row = PQntuples(t_PGresult);
-        STR_PackTaskDlg t_dialogue;
+        STR_TaskDlg t_dialogue;
         for(int i = 0; i < t_row; i++)
         {
-            memset(&t_dialogue, 0, sizeof(STR_PackTaskDlg));
+            memset(&t_dialogue, 0, sizeof(STR_TaskDlg));
             t_dialogue.TaskID = atoi(PQgetvalue(t_PGresult, i, 0));
             t_dialogue.StartLen = PQgetlength(t_PGresult, i, 1) + 1;
             t_dialogue.FinishLen = PQgetlength(t_PGresult, i, 2) + 1;
@@ -469,7 +467,7 @@ hf_int32 DiskDBManager::GetTaskReward(umap_taskReward* TaskReward)
     else
     {
         hf_int32 t_row = PQntuples(t_PGresult);
-        STR_PackTaskReward t_reward;
+        STR_TaskReward t_reward;
         for(int i = 0; i < t_row; i++)
         {
             t_reward.TaskID = atoi(PQgetvalue(t_PGresult, i, 0));
@@ -499,8 +497,8 @@ hf_int32 DiskDBManager::GetGoodsReward(umap_goodsReward* GoodsReward)
     else
     {
         hf_int32 t_row = PQntuples(t_PGresult);
-        STR_PackGoodsReward t_good;
-        vector<STR_PackGoodsReward> v_goodReward;
+        STR_GoodsReward t_good;
+        vector<STR_GoodsReward> v_goodReward;
         for(int i = 0; i < t_row; i++)
         {
             v_goodReward.clear();

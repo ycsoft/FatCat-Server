@@ -24,13 +24,6 @@ typedef struct _STR_PackHead
     hf_uint16 Flag;              //标识位，用于记录数据包内容的类型，用以解析数据。
 }STR_PackHead;
 
-typedef struct _STR_PackAskTaskData
-{
-    hf_uint32  TaskID;  //目标任务
-    hf_uint16  Flag;    //请求得到的数据包标记
-}STR_PackAskTaskData;
-
-
 //任务概述
 typedef struct _STR_TaskProfile
 {
@@ -44,14 +37,14 @@ typedef struct _STR_TaskProfile
 }STR_TaskProfile;
 
 //任务对话数据
-typedef struct _STR_PackTaskDlg
+typedef struct _STR_TaskDlg
 {
-    hf_uint32           TaskID;
-    hf_uint16           StartLen;    //开始对话长度
-    hf_uint16           FinishLen;   //结束对话长度
-    hf_char             StartDialogue[512];  //任务开始对话
-    hf_char             FinishDialogue[512]; //任务结束对话
-}STR_PackTaskDlg;
+    hf_uint32  TaskID;
+    hf_uint16  StartLen;            //开始对话长度
+    hf_uint16  FinishLen;           //结束对话长度
+    hf_char    StartDialogue[512];  //任务开始对话
+    hf_char    FinishDialogue[512]; //任务结束对话
+}STR_TaskDlg;
 
 //4.任务描述数据
 typedef struct _STR_PackTaskDescription
@@ -71,6 +64,7 @@ typedef struct _STR_PackTaskDescription
 }STR_PackTaskDescription;
 
 
+//任务目标数据
 typedef struct _STR_TaskAim
 {
     hf_uint32 TaskID;
@@ -79,25 +73,9 @@ typedef struct _STR_TaskAim
     hf_uint8  ExeModeID;          //执行方式ID
 }STR_TaskAim;
 
-////5.任务目标数据
-//typedef struct _STR_PackTaskAim
-//{
-//    STR_PackHead        head;
-//    hf_uint32 TaskID;
-//    hf_uint32 AimID;              //任务目标ID
-//    hf_uint32 Amount;             //任务数量ID
-//    hf_uint8  ExeModeID;          //执行方式ID
-
-//    _STR_PackTaskAim()
-//    {
-//        bzero(&head,sizeof(_STR_PackTaskAim));
-//        head.Flag = /*htons*/(FLAG_TaskAim);
-//        head.Len = /*htons*/(sizeof(_STR_PackTaskAim)-sizeof(STR_PackHead));
-//    }
-//}STR_PackTaskAim;
 
 //6.任务奖励数据
-typedef struct _STR_PackTaskReward
+typedef struct _STR_TaskReward
 {
     hf_uint32 TaskID;
     hf_uint32 Experience;            //奖励经验值
@@ -105,15 +83,15 @@ typedef struct _STR_PackTaskReward
     hf_uint32 SkillID;               //奖励技能ID
     hf_uint32 TitleID;               //奖励称号ID
     hf_uint8  Attribute;             //奖励属性点
-}STR_PackTaskReward;
+}STR_TaskReward;
 
 //7.物品奖励数据
-typedef struct _STR_PackGoodsReward
+typedef struct _STR_GoodsReward
 {
     hf_uint32  GoodsID;           //奖励物品ID
     hf_uint16  Count;             //奖励物品数量
     hf_uint8   Type;              //奖励类型，1为固定奖励，2为可选奖励
-}STR_PackGoodsReward;
+}STR_GoodsReward;
 
 //8.玩家请求接受任务数据
 typedef struct _STR_PackUserAskTask
@@ -160,6 +138,14 @@ typedef struct _STR_PackAskResult
 //任务执行对话
 typedef struct _STR_PackTaskExeDialogue
 {
+    STR_PackHead        head;
+    _STR_PackTaskExeDialogue()
+    {
+        bzero(&head, sizeof(_STR_PackTaskExeDialogue));
+        head.Flag = 0;
+        head.Len = sizeof(_STR_PackTaskExeDialogue) - sizeof(STR_PackHead);
+    }
+
     hf_uint32 TaskID;
     hf_uint32 AimID;
     hf_uint32 ExeModeID;
@@ -221,7 +207,7 @@ typedef struct _STR_MonsterBasicInfo
     hf_uint8   Level;              //怪物等级  2015.05.06
     hf_uint8   RankID;             //类别ID    2015.05.20    
     hf_uint8   ActID;              //怪物当前动作的索引
-    hf_uint8   Flag;               //是否显示，是否死亡后立即从怪物列表清除等等附加信息
+    hf_uint8   Flag;               //1主动攻击怪 2被动攻击怪
 }STR_MonsterBasicInfo;
 
 //保存怪物死亡结构
@@ -407,11 +393,11 @@ typedef struct _STR_BuyGoods
 }STR_BuyGoods;
 
 //将东西卖给商店
-typedef struct _STR_PackSellGoods
+typedef struct _STR_SellGoods
 {
     hf_uint32 GoodsID;
     hf_uint8  Position;
-}STR_PackSellGoods;
+}STR_SellGoods;
 
 //物品价格
 typedef struct _STR_GoodsPrice
@@ -741,7 +727,7 @@ typedef struct _STR_PlayerLoginUserId
 
 
 //表结构体
-//1.任务要求
+//任务要求
 typedef struct _STR_TaskPremise
 {
     hf_uint32  TaskID;               //任务ID
@@ -755,66 +741,8 @@ typedef struct _STR_TaskPremise
     hf_uint8   JobID;                //职业ID，特定职业的任务
 }STR_TaskPremise;
 
-//3.任务对话
-typedef struct _T_TaskDialogue
-{
-    hf_uint32 TaskID;
-    hf_char   StartDialogue[256];     //任务开始对话
-    hf_char   FinishDialogue[256];    //任务完成对话
-}T_TaskDialogue;
 
-//4.任务描述
-typedef struct _T_TaskDescription
-{
-    hf_uint32 TaskID;
-    hf_uint32 Time;                   //时间 单位秒
-    hf_uint32 TaskPropsID;            //任务道具
-    hf_char   Description[256];       //任务描述
-}T_TaskDescription;
-
-//5.任务目标
-typedef struct _T_TaskAim
-{
-    hf_uint32 TaskID;
-    hf_uint32 AimID;                  //任务目标ID
-    hf_uint32 Amount;                 //任务数量
-    hf_uint8  ExeModeID;              //执行方式ID
-}T_TaskAim;
-
-//6.任务奖励
-typedef struct _T_TaskReward
-{
-    hf_uint32 TaskID;
-    hf_uint32 Experience;             //经验值
-    hf_uint32 Money;                  //金钱
-    hf_uint32 SkillID;                //技能ID
-    hf_uint32 TitleID;                //奖励称号
-    hf_uint8  Attribute;              //奖励属性点
-}T_TaskReward;
-
-//7.物品奖励
-typedef struct _T_GoodsReward
-{
-    hf_uint32  TaskID;
-    hf_uint32  GoodsID;              //奖励物品ID
-    hf_uint16  Count;                //奖励物品数量
-}T_GoodsReward;
-
-//8.职业类型
-typedef struct _T_JobType
-{
-    hf_uint8 JobID;                //玩家角色ID
-    hf_char  JobName[16];          //玩家名
-}T_JobType;
-
-//9.性别
-typedef struct _T_Gender
-{
-    hf_uint8 GenderID;
-    hf_char  Gender[4];
-}T_Gender;
-
-//10.任务接受方式
+//任务接受方式
 /*
 1	触发NPC
 2	NPC对话
@@ -824,13 +752,13 @@ typedef struct _T_Gender
 6	邮件触发
 7	系统自动接取
 */
-typedef struct _T_TaskAcceptMode
+typedef struct _STR_TaskAcceptMode
 {
     hf_uint8 ModeID;
     hf_char  Mode[16];
-}T_TaskAcceptMode;
+}STR_TaskAcceptMode;
 
-//11.任务执行方式
+//任务执行方式
 /*
 1	打怪
 2	对话
@@ -841,13 +769,13 @@ typedef struct _T_TaskAcceptMode
 7	选择
 8	地点触发对话
 */
-typedef struct _T_TaskExecuteMode
+typedef struct _STR_TaskExecuteMode
 {
     hf_uint8 ModeID;
     hf_char  Mode[16];
-}T_TaskExecuteMode;
+}STR_TaskExecuteMode;
 
-//12.任务交接方式
+//任务交接方式
 /*
 1	触发NPC
 2	NPC对话
@@ -856,11 +784,11 @@ typedef struct _T_TaskExecuteMode
 5	特定地点使用物品
 6	自动完成
 */
-typedef struct _T_TaskFinishMode
+typedef struct _STR_TaskFinishMode
 {
     hf_uint8 ModeID;
     hf_char  Mode[16];
-}T_TaskFinishMode;
+}STR_TaskFinishMode;
 
 //怪物
 //怪物类型属性
@@ -875,26 +803,24 @@ typedef struct _STR_MonsterType
     hf_uint32 MagicDefense;    //魔法防御
     hf_uint32 Attackrate;      //攻击速度
     hf_uint32 MoveRate;        //移动速度
-    hf_uint32 Experience;      //经验值
-    hf_uint32 Money;           //掉落金钱
     hf_uint8  RankID;          //怪物类别ID
     hf_uint8  Level;           //怪物等级
     hf_uint8  AttackTypeID;    //攻击类型ID
 }STR_MonsterType;
 
 //怪物类别
-typedef struct _T_MonsterRank
+typedef struct _STR_MonsterRank
 {
     hf_uint8 MonsterRankID;
     hf_char  MonsterRank[16];
-}T_MonsterRank;
+}STR_MonsterRank;
 
 //怪物攻击类型
-typedef struct _T_MonsterAttackType
+typedef struct _STR_MonsterAttackType
 {
     hf_uint8 AttackTypeID;
     hf_char  AttackType[16];
-}T_MonsterAttackType;
+}STR_MonsterAttackType;
 
 //怪物刷新位置
 typedef struct _STR_MonsterSpawns
@@ -951,19 +877,6 @@ typedef struct _STR_TaskProcess
     hf_uint8   ExeModeID;         //执行方式
 }STR_TaskProcess;
 
-//玩家角色单个任务进度数据
-//typedef struct _STR_PackTaskProcess
-//{
-//    STR_PackHead        head;
-//    STR_TaskProcess       TaskProcess;
-
-//    _STR_PackTaskProcess()
-//    {
-//        bzero(&head,sizeof(_STR_PackTaskProcess));
-//        head.Flag = /*htons*/(FLAG_TaskProcess);
-//        head.Len = /*htons*/(sizeof(_STR_PackTaskProcess)-sizeof(STR_PackHead));
-//    }
-//}STR_PackTaskProcess;
 //角色信息
 typedef struct _STR_RoleInfo
 {
