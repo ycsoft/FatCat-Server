@@ -35,6 +35,15 @@ public:
 
     void FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProcess* taskProcess);  //完成收集物品任务
 
+    //删除任务物品
+    void DeleteTaskGoods(umap_taskGoods taskGoods, hf_uint32 GoodsID);
+    //增加任务物品
+    void AddTaskGoods(umap_taskGoods taskGoods, hf_uint32 GoodsID);
+    //删除物品任务
+    void DeleteGoodsTask(umap_taskGoods taskGoods, hf_uint32 GoodsID, hf_uint32 taskID);
+    //增加物品任务
+    void AddGoodsTask(umap_taskGoods taskGoods, hf_uint32 GoodsID, hf_uint32 taskID);
+
     //
     bool TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask);
     void TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask);

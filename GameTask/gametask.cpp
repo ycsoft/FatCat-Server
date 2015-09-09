@@ -22,6 +22,7 @@
 
 #define FINISH_TASKSUCCESS      1     //任务请求完成成功
 #define FINISH_TASKFAIL         2     //任务请求完成失败
+
 GameTask::GameTask()
     :m_dialogue(new umap_dialogue)
     ,m_taskDesc(new umap_taskDescription)
@@ -91,19 +92,9 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
             t_taskProcess.ExeModeID = aim_it->ExeModeID;
             if(aim_it->ExeModeID == EXE_collect_goods) //收集物品任务
             {
-                //将此物品加到任务物品中
-                 _umap_taskGoods::iterator taskGoods_it = (*smap)[conn].m_taskGoods->find(aim_it->AimID);
-                 if(taskGoods_it != (*smap)[conn].m_taskGoods->end())
-                 {
-                    taskGoods_it->second.push_back(taskid);
-                 }
-                 else
-                 {
-                     vector<hf_uint32> t_vec;
-                     t_vec.push_back(taskid);
-                     (*(*smap)[conn].m_taskGoods)[aim_it->AimID] = t_vec;
-                 }
-
+                umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
+                //将此任务加到物品任务中
+                AddGoodsTask(taskGoods, aim_it->AimID, taskid);
                  //此数量从背包查得
                  hf_uint32 t_count = OperationGoods::GetThisGoodsCount(conn,aim_it->AimID);
                  if(t_count >= t_taskProcess.AimAmount)
@@ -155,37 +146,22 @@ void GameTask::QuitTask(TCPConnection::Pointer conn, hf_uint32 taskid)
     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
     _umap_taskProcess::iterator it = playerAcceptTask->find(taskid);
-    if(it != playerAcceptTask->end())
+    if(it == playerAcceptTask->end())
     {
-        umap_taskGoods t_taskGoods = (*smap)[conn].m_taskGoods;
-        for(vector<STR_TaskProcess>::iterator process_it = it->second.begin(); process_it != it->second.end(); process_it++)
-        {
-            //如果要删除任务的任务的执行方式为收集物品，则删除任务时需要更新玩家任务物品
-            if(process_it->ExeModeID == EXE_collect_goods)
-            {
-                _umap_taskGoods::iterator taskGoods_it = t_taskGoods->find(process_it->AimID);
-                if(taskGoods_it != t_taskGoods->end())
-                {
-                    for(vector<hf_uint32>::iterator iter = taskGoods_it->second.begin(); iter != taskGoods_it->second.end(); )
-                    {
-                        if(*iter == taskid)
-                        {
-                            vector<hf_uint32>::iterator _iter = iter;
-                            iter++;
-                            taskGoods_it->second.erase(_iter);
-                        }
-                    }
-                    if(taskGoods_it->second.size() == 0)
-                    {
-                        t_taskGoods->erase(taskGoods_it);
-                    }
-                }
-            }
-
-            Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
-        }
-        playerAcceptTask->erase(it);
+        return;
     }
+    umap_taskGoods t_taskGoods = (*smap)[conn].m_taskGoods;
+    for(vector<STR_TaskProcess>::iterator process_it = it->second.begin(); process_it != it->second.end(); process_it++)
+    {
+        if(process_it->ExeModeID == EXE_collect_goods)
+        {
+            //从物品任务中删除该任务
+            DeleteGoodsTask(t_taskGoods, process_it->AimID, taskid);
+        }
+
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
+    }
+    playerAcceptTask->erase(it);
 }
 
 //请求完成任务
@@ -322,6 +298,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
                    memcpy(newGoodsBuff + sizeof(STR_PackHead) + goodsCount*sizeof(STR_Goods), &t_goods, sizeof(STR_Goods));
                    goodsCount++;
                    t_post->PushUpdateGoods(roleid, &t_goods, PostInsert); //将新买的物品添加到list
+
                    _umap_roleGoods::iterator playerGoods_it = playerGoods->find(t_goods.GoodsID);
                    if(playerGoods_it == playerGoods->end())
                    {
@@ -504,6 +481,69 @@ void GameTask::FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProce
     Server::GetInstance()->free(buff);
 }
 
+//删除任务物品
+void GameTask::DeleteTaskGoods(umap_taskGoods taskGoods, hf_uint32 GoodsID)
+{
+    _umap_taskGoods::iterator taskGoods_it = taskGoods->find(GoodsID);
+    if(taskGoods_it != taskGoods->end())
+    {
+        taskGoods->erase(taskGoods_it);
+    }
+}
+
+//增加任务物品
+void GameTask::AddTaskGoods(umap_taskGoods taskGoods, hf_uint32 GoodsID)
+{
+    _umap_taskGoods::iterator taskGoods_it = taskGoods->find(GoodsID);
+    if(taskGoods_it == taskGoods->end())
+    {
+        vector<hf_uint32> vec;
+        vec.push_back(GoodsID);
+        (*taskGoods)[GoodsID] = vec;
+    }
+    else
+    {
+        taskGoods_it->second.push_back(GoodsID);
+    }
+}
+
+//删除物品任务
+void GameTask::DeleteGoodsTask(umap_taskGoods taskGoods, hf_uint32 GoodsID, hf_uint32 taskID)
+{
+    _umap_taskGoods::iterator taskGoods_it = taskGoods->find(GoodsID);
+    if(taskGoods_it != taskGoods->end())
+    {
+        for(vector<hf_uint32>::iterator iter = taskGoods_it->second.begin(); iter != taskGoods_it->second.end(); )
+        {
+            if(*iter == taskID)
+            {
+                vector<hf_uint32>::iterator _iter = iter;
+                iter++;
+                taskGoods_it->second.erase(_iter);
+            }
+        }
+        if(taskGoods_it->second.size() == 0)
+        {
+            taskGoods->erase(taskGoods_it);
+        }
+    }
+}
+
+//增加物品任务
+void GameTask::AddGoodsTask(umap_taskGoods taskGoods, hf_uint32 GoodsID, hf_uint32 taskID)
+{
+    _umap_taskGoods::iterator taskGoods_it = taskGoods->find(GoodsID);
+    if(taskGoods_it != taskGoods->end())
+    {
+       taskGoods_it->second.push_back(taskID);
+    }
+    else
+    {
+        vector<hf_uint32> t_vec;
+        t_vec.push_back(taskID);
+        (*taskGoods)[GoodsID] = t_vec;
+    }
+}
  //请求任务对话
 void GameTask::StartTaskDlg(TCPConnection::Pointer conn, hf_uint32 taskid)
 {
