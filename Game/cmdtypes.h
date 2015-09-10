@@ -119,7 +119,7 @@ typedef boost::unordered_map<hf_uint32, STR_MonsterSpawns> umap_monsterSpawns;
 //<怪物类型ID,类型信息>
 typedef boost::unordered_map<hf_uint32, STR_MonsterType> umap_monsterType;
 //保存怪物死亡信息 <怪物ID,刷新信息>
-typedef boost::unordered_map<hf_uint32, MonsterDeath> _umap_monsterDeath;
+typedef boost::unordered_map<hf_uint32, STR_MonsterDeath> _umap_monsterDeath;
 typedef boost::shared_ptr<_umap_monsterDeath> umap_monsterDeath;
 
 //保存玩家任务物品 <物品ID,vector<任务编号> >  一个物品同时可能为多个任务目标

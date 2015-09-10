@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include "memManage/diskdbmanager.h"
 #include "utils/stringbuilder.hpp"
 #include "Game/session.hpp"
@@ -7,7 +6,23 @@
 #include "monster.h"
 #include "server.h"
 
-#define  MonsterDeathTime  190    //怪物死亡时间
+
+
+
+void _STR_MonsterInfo::SetMonsterSpawns()
+{
+    umap_monsterSpawns* monsterSpawns = Server::GetInstance()->GetMonster()->GetMonsterSpawns();
+    mtx.lock();
+    umap_monsterSpawns::iterator it = monsterSpawns->find(monster.MonsterTypeID);
+    monster.HP = monster.MaxHP;
+    monster.Direct = 0;
+    monster.ActID = 1;
+
+    Server::GetInstance()->GetMonster()->CreateEffectivePos(&monster, &it->second); //生成怪物有效位置
+    Flag = MonsterAlive;  //怪物复活
+    mtx.unlock();
+}
+
 
 //计算玩家与怪物之间的距离
 hf_float    Monster::caculateDistanceWithMonster( STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster)
@@ -196,7 +211,7 @@ void Monster::SaveDeathMonster(hf_uint32 monsterID)
     }
     time_t timep;
     time(&timep);
-    MonsterDeath t_monsterDeath;
+    STR_MonsterDeath t_monsterDeath;
     t_monsterDeath.SpawnsTime = (hf_uint32)timep + MonsterDeathTime;
     t_monsterDeath.MonsterID = monsterID;
     t_monsterDeath.SpawnsPos = it->second;

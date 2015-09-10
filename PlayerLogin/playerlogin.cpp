@@ -1015,10 +1015,6 @@ void PlayerLogin::UpdatePlayerGoods(hf_uint32 roleid, STR_Goods* upGoods)
     {
         Logger::GetLogger()->Error("更新玩家背包物品信息失败");
     }
-//    else if(t_value == 0)
-//    {
-//        PlayerLogin::InsertPlayerGoods(roleid, upGoods);
-//    }
 }
 
 //新物品更新背包
@@ -1049,7 +1045,7 @@ void PlayerLogin::DeletePlayerGoods(hf_uint32 roleid, hf_uint16 pos)
 void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_Equipment* upEquAttr)
 {
     StringBuilder sbd;
-    sbd << "update t_playerequ set roleid = " << roleid << ",typeid = " << upEquAttr->TypeID << ",physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->AddHp << ",addmagic = " << upEquAttr->AddMagic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << ";";
+    sbd << "update t_playerequ set physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->AddHp << ",addmagic = " << upEquAttr->AddMagic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << " and roleid = " << roleid << ";";
      Logger::GetLogger()->Debug(sbd.str());
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
@@ -1090,17 +1086,13 @@ void PlayerLogin::DeletePlayerEquAttr(hf_uint32 roleid, hf_uint32 equid)
 void PlayerLogin::UpdatePlayerTask(hf_uint32 roleid, STR_TaskProcess* upTask)
 {
     StringBuilder sbd;
-    sbd << "update t_playertaskprocess set taskid = " << upTask->TaskID << ",aimid = " << upTask->AimID << ",aimcount = " << upTask->FinishCount << ",aimamount = " << upTask->AimAmount << ",exemodeid = " << upTask->ExeModeID << " where roleid = " << roleid << ";";
+    sbd << "update t_playertaskprocess set aimcount = " << upTask->FinishCount << " where roleid = " << roleid << " and taskid = " << upTask->TaskID << ";";
      Logger::GetLogger()->Debug(sbd.str());
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
     {
         Logger::GetLogger()->Error("更新玩家任务进度失败");
     }
-//    else if(t_value == 0)
-//    {
-//        InsertPlayerTask(roleid, upTask);
-//    }
 }
 
 //插入新任务

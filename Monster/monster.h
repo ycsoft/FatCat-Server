@@ -4,9 +4,39 @@
 #include "Game/cmdtypes.h"
 #include "Game/postgresqlstruct.h"
 #include "NetWork/tcpconnection.h"
+#include <boost/thread/mutex.hpp>
+#include "server.h"
 
 #define   KB           1024
 #define   MB          1048576
+
+typedef struct _STR_MonsterInfo
+{
+    STR_MonsterBasicInfo monster;   //怪物基本信息
+    STR_Position    pos;            //怪物刷出坐标点,怪物自由活动用
+    hf_uint32       SpawnsTime;     //刷新时间
+    hf_uint8        Flag;           //是否死亡
+
+    void monsterLock() //怪物计算时，map使用find接口得到iterator迭代器不指向map尾时，加锁，运算完成后解锁
+    {
+        mtx.lock();
+    }
+    void monsterUnlock()
+    {
+        mtx.unlock();
+    }
+
+    void SetMonsterDeath()  //设置怪物为死亡
+    {
+        mtx.lock();
+        Flag = MonsterDie;   //怪物死亡
+        mtx.unlock();
+    }
+    void SetMonsterSpawns(); //当前怪物复活
+private:
+    boost::mutex     mtx;
+}STR_MonsterInfo;
+
 
 class Monster
 {
@@ -140,6 +170,9 @@ private:
 
     umap_monsterViewRole            m_monsterViewRole;  //怪物可视范围内的玩家
 };
+
+
+
 
 #endif // MONSTER_HPP
 

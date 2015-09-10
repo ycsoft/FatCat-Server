@@ -24,6 +24,8 @@
 #define  BAGCAPACITY           65             //背包容量
 #define  GOODSMAXCOUNT         99             //每个格子物品最大数量
 
+#define  MonsterDeathTime      190            //怪物死亡时间
+
 //位置的状态，0 空闲，1使用，2锁定
 #define  POS_EMPTY             0              //位置为空
 #define  POS_NONEMPTY          1              //位置非空
@@ -45,6 +47,13 @@
 
 #define  EquTypeMinValue       20000           //装备类型最小值
 #define  EquTypeMaxValue       29999           //装备类型最大值
+
+
+#define  MonsterAlive          1               //怪物复活
+#define  MonsterDie            2               //怪物死亡
+
+#define  ActiveMonster         1               //主动怪物
+#define  UnactiveMonster       2               //被动怪物
 
 namespace hf_types{
 

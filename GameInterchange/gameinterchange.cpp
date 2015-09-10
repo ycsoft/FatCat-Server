@@ -473,6 +473,10 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
     for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
     {
         _umap_roleGoods::iterator iterGoods = (*sp)[conn].m_playerGoods->find(iter->GoodsID);
+        if(iterGoods == (*sp)[conn].m_playerGoods->end())
+        {
+            continue;
+        }
         for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
         {
             if(iterIn->Position == iter->Position)
@@ -505,6 +509,10 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
     for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
     {
         _umap_roleGoods::iterator iterGoods = (*sp)[partnerConn].m_playerGoods->find(iter->GoodsID);
+        if(iterGoods == (*sp)[partnerConn].m_playerGoods->end())
+        {
+            continue;
+        }
         for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
         {
             if(iterIn->Position == iter->Position)

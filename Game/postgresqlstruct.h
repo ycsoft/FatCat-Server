@@ -188,6 +188,7 @@ typedef struct _STR_PackQuitTask
 
 
 //13，怪物信息数据
+
 typedef struct _STR_MonsterBasicInfo
 {
     hf_uint32  MonsterID;          //怪物的唯一标识
@@ -205,18 +206,26 @@ typedef struct _STR_MonsterBasicInfo
     hf_uint32  MaxHP;              //最大血量
     hf_float   Direct;             //怪物朝向角度0...359
     hf_uint8   Level;              //怪物等级  2015.05.06
-    hf_uint8   RankID;             //类别ID    2015.05.20    
+    hf_uint8   RankID;             //类别ID    2015.05.20
     hf_uint8   ActID;              //怪物当前动作的索引
     hf_uint8   Flag;               //1主动攻击怪 2被动攻击怪
 }STR_MonsterBasicInfo;
 
+
+typedef struct _STR_Position
+{
+    hf_float             Come_x;
+    hf_float             Come_y;
+    hf_float             Come_z;
+}STR_Position;
+
 //保存怪物死亡结构
-typedef struct _MonsterDeath
+typedef struct _STR_MonsterDeath
 {
     hf_uint32                MonsterID;      //怪物ID
     hf_uint32                SpawnsPos;      //刷怪点
     hf_uint32                SpawnsTime;     //刷新时间
-}MonsterDeath;
+}STR_MonsterDeath;
 
 //怪物移动位置
 typedef struct _STR_MonsterMovePos
