@@ -35,6 +35,8 @@
 #define FLAG_MoveGoods               134    //玩家背包物品移动
 #define FLAG_OtherResult             135    //操作结果
 
+#define FLAG_ArrangeBagGoods         136    //整理背包物品
+
 #define FLAG_BuyGoods                154    //从商店购买物品
 #define FLAG_SellGoods               155    //出售物品到商店
 

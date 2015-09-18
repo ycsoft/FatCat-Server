@@ -15,6 +15,8 @@
 #include "GameInterchange/gameinterchange.h"
 #include "OperationGoods/operationgoods.h"
 #include "OperationPostgres/operationpostgres.h"
+#include "Game/userposition.hpp"
+#include "Game/cmdparse.h"
 
 #include "server.h"
 
@@ -24,7 +26,7 @@ Server* Server::m_instance = NULL;
 Server::Server() :
     m_MemDB(new MemDBManager),
     m_DiskDB(new DiskDBManager),
-    m_task_pool(20),
+    m_task_pool(50),
     m_memory_factory(CHUNK_SIZE,CHUNK_COUNT),
     m_monster( new Monster()),
     m_playerLogin( new PlayerLogin),
@@ -33,7 +35,8 @@ Server::Server() :
     m_gameAttack(new GameAttack),
     m_gameInterchange(new GameInterchange),
     m_operationGoods(new OperationGoods),
-    m_operationPostgres(new OperationPostgres)
+    m_operationPostgres(new OperationPostgres),
+    m_cmdParse(new CmdParse)
 {
 
 }
@@ -79,6 +82,42 @@ void Server::InitDB()
    m_operationGoods->QueryGoodsPrice();
    m_operationGoods->QueryEquAttr();
    m_operationGoods->SetEquIDInitialValue();
+
+   Server  *srv = Server::GetInstance();
+   GameAttack* t_attack = srv->GetGameAttack();
+   Monster* t_monster = srv->GetMonster();
+   OperationPostgres* t_opePost = srv->GetOperationPostgres();
+   CmdParse* t_cmdParse = srv->GetCmdParse();
+
+   srv->RunTask(boost::bind(&CmdParse::PopAskTask, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopQuitTask, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopAskFinishTask, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopAskTaskData, t_cmdParse));
+
+   srv->RunTask(boost::bind(&CmdParse::PopAddFriend, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopDeleteFriend, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopAddFriendReturn, t_cmdParse));
+
+   srv->RunTask(boost::bind(&CmdParse::PopPickGoods, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopRemoveGoods, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopMoveGoods, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopBuyGoods, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopSellGoods, t_cmdParse));
+
+   srv->RunTask(boost::bind(&CmdParse::PopPlayerMove, t_cmdParse));
+
+   srv->RunTask(boost::bind(&Monster::Monsteractivity, t_monster));
+   //技能伤害线程
+   srv->RunTask(boost::bind(&GameAttack::RoleSkillAttack, t_attack));
+
+   //怪物复活线程
+//    srv->RunTask(boost::bind(&Monster::MonsterSpawns, t_monster));
+
+   //删除过了时间的掉落物品
+   srv->RunTask(boost::bind(&GameAttack::DeleteOverTimeGoods, t_attack));
+
+   //操作数据库更新用户数据
+   srv->RunTask(boost::bind(&OperationPostgres::UpdatePlayerData, t_opePost));
 
 }
 

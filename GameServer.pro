@@ -26,7 +26,9 @@ SOURCES += main.cpp \
     TeamFriend/teamfriend.cpp \
     GameInterchange/gameinterchange.cpp \
     OperationGoods/operationgoods.cpp \
-    OperationPostgres/operationpostgres.cpp
+    OperationPostgres/operationpostgres.cpp \
+    Game/cmdparse.cpp \
+#    Monster/monsterstruct.cpp
 
 
 
@@ -63,7 +65,9 @@ HEADERS += \
     TeamFriend/teamfriend.h \
     GameInterchange/gameinterchange.h \
     OperationGoods/operationgoods.h \
-    OperationPostgres/operationpostgres.h
+    OperationPostgres/operationpostgres.h \
+    Game/cmdparse.h \
+    Monster/monsterstruct.h
 
 
 

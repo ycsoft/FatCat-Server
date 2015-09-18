@@ -19,6 +19,7 @@ class GameAttack;
 class GameInterchange;
 class OperationGoods;
 class OperationPostgres;
+class CmdParse;
 
 using namespace boost::threadpool;
 
@@ -116,6 +117,10 @@ public:
     {
         return m_operationPostgres;
     }
+    CmdParse* GetCmdParse()
+    {
+        return m_cmdParse;
+    }
 
 private:
     Server();
@@ -134,6 +139,7 @@ private:
     GameInterchange                 *m_gameInterchange;
     OperationGoods                  *m_operationGoods;
     OperationPostgres               *m_operationPostgres;
+    CmdParse                        *m_cmdParse;
 
 };
 

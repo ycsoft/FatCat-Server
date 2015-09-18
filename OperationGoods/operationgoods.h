@@ -51,6 +51,9 @@ public:
     void SetEquAttr(STR_Equipment* equAttr, hf_uint32 typeID);
 
     void SetEquIDInitialValue();
+
+    //整理背包
+    void ArrangeBagGoods(TCPConnection::Pointer conn);
 private:
     umap_goodsPrice    m_goodsPrice;   //物品价格
     umap_equAttr*      m_equAttr;      //装备属性

@@ -12,14 +12,6 @@
 
 hf_uint32 OperationGoods::m_equipmentID = EquipMentID;
 
-#define  Buy_NotEnoughMoney    1           //金钱不够
-#define  Buy_BagFull           2           //背包满了
-
-#define   PICK_SUCCESS         1           //捡取成功
-#define   PICK_BAGFULL         2           //背包满了,未捡取物品
-#define   PICKPART_BAGFULL     3           //背包满了 ，捡取部分物品
-#define   PICK_GOODNOTEXIST    4           //捡取的物品不存在
-
 OperationGoods::OperationGoods()
     :m_goodsPrice(new _umap_goodsPrice)
     ,m_equAttr(new umap_equAttr)
@@ -115,14 +107,14 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     if((*(*smap)[conn].m_interchage).isInchange == true) //处于交易状态
     {
-        Server::GetInstance()->free(pickGoods);
+//        Server::GetInstance()->free(pickGoods);
         return;
     }   
     umap_lootGoods lootGoods = (*smap)[conn].m_lootGoods;
     _umap_lootGoods::iterator loot_it = lootGoods->find(pickGoods->GoodsFlag);
     if(loot_it == lootGoods->end())  //掉落者不存在
     {
-        Server::GetInstance()->free(pickGoods);
+//        Server::GetInstance()->free(pickGoods);
         return;
     }
     STR_PackHead t_packHead;
@@ -351,7 +343,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
     srv->free(pickResultBuff);
     srv->free(newGoodsBuff);
     srv->free(equAttrBuff);
-    srv->free(PickGoods);
+//    srv->free(PickGoods);
 }
 
 
@@ -411,12 +403,12 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
         _umap_roleEqu::iterator equ_it = (*smap)[conn].m_playerEqu->find(removeGoods->GoodsID);
         if(equ_it == (*smap)[conn].m_playerEqu->end())
         {
-            Server::GetInstance()->free(removeGoods);
+//            Server::GetInstance()->free(removeGoods);
             return;
         }
         if((*smap)[conn].m_goodsPosition[removeGoods->Position] == POS_LOCKED)
         {
-            Server::GetInstance()->free(removeGoods);
+//            Server::GetInstance()->free(removeGoods);
             return;
         }
 
@@ -430,7 +422,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
 
         Server::GetInstance()->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, equ_it->second.goods.TypeID);
         (*smap)[conn].m_playerEqu->erase(equ_it);
-        Server::GetInstance()->free(removeGoods);
+//        Server::GetInstance()->free(removeGoods);
         return;
     }
 
@@ -438,7 +430,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
     _umap_roleGoods::iterator it = playerBagGoods->find(removeGoods->GoodsID);
     if(it == playerBagGoods->end())
     {
-        Server::GetInstance()->free(removeGoods);
+//        Server::GetInstance()->free(removeGoods);
         return;
     }
     for(vector<STR_Goods>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
@@ -447,7 +439,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
         {
             if((*smap)[conn].m_goodsPosition[removeGoods->Position] == POS_LOCKED)
             {
-                Server::GetInstance()->free(removeGoods);
+//                Server::GetInstance()->free(removeGoods);
                 return;
             }
             OperationGoods::ReleasePos(conn, removeGoods->Position);
@@ -459,7 +451,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
             Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods((*smap)[conn].m_roleid, &(*iter), PostDelete);
             Server::GetInstance()->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, iter->TypeID);
             it->second.erase(iter);
-            Server::GetInstance()->free(removeGoods);
+//            Server::GetInstance()->free(removeGoods);
         }
     }
 }
@@ -469,20 +461,20 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
 {
     if(moveGoods->CurrentPos == moveGoods->TargetPos)
     {
-        Server::GetInstance()->free(moveGoods);
+//        Server::GetInstance()->free(moveGoods);
         return;
     }
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     if((*smap)[conn].m_goodsPosition[moveGoods->CurrentPos] == POS_LOCKED || (*smap)[conn].m_goodsPosition[moveGoods->TargetPos] == POS_LOCKED)  //当前位置或者目标位置商品处于锁定状态，不可以移动
     {
-        Server::GetInstance()->free(moveGoods);
+//        Server::GetInstance()->free(moveGoods);
         return;
     }
 
     if(moveGoods->CurrentGoodsID != moveGoods->TargetGoodsID)
     {
         ExchangeBagGoods(conn, moveGoods);
-        Server::GetInstance()->free(moveGoods);
+//        Server::GetInstance()->free(moveGoods);
         return;
     }
 
@@ -491,7 +483,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
     _umap_roleGoods::iterator cur_goodsID = playerBagGoods->find(moveGoods->CurrentGoodsID);
     if(cur_goodsID == playerBagGoods->end())
     {
-        Server::GetInstance()->free(moveGoods);
+//        Server::GetInstance()->free(moveGoods);
         return;
     }
 
@@ -501,7 +493,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
         {
             if(moveGoods->Count > curPos->Count) //移动数量大于当前数量返回
             {
-                Server::GetInstance()->free(moveGoods);
+//                Server::GetInstance()->free(moveGoods);
                 return;
             }
             break;
@@ -509,7 +501,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
         curPos++;
         if(curPos == cur_goodsID->second.end())
         {
-            Server::GetInstance()->free(moveGoods);
+//            Server::GetInstance()->free(moveGoods);
             return;
         }
     }
@@ -521,7 +513,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
         tarPos++;
         if(tarPos == cur_goodsID->second.end()) //没找到目标位置
         {
-            Server::GetInstance()->free(moveGoods);
+//            Server::GetInstance()->free(moveGoods);
             return;
         }
     }
@@ -587,8 +579,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     Server::GetInstance()->free(buff);
-    Server::GetInstance()->free(moveGoods);
-    return;
+//    Server::GetInstance()->free(moveGoods);
 }
 
 
@@ -693,20 +684,20 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     if((*(*smap)[conn].m_interchage).isInchange == true)
     {
-        Server::GetInstance()->free(buyGoods);
+//        Server::GetInstance()->free(buyGoods);
         return;
     }
     umap_roleMoney t_playerMoney = (*smap)[conn].m_playerMoney;
     _umap_goodsPrice::iterator price_it = m_goodsPrice->find(buyGoods->GoodsID);
     if(price_it == m_goodsPrice->end())  //购买的商品不存在
     {
-        Server::GetInstance()->free(buyGoods);
+//        Server::GetInstance()->free(buyGoods);
         return;
     }
     if(price_it->second.BuyPrice == 0)   //不可买物品
     {
         Logger::GetLogger()->Debug("此物品不可购买");
-        Server::GetInstance()->free(buyGoods);
+//        Server::GetInstance()->free(buyGoods);
         return;
     }
 
@@ -716,7 +707,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
         t_result.Flag = FLAG_BuyGoods;
         t_result.result = Buy_NotEnoughMoney;
         conn->Write_all(&t_result, sizeof(STR_PackOtherResult));
-        Server::GetInstance()->free(buyGoods);
+//        Server::GetInstance()->free(buyGoods);
         return;
     }
 
@@ -728,7 +719,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
     {
         BuyOtherGoods(conn, buyGoods, &(*t_playerMoney)[Money_1], price_it->second.BuyPrice);
     }
-    Server::GetInstance()->free(buyGoods);
+//    Server::GetInstance()->free(buyGoods);
 }
 
 //出售物品
@@ -737,7 +728,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     if((*(*smap)[conn].m_interchage).isInchange == true)
     {
-        Server::GetInstance()->free(sellGoods);
+//        Server::GetInstance()->free(sellGoods);
         return;
     }
 
@@ -751,7 +742,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
         _umap_roleEqu::iterator equ_it = playerEqu->find(sellGoods->GoodsID);
         if(equ_it == playerEqu->end())
         {
-            Server::GetInstance()->free(sellGoods);
+//            Server::GetInstance()->free(sellGoods);
             return;
         }
         STR_GoodsPrice* equPrice = &(*m_goodsPrice)[equ_it->second.goods.TypeID]; //装备价格
@@ -771,7 +762,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
         conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
         t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
 
-        Server::GetInstance()->free(sellGoods);
+//        Server::GetInstance()->free(sellGoods);
         return;
     }
 
@@ -779,7 +770,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
     _umap_roleGoods::iterator goods_it = t_playerGoods->find(sellGoods->GoodsID);
     if(goods_it == t_playerGoods->end()) //背包没有这种物品
     {
-        Server::GetInstance()->free(sellGoods);
+//        Server::GetInstance()->free(sellGoods);
         return;
     }
     for(vector<STR_Goods>::iterator pos_it = goods_it->second.begin(); pos_it != goods_it->second.end();)
@@ -803,13 +794,13 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
             STR_PackPlayerMoney t_money(&(*t_playerMoney)[Money_1]);
             conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
             t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
-            Server::GetInstance()->free(sellGoods);
+//            Server::GetInstance()->free(sellGoods);
             return;
         }
         pos_it++;
         if(pos_it == goods_it->second.end()) //到结尾了没找到这种物品
         {
-            Server::GetInstance()->free(sellGoods);
+//            Server::GetInstance()->free(sellGoods);
             return;
         }
     }
@@ -1065,4 +1056,142 @@ void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* bu
 void OperationGoods::SetEquIDInitialValue()
 {
     m_equipmentID = Server::GetInstance()->getDiskDB()->GetEquIDMaxValue();
+}
+
+//整理背包
+void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
+    umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
+
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    StringBuilder       sbd;
+    sbd << "delete from t_playergoods where roleid = " << roleid << ";";
+    Logger::GetLogger()->Debug(sbd.str());
+    hf_int32 value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
+    if(value == -1)
+    {
+        Logger::GetLogger()->Debug("delete player goods fail");
+    }
+    memset((*smap)[conn].m_goodsPosition, 0, BAGCAPACITY);
+
+    hf_uint8 useBagPosition = 1;
+    hf_uint8 i = 0;
+
+    STR_PackHead t_packHead;
+    t_packHead.Flag = FLAG_BagGoods;
+    hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
+    for(_umap_roleEqu::iterator equ_it = playerEqu->begin(); equ_it != playerEqu->end(); equ_it++)
+    {
+        equ_it->second.goods.Count = 0;
+        equ_it->second.goods.Source = Source_Bag;
+        memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &equ_it->second.goods, sizeof(STR_Goods));
+        i++;
+
+        equ_it->second.goods.Position = useBagPosition;
+        equ_it->second.goods.Count = 1;
+        useBagPosition++;
+        t_post->PushUpdateGoods(roleid, &equ_it->second.goods, PostInsert);
+        memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &equ_it->second.goods, sizeof(STR_Goods));
+        if(i == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_Goods) + 2)
+        {
+            t_packHead.Len = sizeof(STR_Goods)*i;
+            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+            i = 0;
+        }
+        else
+        {
+            i++;
+        }
+    }
+
+    hf_uint16 count = 0;
+    umap_roleGoods playerGoods = (*smap)[conn].m_playerGoods;
+    for(_umap_roleGoods::iterator goods_it = playerGoods->begin(); goods_it != playerGoods->end(); goods_it++)
+    {
+        vector<STR_Goods>::iterator start_it = goods_it->second.begin();
+        vector<STR_Goods>::iterator end_it = goods_it->second.end();
+
+        while(1)
+        {
+            if(start_it == end_it)
+            {
+                break;
+            }
+            if(start_it == --end_it)
+            {
+                count = start_it->Count;
+                start_it->Count = 0;
+                start_it->Source = Source_Bag;
+                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
+                i++;
+
+                start_it->Count = count;
+                start_it->Position = useBagPosition;
+                useBagPosition++;
+                t_post->PushUpdateGoods(roleid, &(*start_it), PostInsert);
+                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
+                if(i == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_Goods) + 2)
+                {
+                    t_packHead.Len = sizeof(STR_Goods)*i;
+                    i = 0;
+                    conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+                }
+                else
+                {
+                    i++;
+                }
+                break;
+            }
+            else
+            {
+                count = start_it->Count;
+                start_it->Count = 0;
+                start_it->Source = Source_Bag;
+                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
+                i++;
+                if(count + end_it->Count > GOODSMAXCOUNT)
+                {
+                    start_it->Count = GOODSMAXCOUNT;
+                    end_it->Count = end_it->Count + count - GOODSMAXCOUNT;
+                }
+                else
+                {
+                    start_it->Count = count + end_it->Count;
+                    end_it->Count = 0;
+                    end_it->Source = Source_Bag;
+
+                    memcpy(buff + sizeof(STR_PackHead) + useBagPosition*sizeof(STR_Goods), &end_it, sizeof(STR_Goods));
+                    i++;
+                    vector<STR_Goods>::iterator _end_it = end_it;
+                    end_it--;
+                    goods_it->second.erase(_end_it);
+                }
+                start_it->Position = useBagPosition;
+                useBagPosition++;
+                t_post->PushUpdateGoods(roleid, &(*start_it), PostInsert);
+                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
+                if(i == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_Goods) + 2)
+                {
+                    t_packHead.Len = sizeof(STR_Goods)*i;
+                    memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+                    conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+                    i = 0;
+                }
+                else
+                {
+                    i++;
+                }
+                start_it++;
+            }
+        }
+    }
+    if(i != 0)
+    {
+        t_packHead.Len = sizeof(STR_Goods)*i;
+        memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+        conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+    }
 }

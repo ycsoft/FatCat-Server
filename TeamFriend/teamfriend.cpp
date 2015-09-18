@@ -88,7 +88,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
              }
          }
     }
-    srv->free(addFriend);
+//    srv->free(addFriend);
 }
 
 void TeamFriend::deleteFriend(TCPConnection::Pointer conn, hf_uint32  roleid)
@@ -205,7 +205,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
             it->second->Write_all(addFriend, sizeof(STR_PackAddFriendReturn));
         }
     }
-    srv->free(addFriend);
+//    srv->free(addFriend);
 }
 
 //玩家上线，发送离线的添加好友请求

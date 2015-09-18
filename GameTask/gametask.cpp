@@ -179,14 +179,17 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
     _umap_taskProcess::iterator it = playerAcceptTask->find(finishTask->TaskID);
     if(it == playerAcceptTask->end()) //没接取当前任务
     {
-        Server::GetInstance()->free(finishTask);
+//        Server::GetInstance()->free(finishTask);
         return;
     }
 
     for(vector<STR_TaskProcess>::iterator process_it = it->second.begin(); process_it != it->second.end(); process_it++)
     {
         if(process_it->AimAmount != process_it->FinishCount)
+        {
+//            Server::GetInstance()->free(finishTask);
             return;
+        }
     }
 
     vector<hf_uint32> reduceGoods;//用来保存任务完成时从背包删除的物品ID
@@ -199,7 +202,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
         }
         if(!TaskFinishGoodsReward(conn, finishTask)) //物品奖励
         {
-            Server::GetInstance()->free(finishTask);
+//            Server::GetInstance()->free(finishTask);
             return;
         }
         TaskFinishTaskReward(conn, finishTask);  //任务奖励
@@ -211,7 +214,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
         UpdateCollectGoodsTaskProcess(conn, *reduce_it);
     }
     (*smap)[conn].m_playerAcceptTask->erase(it);
-    Server::GetInstance()->free(finishTask);
+//    Server::GetInstance()->free(finishTask);
 }
 
 bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)

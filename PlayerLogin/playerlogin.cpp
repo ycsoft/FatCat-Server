@@ -4,21 +4,6 @@
 #include "server.h"
 
 
-#define     RESULT_SUCCESS                 1
-#define     RESULT_ERROR                   2
-
-#define     RESULT_USER_REPEAT             2     //用户名已被注册
-#define     RESULT_EMAIL_REPEAT            3     //邮箱已被注册
-
-#define    RESULT_PASSWORD_ERROR           2     //密码不正确
-#define    RESULT_USER_NOTEXIST            3     //用户名不存在
-
-#define    RESULT_NICK_REPEAT              3     //昵称已被注册
-
-#define    ONLINE  1   //在线
-#define    OFFLINE 2   //不在线
-
-
 PlayerLogin::PlayerLogin()
 {
 

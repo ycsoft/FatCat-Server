@@ -17,9 +17,6 @@
 #include "TeamFriend/teamfriend.h"
 #include "PlayerLogin/playerlogin.h"
 
-
-#define   MoveSpeed       5    //玩家移动一次的距离  单位分米
-#define   RefreshDistance 20   //玩家刷新数据的最短距离
 using boost::asio::ip::tcp;
 
 class UserPosition
@@ -105,26 +102,26 @@ public:
         }
         case 1:   //向前移动
         {
-            pos->Pos_x = pos->Pos_x + MoveSpeed * move_speed/100 * cos((pos->Direct)*PI/180);
-            pos->Pos_z = pos->Pos_z + MoveSpeed * move_speed/100 * sin((pos->Direct)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct)*PI/180);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct)*PI/180);
             break;
         }
         case 2: //向后移动
         {
-            pos->Pos_x = pos->Pos_x + MoveSpeed * move_speed/100 * cos((pos->Direct + 180)*PI/180);
-            pos->Pos_z = pos->Pos_z + MoveSpeed * move_speed/100 * sin((pos->Direct + 180)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct + 180)*PI/180);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct + 180)*PI/180);
             break;
         }
         case 3://向左移动
         {
-            pos->Pos_x = pos->Pos_x + MoveSpeed * move_speed/100 * cos((pos->Direct + 90)*PI/180);
-            pos->Pos_z = pos->Pos_z + MoveSpeed * move_speed/100 * sin((pos->Direct + 90)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct + 90)*PI/180);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct + 90)*PI/180);
             break;
         }
         case 4://向右移动
         {
-            pos->Pos_x = pos->Pos_x + MoveSpeed * move_speed/100 * cos((pos->Direct + 270)*PI/180);
-            pos->Pos_z = pos->Pos_z + MoveSpeed * move_speed/100 * sin((pos->Direct + 270)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct + 270)*PI/180);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct + 270)*PI/180);
             break;
         }
         default:

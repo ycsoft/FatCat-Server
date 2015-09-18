@@ -306,16 +306,18 @@ hf_int32 DiskDBManager::GetMonsterType(umap_monsterType* monsterType)
         {
             t_monsterType.MonsterTypeID = atoi(PQgetvalue(t_PGresult, i, 0));
             memcpy(t_monsterType.MonsterName, PQgetvalue(t_PGresult, i, 1), PQgetlength(t_PGresult, i, 1));
-            t_monsterType.RankID = atoi(PQgetvalue(t_PGresult, i, 2));
-            t_monsterType.Level = atoi(PQgetvalue(t_PGresult, i, 3));
-            t_monsterType.AttackTypeID = atoi(PQgetvalue(t_PGresult, i, 4));
-            t_monsterType.HP = atoi(PQgetvalue(t_PGresult, i, 5));
-            t_monsterType.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 6));
-            t_monsterType.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 7));
-            t_monsterType.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 8));
-            t_monsterType.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 9));
-            t_monsterType.Attackrate = atoi(PQgetvalue(t_PGresult, i, 10));
-            t_monsterType.MoveRate = atoi(PQgetvalue(t_PGresult, i, 11));
+            t_monsterType.HP = atoi(PQgetvalue(t_PGresult, i, 2));
+            t_monsterType.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 3));
+            t_monsterType.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 4));
+            t_monsterType.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 5));
+            t_monsterType.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 6));
+            t_monsterType.Attackrate = atoi(PQgetvalue(t_PGresult, i, 7));
+            t_monsterType.MoveRate = atoi(PQgetvalue(t_PGresult, i, 8));
+            t_monsterType.RankID = atoi(PQgetvalue(t_PGresult, i, 9));
+            t_monsterType.Level = atoi(PQgetvalue(t_PGresult, i, 10));
+            t_monsterType.AttackTypeID = atoi(PQgetvalue(t_PGresult, i, 11));
+            t_monsterType.AttackRange = atoi(PQgetvalue(t_PGresult, i, 12));
+
             (*monsterType)[t_monsterType.MonsterTypeID] = t_monsterType;
         }
         return t_row;

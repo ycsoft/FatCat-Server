@@ -17,22 +17,7 @@ using namespace std;
 TCPServer::TCPServer( boost::asio::io_service & io  )
     :m_acceptor(io,tcp::endpoint(tcp::v4(),SRV_PORT_DEFAULT))
 {
-    Server  *srv = Server::GetInstance();
-    GameAttack* t_attack = srv->GetGameAttack();
-    Monster* t_monster = srv->GetMonster();
-    OperationPostgres* t_opePost = srv->GetOperationPostgres();
 
-    //技能伤害线程
-    srv->RunTask(boost::bind(&GameAttack::RoleSkillAttack, t_attack));
-
-    //怪物复活线程
-    srv->RunTask(boost::bind(&Monster::MonsterSpawns, t_monster));
-
-    //删除过了时间的掉落物品
-    srv->RunTask(boost::bind(&GameAttack::DeleteOverTimeGoods, t_attack));
-
-    //操作数据库更新用户数据
-    srv->RunTask(boost::bind(&OperationPostgres::UpdatePlayerData, t_opePost));
 }
 
 TCPServer::~TCPServer()

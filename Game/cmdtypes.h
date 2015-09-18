@@ -10,7 +10,7 @@
 
 #include "hf_types.h"
 #include "postgresqlstruct.h"
-
+#include "Monster/monsterstruct.h"
 #include "NetWork/tcpconnection.h"
 using namespace std;
 using namespace hf_types;
@@ -35,9 +35,15 @@ typedef boost::unordered_map<hf_uint32,vector<STR_MonsterLoot> > umap_monsterLoo
 
 
 //<怪物ID，怪物基本属性信息>
-typedef boost::unordered_map<hf_uint32,STR_MonsterBasicInfo> _umap_monsterBasicInfo ;
-typedef boost::shared_ptr<_umap_monsterBasicInfo> umap_monsterBasicInfo;
+//typedef boost::unordered_map<hf_uint32,STR_MonsterBasicInfo> _umap_monsterBasicInfo ;
+//typedef boost::shared_ptr<_umap_monsterBasicInfo> umap_monsterBasicInfo;
 
+//typedef boost::unordered_map<hf_uint32, STR_MonsterInfo> _umap_monsterInfo;
+//typedef boost::shared_ptr<_umap_monsterInfo> umap_monsterInfo;
+
+//玩家可视范围内的怪物
+typedef boost::unordered_map<hf_uint32, hf_uint32> _umap_playerViewMonster;
+typedef boost::shared_ptr<_umap_playerViewMonster> umap_playerViewMonster;
 
 //怪物攻击信息
 typedef boost::unordered_map<hf_uint8,STR_MonsterAttackInfo> umap_monsterAttackInfo;
@@ -118,9 +124,9 @@ typedef boost::unordered_map<hf_uint32, hf_uint32> umap_monsterSpawnsPos;
 typedef boost::unordered_map<hf_uint32, STR_MonsterSpawns> umap_monsterSpawns;
 //<怪物类型ID,类型信息>
 typedef boost::unordered_map<hf_uint32, STR_MonsterType> umap_monsterType;
-//保存怪物死亡信息 <怪物ID,刷新信息>
-typedef boost::unordered_map<hf_uint32, STR_MonsterDeath> _umap_monsterDeath;
-typedef boost::shared_ptr<_umap_monsterDeath> umap_monsterDeath;
+////保存怪物死亡信息 <怪物ID,刷新信息>
+//typedef boost::unordered_map<hf_uint32, STR_MonsterDeath> _umap_monsterDeath;
+//typedef boost::shared_ptr<_umap_monsterDeath> umap_monsterDeath;
 
 //保存玩家任务物品 <物品ID,vector<任务编号> >  一个物品同时可能为多个任务目标
 typedef boost::unordered_map<hf_uint32, vector<hf_uint32> > _umap_taskGoods;

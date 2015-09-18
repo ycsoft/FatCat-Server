@@ -1,52 +1,25 @@
-#ifndef MONSTER_HPP
-#define MONSTER_HPP
+#ifndef MONSTER_H
+#define MONSTER_H
 
 #include "Game/cmdtypes.h"
 #include "Game/postgresqlstruct.h"
 #include "NetWork/tcpconnection.h"
 #include <boost/thread/mutex.hpp>
 #include "server.h"
+#include "monsterstruct.h"
 
 #define   KB           1024
 #define   MB          1048576
-
-typedef struct _STR_MonsterInfo
-{
-    STR_MonsterBasicInfo monster;   //怪物基本信息
-    STR_Position    pos;            //怪物刷出坐标点,怪物自由活动用
-    hf_uint32       SpawnsTime;     //刷新时间
-    hf_uint8        Flag;           //是否死亡
-
-    void monsterLock() //怪物计算时，map使用find接口得到iterator迭代器不指向map尾时，加锁，运算完成后解锁
-    {
-        mtx.lock();
-    }
-    void monsterUnlock()
-    {
-        mtx.unlock();
-    }
-
-    void SetMonsterDeath()  //设置怪物为死亡
-    {
-        mtx.lock();
-        Flag = MonsterDie;   //怪物死亡
-        mtx.unlock();
-    }
-    void SetMonsterSpawns(); //当前怪物复活
-private:
-    boost::mutex     mtx;
-}STR_MonsterInfo;
-
 
 class Monster
 {
 public:
     Monster()
-        :m_monsterBasic(new _umap_monsterBasicInfo)
-        ,m_monsterDeath(new _umap_monsterDeath)
+        :m_monsterBasic(new _umap_monsterInfo)
+//        ,m_monsterDeath(new _umap_monsterDeath)
         ,m_monsterAttack(new umap_monsterAttackInfo)
         ,m_monsterSpawns(new umap_monsterSpawns)
-        ,m_monsterSpawnsPos(new umap_monsterSpawnsPos)              
+        ,m_monsterSpawnsPos(new umap_monsterSpawnsPos)
         ,m_monsterType(new umap_monsterType)
         ,m_npcInfo(new umap_npcInfo)
         ,m_monsterLoot(new umap_monsterLoot)
@@ -102,26 +75,27 @@ public:
     void PushViewMonsters( TCPConnection::Pointer conn);
 
     //保存死亡的怪
-    void SaveDeathMonster(hf_uint32 monsterID);
-    //怪物复活
-    void MonsterSpawns();
+//    void SaveDeathMonster(hf_uint32 monsterID);
 
     //查询NPC信息
     void QueryNpcInfo();
     //查询怪物掉落物品
     void QueryMonsterLoot();
 
-    //生成怪物有效位置
-    void CreateEffectivePos(STR_MonsterBasicInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);
+    //怪物活动
+    void Monsteractivity();
 
-    umap_monsterBasicInfo GetMonsterBasic()
+    //怪物复活
+    void MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);
+
+    umap_monsterInfo GetMonsterBasic()
     {
         return m_monsterBasic;
     }
-    umap_monsterDeath GetMonsterDeath()
-    {
-        return m_monsterDeath;
-    }
+//    umap_monsterDeath GetMonsterDeath()
+//    {
+//        return m_monsterDeath;
+//    }
 
     umap_monsterSpawns* GetMonsterSpawns()
     {
@@ -159,8 +133,8 @@ public:
     }
 
 private:
-    umap_monsterBasicInfo           m_monsterBasic;     //怪物基本信息
-    umap_monsterDeath               m_monsterDeath;     //死亡的怪
+    umap_monsterInfo                m_monsterBasic;     //怪物基本信息
+//    umap_monsterDeath               m_monsterDeath;     //死亡的怪
     umap_monsterAttackInfo*         m_monsterAttack;    //怪物攻击信息
     umap_monsterSpawns*             m_monsterSpawns;    //怪物刷新信息
     umap_monsterSpawnsPos*          m_monsterSpawnsPos; //怪物刷拐点
@@ -174,5 +148,5 @@ private:
 
 
 
-#endif // MONSTER_HPP
+#endif // MONSTER_H
 

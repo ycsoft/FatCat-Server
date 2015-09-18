@@ -80,7 +80,7 @@ public:
         :m_playerAcceptTask(new _umap_taskProcess)
         ,m_friendList(new _umap_friendList)
         ,m_viewRole(new _umap_roleSock)
-        ,m_viewMonster(new _umap_monsterBasicInfo)
+        ,m_viewMonster(new _umap_playerViewMonster)
         ,m_skillTime(new _umap_skillTime)
         ,m_playerGoods(new _umap_roleGoods)
         ,m_playerEqu(new _umap_roleEqu)
@@ -116,7 +116,7 @@ public:
     umap_taskProcess        m_playerAcceptTask;  //玩家已接取的任务
     umap_friendList         m_friendList;        //好友列表
     umap_roleSock           m_viewRole;          //可视范围内的玩家
-    umap_monsterBasicInfo   m_viewMonster;       //可视范围内的怪物
+    umap_playerViewMonster  m_viewMonster;       //可视范围内的怪物
     umap_skillTime          m_skillTime;         //保存玩家所有技能的再次使用时间
     umap_roleGoods          m_playerGoods;       //玩家背包其他物品
     umap_roleEqu            m_playerEqu;         //玩家背包装备

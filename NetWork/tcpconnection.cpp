@@ -56,7 +56,7 @@ int TCPConnection::Write_all(void *buff, int size)
     {
         STR_PackHead t_packHead;
         memcpy(&t_packHead, buff, sizeof(STR_PackHead));
-        cout << "发送数据大于1024" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
+        cout << "发送数据大于1024,长度为:" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
         return 0;
     }
     m_write_lock.lock();
@@ -95,6 +95,12 @@ void TCPConnection::ReadBody()
         SessionMgr::Instance()->RemoveSession(shared_from_this());
         return;
     }
+    if(len == 0)
+    {
+        cout << len << endl;
+        return;
+    }
+
     boost::asio::async_read(m_socket,boost::asio::buffer(m_buf+sizeof(STR_PackHead),len),
                             boost::bind(&TCPConnection::CallBack_Read_Body,
                                         shared_from_this(),
