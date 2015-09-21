@@ -23,16 +23,15 @@
 #define  BAGCAPACITY           65          //背包容量
 #define  GOODSMAXCOUNT         99          //每个格子物品最大数量
 
-#define  PlayerView            100         //玩家可视范围
-#define  PlayerAttackView      80          //玩家攻击范围
-#define  MonsterView           40          //怪物可视范围
+#define  PlayerView            500         //玩家可视范围 80
+#define  MonsterView           490         //怪物仇恨范围 60
+#define  PlayerAttackView      480         //玩家攻击范围 40
 
 #define  MonsterMoveDistance   5           //怪物移动一次的距离
 #define  PlayerMoveDistance    5           //玩家移动一次的距离  单位分米
 
 #define  RefreshDistance       20          //玩家刷新数据的距离
 
-#define  MonsterDeathTime      60          //怪物死亡时间
 //位置的状态，0 空闲，1使用，2锁定
 #define  POS_EMPTY             0           //位置为空
 #define  POS_NONEMPTY          1           //位置非空
@@ -56,8 +55,8 @@
 #define  EquTypeMaxValue       29999        //装备类型最大值
 
 
-#define  MonsterAlive           1            //怪物复活
-#define  MonsterDie             2            //怪物死亡
+//#define  MonsterAlive           1            //怪物复活
+#define  MonsterDie             0            //怪物死亡
 
 #define  ActiveMonster          1            //主动怪物
 #define  UnactiveMonster        2            //被动怪物
@@ -71,7 +70,8 @@
 #define  PICK_GOODNOTEXIST      4           //捡取的物品不存在
 
 #define  PUBLIC_COOLTIME        1           //公共冷却时间
-#define  GOODS_CONTINUETIME     180         //掉落物品持续时间
+#define  GOODS_CONTINUETIME     8         //掉落物品持续时间
+#define  MonsterDeathTime       10          //怪物死亡时间
 
 #define  RESULT_SUCCESS         1     //成功
 #define  RESULT_PRE_TASK        2     //未接取条件任务

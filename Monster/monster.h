@@ -16,7 +16,6 @@ class Monster
 public:
     Monster()
         :m_monsterBasic(new _umap_monsterInfo)
-//        ,m_monsterDeath(new _umap_monsterDeath)
         ,m_monsterAttack(new umap_monsterAttackInfo)
         ,m_monsterSpawns(new umap_monsterSpawns)
         ,m_monsterSpawnsPos(new umap_monsterSpawnsPos)
@@ -74,9 +73,6 @@ public:
     //玩家上线时推送所有的怪物数据
     void PushViewMonsters( TCPConnection::Pointer conn);
 
-    //保存死亡的怪
-//    void SaveDeathMonster(hf_uint32 monsterID);
-
     //查询NPC信息
     void QueryNpcInfo();
     //查询怪物掉落物品
@@ -92,10 +88,6 @@ public:
     {
         return m_monsterBasic;
     }
-//    umap_monsterDeath GetMonsterDeath()
-//    {
-//        return m_monsterDeath;
-//    }
 
     umap_monsterSpawns* GetMonsterSpawns()
     {
@@ -134,7 +126,6 @@ public:
 
 private:
     umap_monsterInfo                m_monsterBasic;     //怪物基本信息
-//    umap_monsterDeath               m_monsterDeath;     //死亡的怪
     umap_monsterAttackInfo*         m_monsterAttack;    //怪物攻击信息
     umap_monsterSpawns*             m_monsterSpawns;    //怪物刷新信息
     umap_monsterSpawnsPos*          m_monsterSpawnsPos; //怪物刷拐点

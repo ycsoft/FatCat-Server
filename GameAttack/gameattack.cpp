@@ -28,20 +28,20 @@ void GameAttack::AttackPoint(TCPConnection::Pointer conn, STR_PackUserAttackPoin
     Server* srv = Server::GetInstance();
 
 
-    srv->free(t_attack);
+//    srv->free(t_attack);
 }
 
 //攻击目标
 void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack)
 {
-    Server* srv = Server::GetInstance();
+//    Server* srv = Server::GetInstance();
     if(t_attack->SkillID >= 5001)  //技能攻击
     {
         umap_skillInfo::iterator it = m_skillInfo->find(t_attack->SkillID);
         if(it == m_skillInfo->end())
         {
             Logger::GetLogger()->Debug("没有这个技能");
-            srv->free(t_attack);
+//            srv->free(t_attack);
             return;
         }
         hf_double timep = GameAttack::GetCurrentTime();
@@ -52,7 +52,7 @@ void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t
         {
            t_skillResult.result = SKILL_NOTCOOL;
            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
-           srv->free(t_attack);
+//           srv->free(t_attack);
            return;
         }
         if(it->second.SkillRangeID == 2)  //自己为圆心
@@ -95,7 +95,7 @@ void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t
         }
     }
 
-    srv->free(t_attack);
+//    srv->free(t_attack);
 }
 
 void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack)
@@ -106,8 +106,8 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
 //普通攻击怪物
 void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack)
 {
-    Server *srv = Server::GetInstance();
-    umap_monsterAttackInfo* t_monsterAttack = srv->GetMonster()->GetMonsterAttack();
+//    Server *srv = Server::GetInstance();
+    umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
     STR_PackDamageData t_damageData;
@@ -117,65 +117,68 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     {
         return;
     }
+
     t_damageData.AimID = t_attack->AimID;
     t_damageData.AttackID = (*smap)[conn].m_roleid;
     t_damageData.TypeID = t_attack->SkillID;
 
 
-//    STR_MonsterBasicInfo* t_monsterBasicInfo = &it->second;
-//    //查找怪物攻击属性
-//    STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[t_attack->AimID];
-//    STR_PackPlayerPosition* t_AttacketPosition = &((*smap)[conn].m_position);
+    umap_monsterInfo u_monsterInfo = Server::GetInstance()->GetMonster()->GetMonsterBasic();
+    STR_MonsterInfo* t_monsterBasicInfo = &(*u_monsterInfo)[it->first];
+    STR_PackPlayerPosition* t_AttacketPosition = &((*smap)[conn].m_position);
 
-//    hf_float dx = t_monsterBasicInfo->Current_x - t_AttacketPosition->Pos_x;
-//    hf_float dy = t_monsterBasicInfo->Current_y - t_AttacketPosition->Pos_y;
-//    hf_float dz = t_monsterBasicInfo->Current_z - t_AttacketPosition->Pos_z;
-//    //判断是否在攻击范围内
-//    if(dx*dx + dy*dy + dz*dz > PlayerAttackView*PlayerAttackView)
-//    {
-//        t_damageData.Flag = NOT_ATTACKVIEW;  //不在攻击范围
-//        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
-//        return;
-//    }
+    hf_float dx = t_monsterBasicInfo->monster.Current_x - t_AttacketPosition->Pos_x;
+    hf_float dy = t_monsterBasicInfo->monster.Current_y - t_AttacketPosition->Pos_y;
+    hf_float dz = t_monsterBasicInfo->monster.Current_z - t_AttacketPosition->Pos_z;
+    //判断是否在攻击范围内
+    if(dx*dx + dy*dy + dz*dz > PlayerAttackView*PlayerAttackView)
+    {
+        t_damageData.Flag = NOT_ATTACKVIEW;  //不在攻击范围
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
 
 
 //    //判断方向是否可攻击
-//    if((dx*cos((t_AttacketPosition->Direct)*PI/180) + dz*sin((t_AttacketPosition->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)
-//    {
-//        t_damageData.Flag = OPPOSITE_DIRECT;
-//        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
-//        return;
-//    }
-//    STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
-//    hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
+    if((dx*cos((t_AttacketPosition->Direct)*PI/180) + dz*sin((t_AttacketPosition->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)
+    {
+        t_damageData.Flag = OPPOSITE_DIRECT;
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
 
-//    if(t_probHit*100 < rand()%100) //未命中
-//    {
-//        t_damageData.Flag = NOT_HIT;
-//        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
-//        return;
-//    }
-//    hf_uint8 t_level = t_monsterAttackInfo->Level;
+    STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
+    hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
 
-//    if(t_attack->SkillID == PhyAttackSkillID) //物理攻击
-//    {
-//        t_damageData.Damage = t_AttacketInfo->PhysicalAttack* GetDamage_reduction(t_level)/t_monsterAttackInfo->PhysicalDefense;
-//    }
-//    else if(t_attack->SkillID == MagicAttackSkillID)//魔法攻击
-//    {
-//       t_damageData.Damage = t_AttacketInfo->MagicAttack* GetDamage_reduction(t_level)/t_monsterAttackInfo->MagicDefense;
-//    }
+    if(t_probHit*100 < rand()%100) //未命中
+    {
+        t_damageData.Flag = NOT_HIT;
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
 
-//    if(t_AttacketInfo->Crit_Rate*100 >= rand()%100)//暴击
-//    {
-//        t_damageData.Flag = CRIT;
-//        t_damageData.Damage *= 1.5;
-//    }
-//    else //未暴击
-//    {
-//        t_damageData.Flag = NOT_CRIT;
-//    }
-//    DamageDealWith(conn, &t_damageData, t_attack->AimID);
+    //查找怪物攻击属性
+    STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[t_attack->AimID];
+    hf_uint8 t_level = t_monsterAttackInfo->Level;
+    if(t_attack->SkillID == PhyAttackSkillID) //物理攻击
+    {
+        t_damageData.Damage = t_AttacketInfo->PhysicalAttack* GetDamage_reduction(t_level)/t_monsterAttackInfo->PhysicalDefense;
+    }
+    else if(t_attack->SkillID == MagicAttackSkillID)//魔法攻击
+    {
+       t_damageData.Damage = t_AttacketInfo->MagicAttack* GetDamage_reduction(t_level)/t_monsterAttackInfo->MagicDefense;
+    }
+
+    if(t_AttacketInfo->Crit_Rate*100 >= rand()%100)//暴击
+    {
+        t_damageData.Flag = CRIT;
+        t_damageData.Damage *= 1.5;
+    }
+    else //未暴击
+    {
+        t_damageData.Flag = NOT_CRIT;
+    }
+    DamageDealWith(conn, &t_damageData, t_monsterBasicInfo);
 }
 
 //计算伤害
@@ -212,8 +215,8 @@ void GameAttack::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
 
 void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 {
-    _umap_roleSock* t_roleSock = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    _umap_roleSock* t_roleSock = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家    
     for(_umap_roleSock::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
     {
         umap_playerViewMonster   t_viewMonster = (*smap)[it->second].m_viewMonster;
@@ -228,62 +231,41 @@ void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 }
 
 //技能处理函数
-void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, hf_uint32 attackAim)
+void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster)
 {
-    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     //发送产生的伤害
     conn->Write_all(damage, sizeof(STR_PackDamageData));
 
-//    umap_monsterBasicInfo t_viewMonster = (*smap)[conn].m_viewMonster;
-//    _umap_monsterBasicInfo::iterator it = t_viewMonster->find(attackAim);
+    STR_PackMonsterAttrbt t_monsterBt;
+    t_monsterBt.MonsterID = monster->monster.MonsterID;
+    t_monsterBt.HP = monster->ReduceHp(damage->Damage);
 
-//    STR_PackMonsterAttrbt t_monsterBt;
-//    t_monsterBt.MonsterID = attackAim;
-//    if(it->second.HP >= damage->Damage)
-//    {
-//        it->second.HP -= damage->Damage;
-//        t_monsterBt.HP = it->second.HP;
-
-//        //发送怪物当前血量给可视范围内的玩家
-//        SendMonsterHPToViewRole(&t_monsterBt);
-//    }
-//    else
-//    {
-//        t_monsterBt.HP = 0;
-//        //发送怪物当前血量给可视范围内的玩家
-//        SendMonsterHPToViewRole(&t_monsterBt);
-//        //怪物死亡，发送奖励经验，玩家经验，查找掉落物品
-//        MonsterDeath(conn, &it->second);
-//        //从玩家可视范围内的怪物列表中删除该怪物
-//        RoleViewDeleteMonster(t_monsterBt.MonsterID);
-
-//        umap_monsterBasicInfo u_monster = Server::GetInstance()->GetMonster()->GetMonsterBasic();
-//        _umap_monsterBasicInfo::iterator monster = u_monster->find(attackAim);
-//        if(monster != u_monster->end())
-//        {
-//            //删除已死亡的怪物
-//            u_monster->erase(monster);
-//            //将此怪物信息保存，过固定的时间后重新生成怪物
-//            Server::GetInstance()->GetMonster()->SaveDeathMonster(attackAim);
-//        }
-//    }
+    //发送怪物当前血量给可视范围内的玩家
+    SendMonsterHPToViewRole(&t_monsterBt);
+    if(t_monsterBt.HP == 0)
+    {
+        //怪物死亡，发送奖励经验，玩家经验，查找掉落物品
+        MonsterDeath(conn, monster);
+        //从玩家可视范围内的怪物列表中删除该怪物
+        RoleViewDeleteMonster(t_monsterBt.MonsterID);
+    }
 }
 
 
 //怪物死亡处理函数
-void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo* monster)
+void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* monster)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     Server* srv = Server::GetInstance();
     //查找此任务是否为任务进度里要打的怪，如果是，更新任务进度
-    srv->GetGameTask()->UpdateAttackMonsterTaskProcess(conn, monster->MonsterTypeID);
+    srv->GetGameTask()->UpdateAttackMonsterTaskProcess(conn, monster->monster.MonsterTypeID);
 
     //前15级怪物死亡不掉经验
-     if(monster->Level >= 15)
+     if(monster->monster.Level >= 15)
      {
         STR_PackRewardExperience t_RewardExp;
-        t_RewardExp.ID = monster->MonsterID;
-        t_RewardExp.Experience = GetRewardExperience(monster->Level);
+        t_RewardExp.ID = monster->monster.MonsterID;
+        t_RewardExp.Experience = GetRewardExperience(monster->monster.Level);
         conn->Write_all(&t_RewardExp, sizeof(STR_PackRewardExperience));
 
         STR_PackRoleExperience* t_RoleExp = &(*smap)[conn].m_roleExp;
@@ -307,7 +289,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
       }
 
     umap_monsterLoot* t_monsterLoot = Server::GetInstance()->GetMonster()->GetMonsterLoot();
-    umap_monsterLoot::iterator iter = t_monsterLoot->find(monster->MonsterTypeID);
+    umap_monsterLoot::iterator iter = t_monsterLoot->find(monster->monster.MonsterTypeID);
     if(iter != t_monsterLoot->end())
     {
         STR_LootGoods t_lootGoods;
@@ -315,7 +297,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
         hf_int32 i = 0;
         umap_lootGoods lootGoods = (*smap)[conn].m_lootGoods;
 
-        t_lootGoods.Count = GetRewardMoney(monster->Level);;
+        t_lootGoods.Count = GetRewardMoney(monster->monster.Level);;
         //暂时只取奖励的金钱，后面会加一些计算公式，计算后奖励的金钱可能为0
 
         if(t_lootGoods.Count > 0)
@@ -323,7 +305,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
             t_lootGoods.LootGoodsID = Money_1;
             vector<STR_LootGoods> t_vec;
             t_vec.push_back(t_lootGoods);
-            (*lootGoods)[monster->MonsterID] = t_vec;
+            (*lootGoods)[monster->monster.MonsterID] = t_vec;
             memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_LootGoodsPos) + i* sizeof(STR_LootGoods), &t_lootGoods, sizeof(STR_LootGoods));
             i++;
         }
@@ -341,7 +323,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
                 memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_LootGoodsPos) + i* sizeof(STR_LootGoods), &t_lootGoods, sizeof(STR_LootGoods));
                 i++;
 
-                _umap_lootGoods::iterator it = lootGoods->find(monster->MonsterID); //保存掉落物品
+                _umap_lootGoods::iterator it = lootGoods->find(monster->monster.MonsterID); //保存掉落物品
                 if(it != lootGoods->end())
                 {
                     it->second.push_back(t_lootGoods);
@@ -350,7 +332,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
                 {
                     vector<STR_LootGoods> t_vec;
                     t_vec.push_back(t_lootGoods);
-                    (*lootGoods)[monster->MonsterID] = t_vec;
+                    (*lootGoods)[monster->monster.MonsterID] = t_vec;
                 }
             }
         }                
@@ -360,11 +342,11 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo*
         t_packHead.Len = sizeof(STR_LootGoodsPos) + i*sizeof(STR_LootGoods);
 
         STR_LootGoodsPos t_PacklootGoods;
-        t_PacklootGoods.Pos_x = monster->Current_x;
-        t_PacklootGoods.Pos_y = monster->Current_y;
-        t_PacklootGoods.Pos_z = monster->Current_z;
-        t_PacklootGoods.MapID = monster->MapID;
-        t_PacklootGoods.GoodsFlag = monster->MonsterID;
+        t_PacklootGoods.Pos_x = monster->monster.Current_x;
+        t_PacklootGoods.Pos_y = monster->monster.Current_y;
+        t_PacklootGoods.Pos_z = monster->monster.Current_z;
+        t_PacklootGoods.MapID = monster->monster.MapID;
+        t_PacklootGoods.GoodsFlag = monster->monster.MonsterID;
 
         LootPositionTime t_lootPositionTime;
         time_t timep;

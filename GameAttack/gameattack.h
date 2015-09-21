@@ -4,7 +4,7 @@
 #include "Game/postgresqlstruct.h"
 #include "NetWork/tcpconnection.h"
 #include "Game/cmdtypes.h"
-
+#include "Monster/monsterstruct.h"
 /**
  * @brief The GameAttack class
  * 主要完成玩家与玩家，玩家与怪物之间的攻击。
@@ -37,10 +37,10 @@ public:
     void SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt);
 
     //伤害处理函数
-    void DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, hf_uint32 attackAim);
+    void DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster);
 
     //怪物死亡处理函数
-    void MonsterDeath(TCPConnection::Pointer conn, STR_MonsterBasicInfo* monster);
+    void MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* monster);
 
     //从角色可视范围中删除该怪物
     void RoleViewDeleteMonster(hf_uint32 monsterID);

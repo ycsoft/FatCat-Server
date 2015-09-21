@@ -642,6 +642,16 @@ void PlayerLogin::SendRoleNotPickGoods(TCPConnection::Pointer conn, hf_uint32 Ro
         memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         conn->Write_all(buff, t_packHead.Len + sizeof(STR_PackHead));
     }
+
+    sbd << "delete from t_notpickgoodspos where roleid = " << RoleID << ";";
+    Logger::GetLogger()->Debug(sbd.str());
+    srv->getDiskDB()->Set(sbd.str());
+
+    sbd.Clear();
+    sbd << "delete from t_notpickgoods where roleid = " << RoleID << ";";
+    Logger::GetLogger()->Debug(sbd.str());
+    srv->getDiskDB()->Set(sbd.str());
+
     srv->free(buff);
 }
 

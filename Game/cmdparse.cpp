@@ -19,8 +19,8 @@ CmdParse::CmdParse():
     m_BuyGoods(new queue<Queue_BuyGoods>),
     m_SellGoods(new queue<Queue_SellGoods>),
     m_PlayerMove(new queue<Queue_PlayerMove>),
-    m_UserAttackAim(new queue<Queue_UserAttackAim>),
-    m_UserAttackPoint(new queue<Queue_UserAttackPoint>)
+    m_AttackAim(new queue<Queue_AttackAim>),
+    m_AttackPoint(new queue<Queue_AttackPoint>)
 {
 
 }
@@ -311,6 +311,47 @@ void CmdParse::PopPlayerMove()
             Queue_PlayerMove t_move = m_PlayerMove->front();
             UserPosition::PlayerPositionMove(t_move.conn, &t_move.playerMove);
             m_PlayerMove->pop();
+        }
+    }
+}
+
+
+void CmdParse::PushAttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* attackAim)
+{
+    Queue_AttackAim t_attack(conn, attackAim);
+    m_AttackAim->push(t_attack);
+}
+
+void CmdParse::PopAttackAim()
+{
+    GameAttack* gameAttack = Server::GetInstance()->GetGameAttack();
+    while(1)
+    {
+        for(hf_uint32 i = 0; i < m_AttackAim->size(); i++)
+        {
+            Queue_AttackAim t_attack = m_AttackAim->front();
+            gameAttack->AttackAim(t_attack.conn, &t_attack.attackAim);
+            m_AttackAim->pop();
+        }
+    }
+}
+
+void CmdParse::PushAttackPoint(TCPConnection::Pointer conn, STR_PackUserAttackPoint* attackPoint)
+{
+    Queue_AttackPoint t_attack(conn, attackPoint);
+    m_AttackPoint->push(t_attack);
+}
+
+void CmdParse::PopAttackPoint()
+{
+    GameAttack* gameAttack = Server::GetInstance()->GetGameAttack();
+    while(1)
+    {
+        for(hf_uint32 i = 0; i < m_AttackPoint->size(); i++)
+        {
+            Queue_AttackPoint t_attack = m_AttackPoint->front();
+            gameAttack->AttackPoint(t_attack.conn, &t_attack.attackPoint);
+            m_AttackPoint->pop();
         }
     }
 }

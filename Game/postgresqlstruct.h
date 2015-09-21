@@ -219,39 +219,6 @@ typedef struct _STR_Position
     hf_float             Come_z;
 }STR_Position;
 
-//typedef struct _STR_MonsterInfo
-//{
-//private:
-//    boost::mutex    m_mtx;
-//public:
-//    void lockMonster()
-//    {
-//       m_mtx.lock();
-//    }
-//    void unlockMonster()
-//    {
-//        m_mtx.unlock();
-//    }
-//    STR_MonsterBasicInfo monster;   //怪物基本信息
-//    STR_Position    pos;            //怪物刷出坐标点,怪物自由活动用
-//    hf_uint32       spawnsPos;      //怪物刷怪点
-//    hf_uint32       spawnsTime;     //复活时间,当monster.HP等于0时，怪物死亡计算复活时间
-
-
-
-//    //    void SetMonsterSpawns() //当前怪物复活
-//    //    {
-//    //        umap_monsterSpawns* monsterSpawns = Server::GetInstance()->GetMonster()->GetMonsterSpawns();
-//    //        umap_monsterSpawns::iterator it = monsterSpawns->find(monster.MonsterTypeID);
-//    //        monster.HP = monster.MaxHP;
-//    //        monster.Direct = 0;
-//    //        monster.ActID = 1;
-//    //        Server::GetInstance()->GetMonster()->CreateEffectivePos(&monster, &it->second); //生成怪物有效位置
-//    //    }
-//}STR_MonsterInfo;
-
-
-
 //保存怪物死亡结构
 typedef struct _STR_MonsterDeath
 {

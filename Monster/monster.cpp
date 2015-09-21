@@ -7,24 +7,6 @@
 #include "server.h"
 #include "GameAttack/gameattack.h"
 
-
-
-
-//void _STR_MonsterInfo::SetMonsterSpawns()
-//{
-//    umap_monsterSpawns* monsterSpawns = Server::GetInstance()->GetMonster()->GetMonsterSpawns();
-//    mtx.lock();
-//    umap_monsterSpawns::iterator it = monsterSpawns->find(monster.MonsterTypeID);
-//    monster.HP = monster.MaxHP;
-//    monster.Direct = 0;
-//    monster.ActID = 1;
-
-//    Server::GetInstance()->GetMonster()->CreateEffectivePos(&monster, &it->second); //生成怪物有效位置
-//    Flag = MonsterAlive;  //怪物复活
-//    mtx.unlock();
-//}
-
-
 //计算玩家与怪物之间的距离
 hf_float    Monster::caculateDistanceWithMonster( STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster)
 {
@@ -72,13 +54,11 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
                 continue;
             }
             (*t_playerViewMonster)[t_monsterInfo.MonsterID] = t_monsterInfo.MonsterID;  //保存为新看到的怪
-            //将怪物可视范围内的玩家保存到怪物可视范围内
-            if(t_distance <= MonsterView)
-            {
-                _umap_roleSock* t_roleSock = &(*m_monsterViewRole)[t_monsterInfo.MonsterID];
-                hf_uint32 roleid = (*smap)[conn].m_roleid;
-                (*t_roleSock)[roleid] = conn;
-            }
+            //在怪物可视范围内的玩家保存到怪物可视范围内
+
+            _umap_roleSock* t_roleSock = &(*m_monsterViewRole)[t_monsterInfo.MonsterID];
+            hf_uint32 roleid = (*smap)[conn].m_roleid;
+            (*t_roleSock)[roleid] = conn;
 
             memcpy(comebuff + sizeof(STR_PackHead) + sizeof(STR_MonsterBasicInfo)*pushcount, &t_monsterInfo, sizeof(STR_MonsterBasicInfo));
             pushcount++;
@@ -96,19 +76,14 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
         }
         else   //原来在可视范围，判断是否还在可视范围
         {
-            if(t_distance > MonsterView)
-            {
-                _umap_roleSock* t_roleSock = &(*m_monsterViewRole)[t_monsterInfo.MonsterID];
-                _umap_roleSock::iterator role_it = t_roleSock->find(t_monsterInfo.MonsterID);
-                if(role_it != t_roleSock->end())
-                {
-                    t_roleSock->erase(role_it);
-                }
-            }
             if (t_distance <= PlayerView)
             {
                 continue;
             }
+
+            _umap_roleSock* t_roleSock = &(*m_monsterViewRole)[t_monsterInfo.MonsterID];
+            t_roleSock->erase((*smap)[conn].m_roleid);
+
             t_playerViewMonster->erase(monster);
             //保存离开视野范围的怪
             memcpy(leavebuff + sizeof(STR_PackHead) + popcount * sizeof(t_monsterInfo.MonsterID), &(t_monsterInfo.MonsterID), sizeof(t_monsterInfo.MonsterID));
@@ -178,12 +153,9 @@ void Monster::CreateMonster()
         memcpy(t_monsterInfo.monster.MonsterName, iter->second.MonsterName, 32);
         t_monsterInfo.monster.MapID = it->second.MapID;
         t_monsterInfo.monster.MoveRate = iter->second.MoveRate;
-//        t_monsterInfo.monster.HP = iter->second.HP;
         t_monsterInfo.monster.MaxHP = iter->second.HP;
-//        t_monsterInfo.monster.Direct = 50;
         t_monsterInfo.monster.Level = iter->second.Level;
         t_monsterInfo.monster.RankID = iter->second.RankID;
-//        t_monsterInfo.monster.ActID = 1;
         t_monsterInfo.monster.Flag = 1;
 
         t_MonsterAttackInfo.Hp = iter->second.HP;
@@ -246,11 +218,12 @@ void Monster::Monsteractivity()
         for(_umap_monsterInfo::iterator it = t_monsterBasic->begin(); it != t_monsterBasic->end(); it++)
         {
             if(it->second.monster.HP == 0 )
-            {
+            {                
                 if(currentTime >= it->second.aimTime)//怪物复活时间到了
                 {
                     umap_monsterSpawns::iterator spawns_it = monsterSpawns->find(it->second.spawnsPos);
                     MonsterSpawns(&it->second, &spawns_it->second); //怪物复活
+
                 }
             }
             else
@@ -284,6 +257,7 @@ void Monster::MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* mon
 
             monsterInfo->monster.Direct = 0;
             monsterInfo->monster.ActID = 1;
+            monsterInfo->spawnsPos = monsterSpawns->SpawnsPosID;
             monsterInfo->monster.HP = monsterInfo->monster.MaxHP;
         }
     }

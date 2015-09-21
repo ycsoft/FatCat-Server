@@ -164,15 +164,27 @@ typedef struct _Queue_PlayerMove
     STR_PlayerMove playerMove;
 }Queue_PlayerMove;
 
-typedef struct _Queue_UserAttackAim
+typedef struct _Queue_AttackAim
 {
+    _Queue_AttackAim(TCPConnection::Pointer _conn, STR_PackUserAttackAim* _attackAim)
+        :conn(_conn)
+    {
+        memcpy(&attackAim, _attackAim, sizeof(STR_PackUserAttackAim));
+    }
+    TCPConnection::Pointer conn;
+    STR_PackUserAttackAim attackAim;
+}Queue_AttackAim;
 
-}Queue_UserAttackAim;
-
-typedef struct _Queue_UserAttackPoint
+typedef struct _Queue_AttackPoint
 {
-
-}Queue_UserAttackPoint;
+    _Queue_AttackPoint(TCPConnection::Pointer _conn, STR_PackUserAttackPoint* _attackPoint)
+        :conn(_conn)
+    {
+        memcpy(&attackPoint, _attackPoint, sizeof(STR_PackUserAttackPoint));
+    }
+    TCPConnection::Pointer conn;
+    STR_PackUserAttackPoint attackPoint;
+}Queue_AttackPoint;
 
 
 class CmdParse
@@ -224,24 +236,31 @@ public:
     void PushPlayerMove(TCPConnection::Pointer conn, STR_PlayerMove* playerMove);
     void PopPlayerMove();
 
+    //player Attack
+    void PushAttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* attackAim);
+    void PopAttackAim();
+
+    void PushAttackPoint(TCPConnection::Pointer conn, STR_PackUserAttackPoint* attackPoint);
+    void PopAttackPoint();
+
 
 
 private:
-    queue<Queue_AskTask>         *m_AskTask;
-    queue<Queue_QuitTask>        *m_QuitTask;
-    queue<Queue_AskFinishTask>   *m_AskFinishTask;
-    queue<Queue_AskTaskData>     *m_AskTaskData;
-    queue<Queue_AddFriend>       *m_AddFriend;
-    queue<Queue_DeleteFriend>    *m_DeleteFriend;
-    queue<Queue_AddFriendReturn> *m_AddFriendReturn;   
-    queue<Queue_PickGoods>       *m_PickGoods;
-    queue<Queue_RemoveGoods>     *m_RemoveGoods;
-    queue<Queue_MoveGoods>       *m_MoveGoods;
-    queue<Queue_BuyGoods>        *m_BuyGoods;
-    queue<Queue_SellGoods>       *m_SellGoods;
-    queue<Queue_PlayerMove>      *m_PlayerMove;
-    queue<Queue_UserAttackAim>   *m_UserAttackAim;
-    queue<Queue_UserAttackPoint> *m_UserAttackPoint;
+    queue<Queue_AskTask>           *m_AskTask;
+    queue<Queue_QuitTask>          *m_QuitTask;
+    queue<Queue_AskFinishTask>     *m_AskFinishTask;
+    queue<Queue_AskTaskData>       *m_AskTaskData;
+    queue<Queue_AddFriend>         *m_AddFriend;
+    queue<Queue_DeleteFriend>      *m_DeleteFriend;
+    queue<Queue_AddFriendReturn>   *m_AddFriendReturn;
+    queue<Queue_PickGoods>         *m_PickGoods;
+    queue<Queue_RemoveGoods>       *m_RemoveGoods;
+    queue<Queue_MoveGoods>         *m_MoveGoods;
+    queue<Queue_BuyGoods>          *m_BuyGoods;
+    queue<Queue_SellGoods>         *m_SellGoods;
+    queue<Queue_PlayerMove>        *m_PlayerMove;
+    queue<Queue_AttackAim>         *m_AttackAim;
+    queue<Queue_AttackPoint>       *m_AttackPoint;
 //    queue<> m_;
 };
 
