@@ -132,6 +132,9 @@ typedef boost::unordered_map<hf_uint32, STR_MonsterType> umap_monsterType;
 typedef boost::unordered_map<hf_uint32, vector<hf_uint32> > _umap_taskGoods;
 typedef boost::shared_ptr<_umap_taskGoods> umap_taskGoods;
 
+//角色职业属性
+//typedef boost::unordered_map<hf_uint16, STR_RoleJobAttribute> umap_roleJobAttr;
+
 typedef struct _Configuration
 {
     const char* ip;

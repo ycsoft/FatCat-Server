@@ -370,6 +370,7 @@ void GameAttack::RoleSkillAttack()
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
+    umap_monsterInfo u_monsterInfo = Server::GetInstance()->GetMonster()->GetMonsterBasic();
     STR_PackDamageData t_damageData;
 
     //遍历m_attackMonster,m_attackRole,m_attackPoint 根据时间判断，计算伤害发送给玩家
@@ -396,74 +397,85 @@ void GameAttack::RoleSkillAttack()
             STR_PackSkillAimEffect t_skillEffect(it->second.AimID,it->second.SkillID,it->first);
             iter->second->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
 
-//            umap_monsterBasicInfo t_viewMonster = (*smap)[iter->second].m_viewMonster;
-//            STR_PackPlayerPosition* t_pos = &(*smap)[iter->second].m_position;
-//            STR_PackSkillInfo* t_skillInfo = &((*m_skillInfo)[it->second.SkillID]);
-//            STR_RoleInfo* t_roleInfo = &(*smap)[iter->second].m_roleInfo;
-//            if(t_skillInfo->SkillRangeID == 1)  //目标
-//            {
-//                _umap_monsterBasicInfo::iterator monster = t_viewMonster->find(it->second.AimID);
-//                if(monster == t_viewMonster->end())
-//                {
-//                    continue;
-//                }
-//                 STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[monster->first];
-//                 hf_float dx = monster->second.Current_x - t_pos->Pos_x;
-//                 hf_float dy = monster->second.Current_y - t_pos->Pos_y;
-//                 hf_float dz = monster->second.Current_z - t_pos->Pos_z;
-//                 if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
-//                 {
-//                     t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
-//                     DamageDealWith(iter->second, &t_damageData, monster->first); //发送计算伤害
-//                 }
-//            }
-//            else if(t_skillInfo->SkillRangeID == 2) //自己为圆心
-//            {
-//                for(_umap_monsterBasicInfo::iterator monster = t_viewMonster->begin(); monster != t_viewMonster->end(); monster++)
-//                {
-//                     STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[monster->first];
-//                     hf_float dx = monster->second.Current_x - t_pos->Pos_x;
-//                     hf_float dy = monster->second.Current_y - t_pos->Pos_y;
-//                     hf_float dz = monster->second.Current_z - t_pos->Pos_z;
-//                     if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
-//                     {
-//                         t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
-//                         DamageDealWith(iter->second, &t_damageData, monster->first); //发送计算伤害
-//                     }
-//                }
+            umap_playerViewMonster t_viewMonster = (*smap)[iter->second].m_viewMonster;
+            STR_PackPlayerPosition* t_pos = &(*smap)[iter->second].m_position;
+            STR_PackSkillInfo* t_skillInfo = &((*m_skillInfo)[it->second.SkillID]);
+            STR_RoleInfo* t_roleInfo = &(*smap)[iter->second].m_roleInfo;
+            if(t_skillInfo->SkillRangeID == 1)  //目标
+            {
+                _umap_playerViewMonster::iterator monster = t_viewMonster->find(it->second.AimID);
+                if(monster == t_viewMonster->end())
+                {
+                    continue;
+                }
 
-//            }
-//            else if( t_skillInfo->SkillRangeID == 3) //目标为圆心
-//            {
-//                _umap_monsterBasicInfo::iterator monster = t_viewMonster->find(it->second.AimID);
-//                if(monster == t_viewMonster->end())
-//                {
-//                    continue;
-//                }
-//                hf_float dx = monster->second.Current_x - t_pos->Pos_x;
-//                hf_float dy = monster->second.Current_y - t_pos->Pos_y;
-//                hf_float dz = monster->second.Current_z - t_pos->Pos_z;
-//                if( (dx*dx + dy*dy + dz*dz) < t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance || (dx*dx + dy*dy + dz*dz) > t_skillInfo->FarDistance * t_skillInfo->FarDistance)
-//                {
-//                    continue;
-//                }
-//                for(_umap_monsterBasicInfo::iterator monster = t_viewMonster->begin(); monster != t_viewMonster->end(); monster++)
-//                {
-//                    STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[monster->first];
-//                    hf_float dx = monster->second.Current_x - t_pos->Pos_x;
-//                    hf_float dy = monster->second.Current_y - t_pos->Pos_y;
-//                    hf_float dz = monster->second.Current_z - t_pos->Pos_z;
-//                    if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
-//                    {
-//                      t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
-//                      DamageDealWith(iter->second, &t_damageData, monster->first); //发送计算伤害
-//                    }
-//                }
-//            }
-//            _umap_roleAttackAim::iterator aim = it;
-//            it++;
-//            m_attackMonster->erase(aim);
-//        }
+                STR_MonsterInfo* t_monsterInfo = &(*u_monsterInfo)[it->second.AimID];
+
+                 STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[it->second.AimID];
+                 hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
+                 hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
+                 hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
+                 if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                 {
+                     t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+                     DamageDealWith(iter->second, &t_damageData, t_monsterInfo); //发送计算伤害
+                 }
+            }
+            else if(t_skillInfo->SkillRangeID == 2) //自己为圆心
+            {
+                for(_umap_playerViewMonster::iterator monster = t_viewMonster->begin(); monster != t_viewMonster->end(); monster++)
+                {
+
+                     STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[monster->first];
+                     STR_MonsterInfo* t_monsterInfo = &(*u_monsterInfo)[monster->first];
+                     hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
+                     hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
+                     hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
+                     if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                     {
+                         t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+                         DamageDealWith(iter->second, &t_damageData, t_monsterInfo); //发送计算伤害
+                     }
+                }
+            }
+            else if( t_skillInfo->SkillRangeID == 3) //目标为圆心
+            {
+                _umap_playerViewMonster::iterator monster = t_viewMonster->find(it->second.AimID);
+                if(monster == t_viewMonster->end())
+                {
+                    continue;
+                }
+                STR_MonsterInfo* t_monsterInfo = &(*u_monsterInfo)[monster->first];
+                hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
+                hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
+                hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
+                if( (dx*dx + dy*dy + dz*dz) < t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance || (dx*dx + dy*dy + dz*dz) > t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                {
+                    continue;
+                }
+                for(_umap_playerViewMonster::iterator monster = t_viewMonster->begin(); monster != t_viewMonster->end(); monster++)
+                {
+                    if(monster->first == t_monsterInfo->monster.MonsterID)
+                    {
+                        continue;
+                    }
+                    STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[monster->first];
+                    STR_MonsterInfo* t_monster = &(*u_monsterInfo)[monster->first];
+
+                    hf_float dx = t_monsterInfo->monster.Current_x - t_monster->monster.Current_x;
+                    hf_float dy = t_monsterInfo->monster.Current_y - t_monster->monster.Current_x;
+                    hf_float dz = t_monsterInfo->monster.Current_z - t_monster->monster.Current_x;
+                    if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                    {
+                      t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+                      DamageDealWith(iter->second, &t_damageData, t_monster); //发送计算伤害
+                    }
+                }
+            }
+            _umap_roleAttackAim::iterator aim = it;
+            it++;
+            m_attackMonster->erase(aim);
+        }
 //        for(_umap_roleAttackAim::iterator it = m_attackRole->begin(); it != m_attackRole->end(); it++)
 //        {  //攻击角色
 
@@ -472,7 +484,7 @@ void GameAttack::RoleSkillAttack()
 //        for(_umap_roleAttackPoint::iterator it = m_attackPoint->begin(); it != m_attackPoint->end(); it++)
 //        { //攻击点
 
-        }
+//        }
     }
 }
 
@@ -603,129 +615,141 @@ void GameAttack::AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skil
     STR_PackSkillResult t_skillResult;
     STR_PackDamageData t_damageData;
 
-//    _umap_monsterBasicInfo::iterator it = (*smap)[conn].m_viewMonster->find(AimID); //查找可范围内是否有这个怪物
-//    if(it != (*smap)[conn].m_viewMonster->end())
-//    {
-//        t_damageData.AimID = AimID;
-//        t_damageData.AttackID = (*smap)[conn].m_roleid;
+    _umap_playerViewMonster::iterator it = (*smap)[conn].m_viewMonster->find(AimID); //查找可范围内是否有这个怪物
+    if(it != (*smap)[conn].m_viewMonster->end())
+    {
+        t_damageData.AimID = AimID;
+        t_damageData.AttackID = (*smap)[conn].m_roleid;
 
-//        hf_float dx = it->second.Current_x - t_pos->Pos_x;
-//        hf_float dy = it->second.Current_y - t_pos->Pos_y;
-//        hf_float dz = it->second.Current_z - t_pos->Pos_z;
+        umap_monsterInfo u_monsterInfo = Server::GetInstance()->GetMonster()->GetMonsterBasic();
+        STR_MonsterInfo* t_monsterInfo = &(*u_monsterInfo)[AimID];
 
-//        if( (dx*dx + dy*dy + dz*dz) < skillInfo->NearlyDistance * skillInfo->NearlyDistance ||
-//                (dx*dx + dy*dy + dz*dz) > skillInfo->FarDistance * skillInfo->FarDistance)    //不在攻击范围
-//        {
-//            t_skillResult.result = NOT_ATTACKVIEW;
-//            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
-//            return;
-//        }
-//        if((dx*cos((t_pos->Direct)*PI/180) + dz*sin((t_pos->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)  //不在攻击角度
-//        {
-//            t_skillResult.result = OPPOSITE_DIRECT;
-//            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
-//            return;
-//        }
+        hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
+        hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
+        hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
 
-//        (*smap)[conn].m_publicCoolTime = timep + PUBLIC_COOLTIME; //保存玩家使用技能的公共冷却时间
-//        (*smap)[conn].m_skillUseTime = timep + skillInfo->CoolTime + skillInfo->CastingTime;  //保存技能的冷却时间
+        if( (dx*dx + dy*dy + dz*dz) < skillInfo->NearlyDistance * skillInfo->NearlyDistance ||
+                (dx*dx + dy*dy + dz*dz) > skillInfo->FarDistance * skillInfo->FarDistance)    //不在攻击范围
+        {
+            t_skillResult.result = NOT_ATTACKVIEW;
+            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
+            return;
+        }
+        if((dx*cos((t_pos->Direct)*PI/180) + dz*sin((t_pos->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)  //不在攻击角度
+        {
+            t_skillResult.result = OPPOSITE_DIRECT;
+            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
+            return;
+        }
 
-//        //取攻击者角色的属性信息
-//        STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
-//        umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
-//        STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[AimID];
+        (*smap)[conn].m_publicCoolTime = timep + PUBLIC_COOLTIME; //保存玩家使用技能的公共冷却时间
+        (*smap)[conn].m_skillUseTime = timep + skillInfo->CoolTime + skillInfo->CastingTime;  //保存技能的冷却时间
 
-//        if(skillInfo->CastingTime == 0)//无延时类技能
-//        {
-//            t_skillResult.result = SKILL_SUCCESS;
-//            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
-//            t_damageData.Damage = CalDamage(skillInfo, t_AttacketInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+        //取攻击者角色的属性信息
+        STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
+        umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
+        STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[AimID];
 
-//            STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
-//            conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
-//            DamageDealWith(conn, &t_damageData, AimID); //发送计算伤害
-//        }
-//        else   //延时类技能
-//        {
-//            RoleAttackAim t_attackAim;
-//            t_attackAim.AimID = AimID;
-//            t_attackAim.HurtTime = (hf_uint32)timep + skillInfo->CastingTime;
-//            t_attackAim.SkillID = skillInfo->SkillID;
+        if(skillInfo->CastingTime == 0)//无延时类技能
+        {
+            t_skillResult.result = SKILL_SUCCESS;
+            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
+            t_damageData.Damage = CalDamage(skillInfo, t_AttacketInfo, t_monsterAttackInfo, &t_damageData.TypeID);
 
-//            (*m_attackMonster)[(*smap)[conn].m_roleid] = t_attackAim;
-//            (*smap)[conn].m_skillUseTime = t_attackAim.HurtTime + skillInfo->CoolTime;
-//        }
-//    }
+            STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
+            conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
+            DamageDealWith(conn, &t_damageData, t_monsterInfo); //发送计算伤害
+        }
+        else   //延时类技能
+        {
+            RoleAttackAim t_attackAim;
+            t_attackAim.AimID = AimID;
+            t_attackAim.HurtTime = (hf_uint32)timep + skillInfo->CastingTime;
+            t_attackAim.SkillID = skillInfo->SkillID;
+
+            (*m_attackMonster)[(*smap)[conn].m_roleid] = t_attackAim;
+            (*smap)[conn].m_skillUseTime = t_attackAim.HurtTime + skillInfo->CoolTime;
+        }
+    }
 }
 
 //怪物为圆心
 void GameAttack::AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID)
 {
-//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-//    umap_monsterBasicInfo t_viewMonster = (*smap)[conn].m_viewMonster;
-//    STR_PackPlayerPosition* t_pos = &(*smap)[conn].m_position;
-//    STR_PackSkillResult t_skillResult;
-//    STR_PackDamageData t_damageData;
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_playerViewMonster t_viewMonster = (*smap)[conn].m_viewMonster;
+    STR_PackPlayerPosition* t_pos = &(*smap)[conn].m_position;
+    STR_PackSkillResult t_skillResult;
+    STR_PackDamageData t_damageData;
 
-//    _umap_monsterBasicInfo::iterator it = t_viewMonster->find(AimID); //查找可范围内是否有这个怪物
-//    if(it != (*smap)[conn].m_viewMonster->end())
-//    {
-//        hf_float dx = it->second.Current_x - t_pos->Pos_x;
-//        hf_float dy = it->second.Current_y - t_pos->Pos_y;
-//        hf_float dz = it->second.Current_z - t_pos->Pos_z;
+    _umap_playerViewMonster::iterator it = t_viewMonster->find(AimID); //查找可范围内是否有这个怪物
+    if(it != (*smap)[conn].m_viewMonster->end())
+    {
+        umap_monsterInfo u_monsterInfo = Server::GetInstance()->GetMonster()->GetMonsterBasic();
 
-//        if( (dx*dx + dy*dy + dz*dz) < skillInfo->NearlyDistance * skillInfo->NearlyDistance ||
-//                (dx*dx + dy*dy + dz*dz) > skillInfo->FarDistance * skillInfo->FarDistance)    //不在攻击范围
-//        {
-//            t_skillResult.result = NOT_ATTACKVIEW;
-//            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
-//            return;
-//        }
-//        if((dx*cos((t_pos->Direct)*PI/180) + dz*sin((t_pos->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)  //不在攻击角度
-//        {
-//            t_skillResult.result = OPPOSITE_DIRECT;
-//            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
-//            return;
-//        }
+        STR_MonsterInfo* t_monsterInfo = &(*u_monsterInfo)[AimID];
+        hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
+        hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
+        hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
 
-//        (*smap)[conn].m_publicCoolTime = timep + PUBLIC_COOLTIME; //保存玩家使用技能的公共冷却时间
-//        (*smap)[conn].m_skillUseTime = timep + skillInfo->CoolTime + skillInfo->CastingTime;  //保存技能的冷却时间
-//        t_skillResult.result = SKILL_SUCCESS;
-//        conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));  //发送施法结果
+        if( (dx*dx + dy*dy + dz*dz) < skillInfo->NearlyDistance * skillInfo->NearlyDistance ||
+                (dx*dx + dy*dy + dz*dz) > skillInfo->FarDistance * skillInfo->FarDistance)    //不在攻击范围
+        {
+            t_skillResult.result = NOT_ATTACKVIEW;
+            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
+            return;
+        }
+        if((dx*cos((t_pos->Direct)*PI/180) + dz*sin((t_pos->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)  //不在攻击角度
+        {
+            t_skillResult.result = OPPOSITE_DIRECT;
+            conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
+            return;
+        }
+
+        (*smap)[conn].m_publicCoolTime = timep + PUBLIC_COOLTIME; //保存玩家使用技能的公共冷却时间
+        (*smap)[conn].m_skillUseTime = timep + skillInfo->CoolTime + skillInfo->CastingTime;  //保存技能的冷却时间
+        t_skillResult.result = SKILL_SUCCESS;
+        conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));  //发送施法结果
 
 
 //        //取攻击者角色的属性信息
-//        STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
-//        umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
-//        STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[AimID];
+        STR_RoleInfo* t_roleInfo = &((*smap)[conn].m_roleInfo);
+        umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
+        STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[AimID];
 
-//        if(skillInfo->CastingTime > 0)
-//        {
-//            RoleAttackAim t_attackAim;
-//            t_attackAim.AimID = AimID;
-//            t_attackAim.HurtTime = timep + skillInfo->CastingTime;
-//            t_attackAim.SkillID = skillInfo->SkillID;
+        if(skillInfo->CastingTime > 0)
+        {
+            RoleAttackAim t_attackAim;
+            t_attackAim.AimID = AimID;
+            t_attackAim.HurtTime = timep + skillInfo->CastingTime;
+            t_attackAim.SkillID = skillInfo->SkillID;
 
-//            (*m_attackMonster)[(*smap)[conn].m_roleid] = t_attackAim;
-//            (*smap)[conn].m_skillUseTime = t_attackAim.HurtTime + skillInfo->CoolTime;
-//            return;
-//        }
-//        STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
-//        conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
+            (*m_attackMonster)[(*smap)[conn].m_roleid] = t_attackAim;
+            (*smap)[conn].m_skillUseTime = t_attackAim.HurtTime + skillInfo->CoolTime;
+            return;
+        }
+        STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
+        conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
 
-//        for(_umap_monsterBasicInfo::iterator iter = t_viewMonster->begin(); iter != t_viewMonster->end(); iter++)
-//        {
-//            hf_float dx = iter->second.Current_x - it->second.Current_x;
-//            hf_float dy = iter->second.Current_y - it->second.Current_y;
-//            hf_float dz = iter->second.Current_z - it->second.Current_z;
-//            if( (dx*dx + dy*dy + dz*dz) >= skillInfo->NearlyDistance * skillInfo->NearlyDistance ||
-//                    (dx*dx + dy*dy + dz*dz) <= skillInfo->FarDistance * skillInfo->FarDistance)    //不在攻击范围
-//            {
-//                    t_damageData.Damage = CalDamage(skillInfo, t_AttacketInfo, t_monsterAttackInfo, &t_damageData.TypeID);
-//                    DamageDealWith(conn, &t_damageData, AimID); //发送计算伤害
-//            }
-//        }
-//    }
+        for(_umap_playerViewMonster::iterator iter = t_viewMonster->begin(); iter != t_viewMonster->end(); iter++)
+        {
+
+            if(iter->first == t_monsterInfo->monster.MonsterID)
+            {
+                continue;
+            }
+            STR_MonsterInfo* t_monster = &(*u_monsterInfo)[iter->first];
+
+            hf_float dx = t_monsterInfo->monster.Current_x - t_monster->monster.Current_x;
+            hf_float dy = t_monsterInfo->monster.Current_y - t_monster->monster.Current_x;
+            hf_float dz = t_monsterInfo->monster.Current_z - t_monster->monster.Current_x;
+            if( (dx*dx + dy*dy + dz*dz) >= skillInfo->NearlyDistance * skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= skillInfo->FarDistance * skillInfo->FarDistance)
+            {
+              t_damageData.Damage = CalDamage(skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+              DamageDealWith(conn, &t_damageData, t_monster); //发送计算伤害
+            }
+        }
+    }
 }
 
 

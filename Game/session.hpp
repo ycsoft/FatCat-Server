@@ -113,6 +113,7 @@ public:
     STR_RoleInfo            m_roleInfo;          //角色攻击属性
     STR_PackRoleExperience  m_roleExp;           //角色经验
     STR_RoleBasicInfo       m_RoleBaseInfo;      //角色基本信息
+    STR_BodyEquipment       m_BodyEqu;           //角色所穿戴装备
     umap_taskProcess        m_playerAcceptTask;  //玩家已接取的任务
     umap_friendList         m_friendList;        //好友列表
     umap_roleSock           m_viewRole;          //可视范围内的玩家

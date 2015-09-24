@@ -54,6 +54,10 @@ public:
 
     //整理背包
     void ArrangeBagGoods(TCPConnection::Pointer conn);
+
+    //换装
+    void WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, hf_uint8 pos);
+    void TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid);
 private:
     umap_goodsPrice    m_goodsPrice;   //物品价格
     umap_equAttr*      m_equAttr;      //装备属性

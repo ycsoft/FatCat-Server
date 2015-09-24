@@ -492,7 +492,7 @@ typedef struct _STR_PlayerEqu
     {
         memset(&goods, 0, sizeof(_STR_PlayerEqu));
     }
-    STR_Goods goods;
+    STR_Goods goods;    //当Position为0时，表示穿在身上，不可操作
     STR_Equipment equAttr;
 }STR_PlayerEqu;
 
@@ -645,6 +645,41 @@ typedef struct _STR_RoleBasicInfo
     hf_uint8  HairColor;     //发色
 }STR_RoleBasicInfo;
 
+typedef struct _STR_BodyEquipment
+{
+    hf_uint32  roleid;
+    //受到攻击时，头，上身，下身，鞋子，腰带的耐久度减小0.1，发出攻击时武器耐久度较小0.1
+    hf_uint32  Head;          //头部
+    hf_uint32  HeadType;
+    hf_uint32  UpperBody;     //上身
+    hf_uint32  UpperBodyType;
+    hf_uint32  Pants;         //下身
+    hf_uint32  PantsType;
+    hf_uint32  Shoes;         //鞋子
+    hf_int32   ShoesType;
+    hf_uint32  Belt;          //腰带
+    hf_uint32  BelfType;
+    hf_uint32  Neaklace;      //项链
+    hf_uint32  NeaklaceType;
+    hf_uint32  Bracelet;      //手镯
+    hf_uint32  BraceletType;
+    hf_uint32  LeftRing;      //左手戒指
+    hf_uint32  LeftRingType;
+    hf_uint32  RightRing;     //右手戒指
+    hf_uint32  RightRingType;
+    hf_uint32  Phone;         //手机
+    hf_uint32  PhoneType;
+    hf_uint32  Weapon;        //武器
+    hf_uint32  WeaponType;
+}STR_BodyEquipment;
+
+//穿装备
+typedef struct _STR_WearEqu
+{
+    hf_uint32 equid;
+    hf_uint8  pos;    //当为戒指时1表示左手，2表示右手 ，其它装备都为0
+}STR_WearEqu;
+
 typedef struct _STR_PackRoleBasicInfo
 {
     _STR_PackRoleBasicInfo()
@@ -665,6 +700,17 @@ typedef struct _STR_PlayerRegisterUserId
     hf_char Email[32];             //邮箱
 }STR_PlayerRegisterUserId;
 
+//角色职业属性
+typedef struct _STR_RoleJobAttribute
+{
+    hf_uint32 physicalAttack;
+    hf_uint32 physicalDefense;
+    hf_uint32 magicAttack;
+    hf_uint32 magicDefense;
+    hf_uint32 magic;
+    hf_uint32 hp;
+    hf_uint16 job;
+}STR_RoleJobAttribute;
 
 typedef struct _STR_PlayerRegisterRole
 {

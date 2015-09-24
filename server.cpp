@@ -82,6 +82,8 @@ void Server::InitDB()
    m_operationGoods->QueryGoodsPrice();
    m_operationGoods->QueryEquAttr();
    m_operationGoods->SetEquIDInitialValue();
+   m_playerLogin->QueryRoleJobAttribute();
+
 
    Server  *srv = Server::GetInstance();
    GameAttack* t_attack = srv->GetGameAttack();
@@ -109,9 +111,6 @@ void Server::InitDB()
    srv->RunTask(boost::bind(&Monster::Monsteractivity, t_monster));
    //技能伤害线程
    srv->RunTask(boost::bind(&GameAttack::RoleSkillAttack, t_attack));
-
-   //怪物复活线程
-//    srv->RunTask(boost::bind(&Monster::MonsterSpawns, t_monster));
 
    //删除过了时间的掉落物品
    srv->RunTask(boost::bind(&GameAttack::DeleteOverTimeGoods, t_attack));

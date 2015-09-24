@@ -111,6 +111,10 @@
 #define    ONLINE  1   //在线
 #define    OFFLINE 2   //不在线
 
+#define    CommonGradeCount               110   //基本等级总数
+#define    ChangeProfessionGrade          14    //改变职业需要的等级
+#define    OtherGradeCount                96    //其他等级总数 CommonGradeCount - ChangeProfessionGrade
+
 namespace hf_types{
 
 typedef unsigned int            hf_uint32;

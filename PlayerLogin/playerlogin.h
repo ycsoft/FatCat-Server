@@ -3,7 +3,7 @@
 
 #include "NetWork/tcpconnection.h"
 #include "Game/postgresqlstruct.h"
-
+#include "Game/cmdtypes.h"
 
 class PlayerLogin
 {
@@ -104,6 +104,15 @@ public:
     //判断两个玩家能否看到
     hf_uint8 caculateDistanceWithRole(STR_PackPlayerPosition* pos1, STR_PackPlayerPosition* pos2);
 
+    //查询角色职业属性
+    void QueryRoleJobAttribute();
+
+
+
+    STR_RoleJobAttribute* m_common;                //普通职业
+    STR_RoleJobAttribute* m_sales;                 //销售
+    STR_RoleJobAttribute* m_technology;            //技术
+    STR_RoleJobAttribute* m_administration;        //行政
 };
 
 #endif // PLAYERLOGIN_H

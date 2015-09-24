@@ -167,10 +167,21 @@ public:
      //查询物品价格
      hf_int32 GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char* str);
      //查询装备属性
-     hf_uint32 GetEquAttr(umap_equAttr* equAttr, const hf_char* str);
+     hf_int32 GetEquAttr(umap_equAttr* equAttr, const hf_char* str);
 
      //查询数据库中装备现在的最大值
-     hf_uint32 GetEquIDMaxValue();
+     hf_int32 GetEquIDMaxValue();
+
+     //查询玩家身上穿戴的装备
+     hf_int32 GetUserBodyEqu(hf_char* buff, hf_char* str);
+
+     //查询角色身上穿戴的装备
+     hf_int32  GetRoleBodyEqu(STR_BodyEquipment* bodyEqu, hf_char* str);
+
+     //查询职业属性
+     hf_int32 GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* str);
+
+
 private:
 
     PGconn *m_PGconn;

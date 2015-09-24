@@ -1195,3 +1195,23 @@ void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
         conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     }
 }
+
+//换装
+void OperationGoods::WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, hf_uint8 pos)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+}
+
+void OperationGoods::TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
+    _umap_roleEqu::iterator it = playerEqu->find(equid);
+    if(it == playerEqu->end())
+    {
+        return;
+    }
+
+//    umap_equAttr::iterator it = m_equAttr->find();
+}
+

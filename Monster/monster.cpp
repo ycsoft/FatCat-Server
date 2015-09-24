@@ -210,8 +210,16 @@ void Monster::QueryMonsterLoot()
 //怪物运动
 void Monster::Monsteractivity()
 {
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     umap_monsterInfo t_monsterBasic = Server::GetInstance()->GetMonster()->GetMonsterBasic();
     umap_monsterSpawns* monsterSpawns = Server::GetInstance()->GetMonster()->GetMonsterSpawns();
+
+    hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
+    STR_PackHead t_packHead;
+    t_packHead.Len = sizeof(STR_MonsterBasicInfo);
+    t_packHead.Flag = FLAG_MonsterCome;
+    memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+
     while(1)
     {
         hf_double currentTime = GameAttack::GetCurrentTime();
@@ -224,7 +232,21 @@ void Monster::Monsteractivity()
                     umap_monsterSpawns::iterator spawns_it = monsterSpawns->find(it->second.spawnsPos);
                     MonsterSpawns(&it->second, &spawns_it->second); //怪物复活
 
-                }
+                    //查找怪物周围的玩家,给玩家发送新生成的怪物
+                    _umap_roleSock t_roleSock;
+                    memcpy(buff + sizeof(STR_PackHead), &it->second.monster, sizeof(STR_MonsterBasicInfo));
+                    for(SessionMgr::SessionMap::iterator role_it = smap->begin(); role_it != smap->end(); role_it++)
+                    {
+                        STR_PackPlayerPosition* t_pos = &(role_it->second.m_position);
+                        if (caculateDistanceWithMonster(t_pos, &it->second.monster) > PlayerView)
+                        {
+                            continue;
+                        }
+                        role_it->first->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+                        t_roleSock[role_it->second.m_roleid] = role_it->first;
+                        (*(role_it->second.m_viewMonster))[it->second.monster.MonsterID] = it->second.monster.MonsterID;
+                    }
+                 }
             }
             else
             {
@@ -235,6 +257,7 @@ void Monster::Monsteractivity()
             }
         }
     }
+    Server::GetInstance()->free(buff);
 }
 
 //生成怪物
@@ -255,7 +278,7 @@ void Monster::MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* mon
             monsterInfo->pos.Come_y = monsterInfo->monster.Current_y;
             monsterInfo->pos.Come_z = monsterInfo->monster.Current_z;
 
-            monsterInfo->monster.Direct = 0;
+            monsterInfo->monster.Direct = 1;
             monsterInfo->monster.ActID = 1;
             monsterInfo->spawnsPos = monsterSpawns->SpawnsPosID;
             monsterInfo->monster.HP = monsterInfo->monster.MaxHP;

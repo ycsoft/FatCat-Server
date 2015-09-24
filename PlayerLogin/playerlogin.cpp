@@ -6,7 +6,10 @@
 
 PlayerLogin::PlayerLogin()
 {
-
+    m_common = new STR_RoleJobAttribute[CommonGradeCount];
+    m_sales = new STR_RoleJobAttribute[OtherGradeCount];
+    m_technology = new STR_RoleJobAttribute[OtherGradeCount];
+    m_administration = new STR_RoleJobAttribute[OtherGradeCount];
 }
 
 PlayerLogin::~PlayerLogin()
@@ -152,7 +155,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
     memcpy(nickbuff, reg->Nick, sizeof(reg->Nick));
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     hf_char *pname =  & ( (*smap)[conn].m_usrid[0]);
-    sbd<< "insert into t_PlayerRoleList(username,nick,profession,sex,figure,figurecolor,face,eye,hair,haircolor,modeid,skirtid) values('" <<pname<<"','"<< nickbuff << "'," << reg->Profession << "," <<reg->Sex<<","<<reg->Figure<<","<<reg->FigureColor<<","<< reg->Face << "," << reg->Eye << "," << reg->Hair <<"," << reg->HairColor << "," << reg->ModeID << "," << reg->SkirtID <<");";
+    sbd<< "insert into t_PlayerRoleList(username,nick,sex,figure,figurecolor,face,eye,hair,haircolor,modeid,skirtid) values('" <<pname<<"','"<< nickbuff << "'," << reg->Sex<<","<<reg->Figure<<","<<reg->FigureColor<<","<< reg->Face << "," << reg->Eye << "," << reg->Hair <<"," << reg->HairColor << "," << reg->ModeID << "," << reg->SkirtID <<");";
 
     Logger::GetLogger()->Debug(sbd.str());
     hf_int32 t_row = srv->getDiskDB()->Set(sbd.str());
@@ -174,7 +177,6 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         Logger::GetLogger()->Debug(sbd.str());
 
         STR_PackRoleBasicInfo t_roleInfo;
-
         hf_int32 t_row = srv->getDiskDB()->GetPlayerRegisterRoleInfo(&t_roleInfo.RoleInfo, sbd.str());
         if(t_row > 0)
         {
@@ -211,6 +213,17 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         {
             Logger::GetLogger()->Error("写入玩家初始金钱失败");
         }
+
+        //写入玩家初始装备
+        sbd.Clear();
+        sbd << "insert into t_playerbodyequipment values(" << t_roleInfo.RoleInfo.RoleID << ");";
+        Logger::GetLogger()->Debug(sbd.str());
+        t_row = srv->getDiskDB()->Set(sbd.str());
+        if(t_row != 1)
+        {
+            Logger::GetLogger()->Error("写入玩家初始装备失败");
+        }
+
     }
     srv->free(reg);
 }
@@ -347,8 +360,18 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
             conn->Write_all(&(*smap)[conn].m_roleExp, sizeof(STR_PackRoleExperience));
         }
 
+        sbd.Clear();
+        sbd << "select * from t_playerbodyequipment where roleid = " << roleid << ";";
+        Logger::GetLogger()->Debug(sbd.str());
+        t_row = srv->getDiskDB()->GetRoleBodyEqu(&(*smap)[conn].m_BodyEqu, sbd.str());
+        if(t_row == -1)
+        {
+            Logger::GetLogger()->Error("查询角色身上所穿戴装备失败");
+        }
+
         //查询角色属性，发送给玩家
         STR_PackRoleInfo t_roleInfo;
+
         sbd.Clear();
         sbd << "select * from t_roleInfo where roleid = " << roleid << ";";
         Logger::GetLogger()->Debug(sbd.str());
@@ -444,8 +467,20 @@ void PlayerLogin::SendRoleList(TCPConnection::Pointer conn, hf_char* userID)
             memcpy(buff, &t_packHead, sizeof(STR_PackHead));
             conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
         }
+
+        sbd.Clear();
+        sbd << "select t_playerbodyequipment.roleid,head,headtype,upperbody,upperbodytype,pants,pantstype,shoes,shoestype,belt,belttype,neaklace,neaklacetype,bracelet,bracelettype,leftring,leftringtype,rightring,rightringtype,phone,phonetype,weapon,weapontype from t_playerbodyequipment,t_playerrolelist where t_playerbodyequipment.roleid = t_playerrolelist.roleid and username = '" <<   userID << "' and ifdelete = 0;";
+        Logger::GetLogger()->Debug(sbd.str());
+        t_row = srv->getDiskDB()->GetUserBodyEqu(buff, sbd.str());
+        if(t_row > 0)
+        {
+            t_packHead.Flag = FLAG_PlayerBodyEqu;
+            t_packHead.Len = sizeof(STR_BodyEquipment)*t_row;
+            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+        }
         srv->free(buff);
-    }
+    }   
 }
 
 
@@ -1243,3 +1278,41 @@ void PlayerLogin::FriendOffline(TCPConnection::Pointer conn)
     }
     Server::GetInstance()->free(buff);
 }
+
+
+
+//查询角色职业属性
+void PlayerLogin::QueryRoleJobAttribute()
+{
+    StringBuilder sbd;
+    sbd << "select * from t_roleattribute where job = 0;";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_common, sbd.str()) != CommonGradeCount)
+    {
+        Logger::GetLogger()->Error("查询销售职业属性失败");
+    }
+    sbd.Clear();
+    sbd << "select * from t_roleattribute where job = 1;";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_sales, sbd.str()) != OtherGradeCount)
+    {
+        Logger::GetLogger()->Error("查询普通职业属性失败");
+    }
+
+    sbd.Clear();
+    sbd << "select * from t_roleattribute where job = 2;";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_technology, sbd.str()) != OtherGradeCount)
+    {
+        Logger::GetLogger()->Error("查询技术职业属性失败");
+    }
+
+    sbd.Clear();
+    sbd << "select * from t_roleattribute where job = 3;";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_administration, sbd.str()) != OtherGradeCount)
+    {
+        Logger::GetLogger()->Error("查询行政职业属性失败");
+    }
+}
+

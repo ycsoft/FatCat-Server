@@ -284,6 +284,19 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         srv->RunTask(boost::bind(&OperationGoods::ArrangeBagGoods, t_operationGoods, conn));
         break;
     }
+
+    case FLAG_WearBodyEqu: //穿装备
+    {
+        Server::GetInstance()->GetCmdParse()->PushWearBodyEqu(conn, (STR_WearEqu*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
+
+    case FLAG_TakeOffEqu:  //脱装备
+    {
+        hf_uint32 equid = *(hf_uint32*)(buf + sizeof(STR_PackHead));
+        Server::GetInstance()->GetCmdParse()->PushTakeOffBodyEqu(conn, equid);
+        break;
+    }
     case FLAG_OperRequest:
     {
         operationRequest* t_operReq = (operationRequest*)srv->malloc();

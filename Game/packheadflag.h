@@ -36,6 +36,9 @@
 #define FLAG_OtherResult             135    //操作结果
 
 #define FLAG_ArrangeBagGoods         136    //整理背包物品
+#define FLAG_PlayerBodyEqu           137    //玩家身上装备
+#define FLAG_WearBodyEqu             138    //穿装备
+#define FLAG_TakeOffEqu              139    //脱装备
 
 #define FLAG_BuyGoods                154    //从商店购买物品
 #define FLAG_SellGoods               155    //出售物品到商店

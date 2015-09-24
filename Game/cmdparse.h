@@ -152,6 +152,30 @@ typedef struct _Queue_SellGoods
     STR_SellGoods sellGoods;
 }Queue_SellGoods;
 
+typedef struct _Queue_WearBodyEqu
+{
+    _Queue_WearBodyEqu(TCPConnection::Pointer _conn, STR_WearEqu* _wearEqu)
+        :conn(_conn)
+    {
+        memcpy(&wearEqu, _wearEqu, sizeof(STR_WearEqu));
+    }
+    TCPConnection::Pointer conn;
+    STR_WearEqu wearEqu;
+}Queue_WearBodyEqu;
+
+typedef struct _Queue_TakeOffBodyEqu
+{
+    _Queue_TakeOffBodyEqu(TCPConnection::Pointer _conn, hf_uint32 _equid)
+        :conn(_conn),equid(_equid)
+    {
+
+    }
+    TCPConnection::Pointer conn;
+    hf_uint32 equid;
+}Queue_TakeOffBodyEqu;
+
+
+
 typedef struct _Queue_PlayerMove
 {
     _Queue_PlayerMove(TCPConnection::Pointer _conn, STR_PlayerMove* _playerMove)
@@ -232,6 +256,13 @@ public:
     void PushSellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellGoods); //出售物品
     void PopSellGoods();
 
+    //穿装备
+    void PushWearBodyEqu(TCPConnection::Pointer conn, STR_WearEqu* wearEqu);
+    void PopWearBodyEqu();
+    //脱装备
+    void PushTakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid);
+    void PopTakeOffBodyEqu();
+
     //player move
     void PushPlayerMove(TCPConnection::Pointer conn, STR_PlayerMove* playerMove);
     void PopPlayerMove();
@@ -258,6 +289,8 @@ private:
     queue<Queue_MoveGoods>         *m_MoveGoods;
     queue<Queue_BuyGoods>          *m_BuyGoods;
     queue<Queue_SellGoods>         *m_SellGoods;
+    queue<Queue_WearBodyEqu>       *m_WearBodyEqu;
+    queue<Queue_TakeOffBodyEqu>    *m_TakeOffBodyEqu;
     queue<Queue_PlayerMove>        *m_PlayerMove;
     queue<Queue_AttackAim>         *m_AttackAim;
     queue<Queue_AttackPoint>       *m_AttackPoint;

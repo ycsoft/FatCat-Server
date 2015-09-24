@@ -1092,7 +1092,7 @@ hf_int32 DiskDBManager::GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char*
 }
 
 //查询装备属性
-hf_uint32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
+hf_int32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
 {
     mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
@@ -1128,7 +1128,7 @@ hf_uint32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
 
 
 //查询数据库中装备现在的最大值
-hf_uint32 DiskDBManager::GetEquIDMaxValue()
+hf_int32 DiskDBManager::GetEquIDMaxValue()
 {
     const hf_char* str = "select max(goodsid) from t_playergoods;";
     Logger::GetLogger()->Debug(str);
@@ -1143,5 +1143,125 @@ hf_uint32 DiskDBManager::GetEquIDMaxValue()
     else
     {
         return atoi(PQgetvalue(t_PGresult, 0, 0));
+    }
+}
+
+//查询用户身上穿戴的装备
+hf_int32 DiskDBManager::GetUserBodyEqu(hf_char* buff, hf_char* str)
+{
+    mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    mtx.unlock();
+    ExecStatusType t_status = PQresultStatus(t_PGresult);
+    if(t_status != PGRES_TUPLES_OK)
+    {
+        return -1;
+    }
+    else
+    {
+        STR_BodyEquipment bodyEqu;
+        hf_int32 t_row = PQntuples(t_PGresult);
+        for(hf_int32 i = 0; i < t_row; i++)
+        {
+            bodyEqu.roleid = atoi(PQgetvalue(t_PGresult, 0, 0));
+            bodyEqu.Head = atoi(PQgetvalue(t_PGresult, 0, 1));
+            bodyEqu.HeadType = atoi(PQgetvalue(t_PGresult, 0, 2));
+            bodyEqu.UpperBody = atoi(PQgetvalue(t_PGresult, 0, 3));
+            bodyEqu.UpperBodyType = atoi(PQgetvalue(t_PGresult, 0, 4));
+            bodyEqu.Pants = atoi(PQgetvalue(t_PGresult, 0, 5));
+            bodyEqu.PantsType = atoi(PQgetvalue(t_PGresult, 0, 6));
+            bodyEqu.Shoes = atoi(PQgetvalue(t_PGresult, 0, 7));
+            bodyEqu.ShoesType = atoi(PQgetvalue(t_PGresult, 0, 8));
+            bodyEqu.Belt = atoi(PQgetvalue(t_PGresult, 0, 9));
+            bodyEqu.BelfType = atoi(PQgetvalue(t_PGresult, 0, 10));
+            bodyEqu.Neaklace = atoi(PQgetvalue(t_PGresult, 0, 11));
+            bodyEqu.NeaklaceType = atoi(PQgetvalue(t_PGresult, 0, 12));
+            bodyEqu.Bracelet = atoi(PQgetvalue(t_PGresult, 0, 13));
+            bodyEqu.BraceletType = atoi(PQgetvalue(t_PGresult, 0, 14));
+            bodyEqu.LeftRing = atoi(PQgetvalue(t_PGresult, 0, 15));
+            bodyEqu.LeftRingType = atoi(PQgetvalue(t_PGresult, 0, 16));
+            bodyEqu.RightRing = atoi(PQgetvalue(t_PGresult, 0, 17));
+            bodyEqu.RightRingType = atoi(PQgetvalue(t_PGresult, 0, 18));
+            bodyEqu.Phone = atoi(PQgetvalue(t_PGresult, 0, 19));
+            bodyEqu.PhoneType = atoi(PQgetvalue(t_PGresult, 0, 20));
+            bodyEqu.Weapon = atoi(PQgetvalue(t_PGresult, 0, 21));
+            bodyEqu.WeaponType = atoi(PQgetvalue(t_PGresult, 0, 22));
+            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_BodyEquipment), &bodyEqu, sizeof(STR_BodyEquipment));
+        }
+        return t_row;
+    }
+}
+
+//查询玩家身上穿戴的装备
+hf_int32 DiskDBManager::GetRoleBodyEqu(STR_BodyEquipment* bodyEqu, hf_char* str)
+{
+    mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    mtx.unlock();
+    ExecStatusType t_status = PQresultStatus(t_PGresult);
+    if(t_status != PGRES_TUPLES_OK)
+    {
+        return -1;
+    }
+    else
+    {
+        hf_int32 t_row = PQntuples(t_PGresult);
+        if(t_row == 1)
+        {
+            bodyEqu->roleid = atoi(PQgetvalue(t_PGresult, 0, 0));
+            bodyEqu->Head = atoi(PQgetvalue(t_PGresult, 0, 1));
+            bodyEqu->HeadType = atoi(PQgetvalue(t_PGresult, 0, 2));
+            bodyEqu->UpperBody = atoi(PQgetvalue(t_PGresult, 0, 3));
+            bodyEqu->UpperBodyType = atoi(PQgetvalue(t_PGresult, 0, 4));
+            bodyEqu->Pants = atoi(PQgetvalue(t_PGresult, 0, 5));
+            bodyEqu->PantsType = atoi(PQgetvalue(t_PGresult, 0, 6));
+            bodyEqu->Shoes = atoi(PQgetvalue(t_PGresult, 0, 7));
+            bodyEqu->ShoesType = atoi(PQgetvalue(t_PGresult, 0, 8));
+            bodyEqu->Belt = atoi(PQgetvalue(t_PGresult, 0, 9));
+            bodyEqu->BelfType = atoi(PQgetvalue(t_PGresult, 0, 10));
+            bodyEqu->Neaklace = atoi(PQgetvalue(t_PGresult, 0, 11));
+            bodyEqu->NeaklaceType = atoi(PQgetvalue(t_PGresult, 0, 12));
+            bodyEqu->Bracelet = atoi(PQgetvalue(t_PGresult, 0, 13));
+            bodyEqu->BraceletType = atoi(PQgetvalue(t_PGresult, 0, 14));
+            bodyEqu->LeftRing = atoi(PQgetvalue(t_PGresult, 0, 15));
+            bodyEqu->LeftRingType = atoi(PQgetvalue(t_PGresult, 0, 16));
+            bodyEqu->RightRing = atoi(PQgetvalue(t_PGresult, 0, 17));
+            bodyEqu->RightRingType = atoi(PQgetvalue(t_PGresult, 0, 18));
+            bodyEqu->Phone = atoi(PQgetvalue(t_PGresult, 0, 19));
+            bodyEqu->PhoneType = atoi(PQgetvalue(t_PGresult, 0, 20));
+            bodyEqu->Weapon = atoi(PQgetvalue(t_PGresult, 0, 21));
+            bodyEqu->WeaponType = atoi(PQgetvalue(t_PGresult, 0, 22));
+        }
+        return t_row;
+    }
+}
+
+
+//查询职业属性
+hf_int32 DiskDBManager::GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* str)
+{
+    mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    mtx.unlock();
+    ExecStatusType t_status = PQresultStatus(t_PGresult);
+    if(t_status != PGRES_TUPLES_OK)
+    {
+        return -1;
+    }
+    else
+    {
+        hf_int32 t_row = PQntuples(t_PGresult);
+        for(hf_int32 i = 0; i < t_row; i++)
+        {
+            jobAttr->physicalAttack = atoi(PQgetvalue(t_PGresult, i, 0));
+            jobAttr->physicalDefense = atoi(PQgetvalue(t_PGresult, i, 1));
+            jobAttr->magicAttack = atoi(PQgetvalue(t_PGresult, i, 2));
+            jobAttr->magicDefense = atoi(PQgetvalue(t_PGresult, i, 3));
+            jobAttr->magic = atoi(PQgetvalue(t_PGresult, i, 4));
+            jobAttr->hp = atoi(PQgetvalue(t_PGresult, i, 5));
+            jobAttr->job = atoi(PQgetvalue(t_PGresult, i, 6));
+            jobAttr++;
+        }
+        return t_row;
     }
 }

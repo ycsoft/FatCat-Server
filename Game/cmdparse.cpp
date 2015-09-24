@@ -18,6 +18,8 @@ CmdParse::CmdParse():
     m_MoveGoods(new queue<Queue_MoveGoods>),
     m_BuyGoods(new queue<Queue_BuyGoods>),
     m_SellGoods(new queue<Queue_SellGoods>),
+    m_WearBodyEqu(new queue<Queue_WearBodyEqu>),
+    m_TakeOffBodyEqu(new queue<Queue_TakeOffBodyEqu>),
     m_PlayerMove(new queue<Queue_PlayerMove>),
     m_AttackAim(new queue<Queue_AttackAim>),
     m_AttackPoint(new queue<Queue_AttackPoint>)
@@ -295,6 +297,49 @@ void CmdParse::PopSellGoods()
         }
     }
 }
+
+//穿装备
+void CmdParse::PushWearBodyEqu(TCPConnection::Pointer conn, STR_WearEqu* wearEqu)
+{
+    Queue_WearBodyEqu t_goods(conn, wearEqu);
+    m_WearBodyEqu->push(t_goods);
+}
+
+void CmdParse::PopWearBodyEqu()
+{
+    OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
+    while(1)
+    {
+        for(hf_uint32 i = 0; i < m_WearBodyEqu->size(); i++)
+        {
+            Queue_WearBodyEqu t_goods = m_WearBodyEqu->front();
+            optGoods->WearBodyEqu(t_goods.conn, t_goods.wearEqu.equid, t_goods.wearEqu.pos);
+            m_WearBodyEqu->pop();
+        }
+    }
+}
+
+//脱装备
+void CmdParse::PushTakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid)
+{
+    Queue_TakeOffBodyEqu t_goods(conn, equid);
+    m_TakeOffBodyEqu->push(t_goods);
+}
+
+void CmdParse::PopTakeOffBodyEqu()
+{
+    OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
+    while(1)
+    {
+        for(hf_uint32 i = 0; i < m_TakeOffBodyEqu->size(); i++)
+        {
+            Queue_TakeOffBodyEqu t_goods = m_TakeOffBodyEqu->front();
+            optGoods->TakeOffBodyEqu(t_goods.conn, t_goods.equid);
+            m_TakeOffBodyEqu->pop();
+        }
+    }
+}
+
 
 void CmdParse::PushPlayerMove(TCPConnection::Pointer conn, STR_PlayerMove* playerMove)
 {
