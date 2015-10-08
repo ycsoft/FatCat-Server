@@ -435,18 +435,98 @@ typedef struct _STR_PickGoodsResult
 //装备属性 <表结构>
 typedef struct _STR_EquipmentAttr
 {
-    hf_uint32 TypeID;             //类型ID
-    hf_uint16 PhysicalAttack;     //物理攻击
-    hf_uint16 PhysicalDefense;    //物理防御
-    hf_uint16 MagicAttack;        //魔法攻击
-    hf_uint16 MagicDefense;       //魔法防御
-    hf_uint16 AddHp;              //附加血量
-    hf_uint16 AddMagic;           //附加魔法值
-    hf_uint8  bodyPos;            //装备身体部位
-    hf_uint8  Grade;              //装备品级
-    hf_uint8  Level;              //装备等级
-    hf_uint8  Durability;         //耐久度
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_float  Crit_Rate;                //暴击率
+    hf_float  Dodge_Rate;               //闪避率
+    hf_float  Hit_Rate;                 //命中率
+    hf_float  Resist_Rate;              //抵挡率
+    hf_float  Caster_Speed;             //施法速度
+    hf_float  Move_Speed;               //移动速度
+    hf_float  Hurt_Speed;               //攻击速度
+    hf_float  RecoveryLife_Percentage;  //每秒恢复生命值百分比
+    hf_uint32 RecoveryLife_value;       //每秒恢复生命值
+    hf_float  RecoveryMagic_Percentage; //每秒恢复魔法值百分比
+    hf_uint32 RecoveryMagic_value;      //每秒恢复魔法值
+    hf_float  MagicHurt_Reduction;      //法术伤害减免
+    hf_float  PhysicalHurt_Reduction;   //物理伤害减免
+    hf_float  CritHurt;                 //暴击伤害
+    hf_float  CritHurt_Reduction;       //暴击伤害减免
+
+    hf_uint16 HP;                       //附加血量
+    hf_uint16 Magic;                    //附加魔法值
+    hf_uint16 PhysicalDefense;          //物理防御
+    hf_uint16 MagicDefense;             //魔法防御
+    hf_uint16 PhysicalAttack;           //物理攻击
+    hf_uint16 MagicAttack;              //魔法攻击
+    hf_uint16 Rigorous;                 //严谨
+    hf_uint16 Will;                     //机变
+    hf_uint16 Wise;                     //睿智
+    hf_uint16 Mentality;                //心态
+    hf_uint16 Physical_fitness;         //体能
+
+    hf_uint8  bodyPos;                  //装备身体部位
+    hf_uint8  Grade;                    //装备品级
+    hf_uint8  Level;                    //装备等级
+    hf_uint8  StrengthenLevel;          //强化等级
+    hf_uint8  Durability;               //耐久度
 }STR_EquipmentAttr;
+
+//生成时
+typedef struct _STR_PackCreateEqu
+{
+    _STR_PackCreateEqu()
+    {
+        bzero(&head,sizeof(_STR_PackCreateEqu));
+        head.Len = sizeof(_STR_PackCreateEqu) - sizeof(STR_PackHead);
+        head.Flag = FLAG_CreateEqu;
+    }
+    STR_PackHead head;
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_uint16 Rigorous;                 //严谨
+    hf_uint16 Will;                     //机变
+    hf_uint16 Wise;                     //睿智
+    hf_uint16 Mentality;                //心态
+    hf_uint16 Physical_fitness;         //体能
+}TR_PackCreateEqu;
+
+
+//强化时
+typedef struct _STR_PackStrengthenEqu
+{
+    _STR_PackStrengthenEqu()
+    {
+        bzero(&head,sizeof(_STR_PackStrengthenEqu));
+        head.Len = sizeof(_STR_PackStrengthenEqu) - sizeof(STR_PackHead);
+        head.Flag = FLAG_StrengthenEqu;
+    }
+    STR_PackHead head;
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_uint16 HP;                       //附加血量
+    hf_uint16 Magic;                    //附加魔法值
+    hf_uint16 PhysicalDefense;          //物理防御
+    hf_uint16 MagicDefense;             //魔法防御
+    hf_uint16 PhysicalAttack;           //物理攻击
+    hf_uint16 MagicAttack;              //魔法攻击
+    hf_uint8  StrengthenLevel;          //强化等级
+}STR_PackStrengthenEqu;
+
+//使用过程中变化
+typedef struct _STR_PackUseEqu
+{
+    _STR_PackUseEqu()
+    {
+        bzero(&head,sizeof(_STR_PackUseEqu));
+        head.Len = sizeof(_STR_PackUseEqu) - sizeof(STR_PackHead);
+        head.Flag = FLAG_UseEqu;
+    }
+    STR_PackHead head;
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_uint8  Durability;               //耐久度
+}STR_PackUseEqu;
 
 //玩家普通物品数据包
 typedef struct _STR_Goods
@@ -472,18 +552,18 @@ typedef struct _STR_PackGoods
 }STR_PackGoods;
 
 //玩家装备属性数据包
-typedef struct _STR_Equipment
-{
-    hf_uint32 EquID;              //物品ID
-    hf_uint32 TypeID;             //类型ID
-    hf_uint32 PhysicalAttack;     //物理攻击
-    hf_uint32 PhysicalDefense;    //物理防御
-    hf_uint32 MagicAttack;        //魔法攻击
-    hf_uint32 MagicDefense;       //魔法防御
-    hf_uint32 AddHp;              //附加血量
-    hf_uint32 AddMagic;           //附加魔法值
-    hf_uint8  Durability;         //耐久度
-}STR_Equipment;
+//typedef struct _STR_Equipment
+//{
+//    hf_uint32 EquID;              //物品ID
+//    hf_uint32 TypeID;             //类型ID
+//    hf_uint32 PhysicalAttack;     //物理攻击
+//    hf_uint32 PhysicalDefense;    //物理防御
+//    hf_uint32 MagicAttack;        //魔法攻击
+//    hf_uint32 MagicDefense;       //魔法防御
+//    hf_uint32 AddHp;              //附加血量
+//    hf_uint32 AddMagic;           //附加魔法值
+//    hf_uint8  Durability;         //耐久度
+//}STR_Equipment;
 
 //玩家装备信息
 typedef struct _STR_PlayerEqu
@@ -493,7 +573,7 @@ typedef struct _STR_PlayerEqu
         memset(&goods, 0, sizeof(_STR_PlayerEqu));
     }
     STR_Goods goods;    //当Position为0时，表示穿在身上，不可操作
-    STR_Equipment equAttr;
+    STR_EquipmentAttr equAttr;
 }STR_PlayerEqu;
 
 //玩家金币
@@ -648,7 +728,7 @@ typedef struct _STR_RoleBasicInfo
 typedef struct _STR_BodyEquipment
 {
     hf_uint32  roleid;
-    //受到攻击时，头，上身，下身，鞋子，腰带的耐久度减小0.1，发出攻击时武器耐久度较小0.1
+    //受到攻击时，头，上身，下身，鞋子，腰带的耐久度减小0.1，发出攻击时武器耐久度减小0.1
     hf_uint32  Head;          //头部
     hf_uint32  HeadType;
     hf_uint32  UpperBody;     //上身
@@ -658,7 +738,7 @@ typedef struct _STR_BodyEquipment
     hf_uint32  Shoes;         //鞋子
     hf_int32   ShoesType;
     hf_uint32  Belt;          //腰带
-    hf_uint32  BelfType;
+    hf_uint32  BeltType;
     hf_uint32  Neaklace;      //项链
     hf_uint32  NeaklaceType;
     hf_uint32  Bracelet;      //手镯
@@ -672,6 +752,19 @@ typedef struct _STR_BodyEquipment
     hf_uint32  Weapon;        //武器
     hf_uint32  WeaponType;
 }STR_BodyEquipment;
+
+typedef struct _STR_PackBodyEquipment
+{
+    _STR_PackBodyEquipment(STR_BodyEquipment* _bodyEqu)
+        {
+            bzero(&head, sizeof(_STR_PackBodyEquipment));
+            head.Flag = FLAG_PlayerBodyEqu;
+            head.Len = sizeof(_STR_PackBodyEquipment) - sizeof(STR_PackHead);
+            memcpy(&bodyEqu, _bodyEqu, sizeof(STR_BodyEquipment));
+        }
+        STR_PackHead head;
+        STR_BodyEquipment bodyEqu;
+}STR_PackBodyEquipment;
 
 //穿装备
 typedef struct _STR_WearEqu
@@ -703,13 +796,17 @@ typedef struct _STR_PlayerRegisterUserId
 //角色职业属性
 typedef struct _STR_RoleJobAttribute
 {
-    hf_uint32 physicalAttack;
-    hf_uint32 physicalDefense;
-    hf_uint32 magicAttack;
-    hf_uint32 magicDefense;
-    hf_uint32 magic;
-    hf_uint32 hp;
-    hf_uint16 job;
+    hf_uint32 Hp;
+    hf_uint32 Magic;
+    hf_uint32 PhysicalDefense;
+    hf_uint32 MagicDefense;
+    hf_uint32 PhysicalAttack;
+    hf_uint32 MagicAttack;
+    hf_uint16 Rigorous;
+    hf_uint16 Will;
+    hf_uint16 Wise;
+    hf_uint16 Mentality;
+    hf_uint16 Physical_fitness;
 }STR_RoleJobAttribute;
 
 typedef struct _STR_PlayerRegisterRole
@@ -936,50 +1033,57 @@ typedef struct _STR_TaskProcess
 //角色信息
 typedef struct _STR_RoleInfo
 {
-    hf_uint32 Roleid;
-    hf_uint32 Rigorous;              //严谨
-    hf_uint32 Will;                  //机变
-    hf_uint32 Wise;                  //睿智
-    hf_uint32 Mentality;             //心态
-    hf_uint32 Physical_fitness;      //体能
+    hf_uint32 MaxHP;                 //最大生命值
+    hf_uint32 HP;                    //当前生命值
+    hf_uint32 MaxMagic;              //最大法力值
+    hf_uint32 Magic;                 //当前法力值
+    hf_uint32 PhysicalDefense;       //物理防御值
+    hf_uint32 MagicDefense;          //法力防御值
+    hf_uint32 PhysicalAttack;        //物理攻击力
+    hf_uint32 MagicAttack;           //法术攻击力
 
-    hf_uint32 maxHP;    //最大生命值
-    hf_uint32 HP;       //当前生命值
-    hf_uint32 maxMagic; //最大法力值
-    hf_uint32 Magic;    //当前法力值
+    //下面这9个字段的值确定固定不变，跟职业和等级无关
+    hf_float  Crit_Rate;             //暴击率 0.02
+    hf_float  Dodge_Rate;            //闪避率 0.05
+    hf_float  Hit_Rate;              //命中率 0.80
+    hf_float  Resist_Rate;           //抵挡率 0.05
+    hf_float  Caster_Speed;          //施法速度 1.00
+    hf_float  Move_Speed;            //移动速度 1.00
+    hf_float  Hurt_Speed;            //攻击速度 1.00
+    hf_uint16 Small_Universe;        //当前小宇宙 在某个等级之后才会有值，假定60级之后会变为100，60级之前都为0
+    hf_uint16 maxSmall_Universe;     //最大小宇宙 100
 
-    hf_uint16 Small_Universe;           //小宇宙
-    hf_uint16 maxSmall_Universe;        //最大小宇宙
+    //下面这10个字段的值从装备获得
     hf_float  RecoveryLife_Percentage;  //每秒恢复生命值百分比
     hf_uint32 RecoveryLife_value;       //每秒恢复生命值
     hf_float  RecoveryMagic_Percentage; //每秒恢复魔法值百分比
     hf_uint32 RecoveryMagic_value;      //每秒恢复魔法值
+    hf_float  MagicHurt_Reduction;      //法术伤害减免
+    hf_float  PhysicalHurt_Reduction;   //物理伤害减免
+    hf_float  CritHurt;                 //暴击伤害
+    hf_float  CritHurt_Reduction;       //暴击伤害减免
 
-    hf_uint32 PhysicalDefense;  //物理防御值
-    hf_uint32 MagicDefense;     //法力防御值
-    hf_uint32 PhysicalAttack;   //物理攻击力
-    hf_uint32 MagicAttack;      //法术攻击力
+    //从其他系统来
+    hf_float  Magic_Pass;               //法透
+    hf_float  Physical_Pass;            //物透
 
-    hf_float Crit_Rate;  //暴击率
-    hf_float Dodge_Rate; //闪避率
-    hf_float Hit_Rate;   //命中率
-    hf_float Resist_Rate; //抵挡率
-
-    hf_float Magic_Pass;             //法透
-    hf_float Physical_Pass;          //物透
-    hf_float MagicHurt_Reduction;    //法术伤害减免
-    hf_float PhysicalHurt_Reduction; //物理伤害减免
-    hf_float  CritHurt;              //暴击伤害
-    hf_float  CritHurt_Reduction;    //暴击伤害减免
-
-    hf_uint16 Hurt_Speed;          //攻击速度
-    hf_uint16 Caster_Speed;        //施法速度
-    hf_uint16 Move_Speed;          //移动速度
-
+    hf_uint16 Rigorous;                 //严谨
+    hf_uint16 Will;                     //机变
+    hf_uint16 Wise;                     //睿智
+    hf_uint16 Mentality;                //心态
+    hf_uint16 Physical_fitness;         //体能
 }STR_RoleInfo;
 
 typedef struct _STR_PackRoleInfo
 {
+    _STR_PackRoleInfo(STR_RoleInfo* _RoleInfo)
+    {
+        bzero(&head, sizeof(_STR_PackRoleInfo));
+        head.Flag = FLAG_RoreInfo;
+        head.Len = sizeof(_STR_PackRoleInfo) - sizeof(STR_PackHead);
+        memcpy(&RoleInfo, _RoleInfo, sizeof(STR_RoleInfo));
+    }
+
     _STR_PackRoleInfo()
     {
         bzero(&head, sizeof(_STR_PackRoleInfo));
@@ -1287,16 +1391,16 @@ typedef struct _UpdateGoods            //更新背包某位置的物品
 
 typedef struct _UpdateEquAttr        //更新某装备的属性
 {
-    _UpdateEquAttr(hf_uint32 roleid, STR_Equipment* equ, hf_uint8 operate)
+    _UpdateEquAttr(hf_uint32 roleid, STR_EquipmentAttr* equ, hf_uint8 operate)
         :RoleID(roleid),Operate(operate)
     {
-        memcpy(&EquAttr, equ, sizeof(STR_Equipment));
+        memcpy(&EquAttr, equ, sizeof(STR_EquipmentAttr));
     }
     _UpdateEquAttr()
     {
     }
     hf_uint32 RoleID;
-    STR_Equipment EquAttr;
+    STR_EquipmentAttr EquAttr;
     hf_uint8  Operate;
 }UpdateEquAttr;
 

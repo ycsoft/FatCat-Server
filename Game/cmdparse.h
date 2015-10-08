@@ -294,7 +294,6 @@ private:
     queue<Queue_PlayerMove>        *m_PlayerMove;
     queue<Queue_AttackAim>         *m_AttackAim;
     queue<Queue_AttackPoint>       *m_AttackPoint;
-//    queue<> m_;
 };
 
 

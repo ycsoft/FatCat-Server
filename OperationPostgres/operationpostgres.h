@@ -37,7 +37,7 @@ public:
         m_UpdateGoods->push(upGoods);
     }
 
-    void PushUpdateEquAttr(hf_uint32 roleid, STR_Equipment* equ, hf_uint8 operate)
+    void PushUpdateEquAttr(hf_uint32 roleid, STR_EquipmentAttr* equ, hf_uint8 operate)
     {
         UpdateEquAttr upEpq(roleid, equ, operate);
         m_UpdateEquAttr->push(upEpq);

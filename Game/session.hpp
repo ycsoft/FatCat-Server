@@ -27,7 +27,7 @@ public:
     int roleId;
 
     std::vector<STR_Goods> changes;    //缓存交易过程中要交易物品
-    vector<STR_Equipment> vecEqui; //缓存交易过程中交易的装备的信息
+    vector<STR_EquipmentAttr> vecEqui; //缓存交易过程中交易的装备的信息
     interchangeMoney money;   //缓存交易过程中要交易的金钱
 
     bool inChange()

@@ -278,7 +278,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
                  memcpy(newGoodsBuff + sizeof(STR_PackHead) + goodsCount*sizeof(STR_Goods), &t_equ.goods, sizeof(STR_Goods));
                  goodsCount++;
                   t_post->PushUpdateGoods(roleid, &t_equ.goods, PostInsert); //将新买的物品添加到list
-                 memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_Equipment), &t_equ.equAttr, sizeof(STR_Equipment));
+                 memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_EquipmentAttr), &t_equ.equAttr, sizeof(STR_EquipmentAttr));
                  equCount++;
                  t_post->PushUpdateEquAttr(roleid, &t_equ.equAttr, PostInsert); //将新买的物品添加到list
                  UpdateCollectGoodsTaskProcess(conn, t_equ.goods.TypeID);
@@ -335,7 +335,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
     }
     if(equCount)
     {
-        t_packHead.Len = sizeof(STR_Equipment) * equCount;
+        t_packHead.Len = sizeof(STR_EquipmentAttr) * equCount;
         t_packHead.Flag = FLAG_EquGoodsAttr;
         memcpy(equAttrBuff, &t_packHead, sizeof(STR_PackHead));
         conn->Write_all(equAttrBuff, sizeof(STR_PackHead) + t_packHead.Len);

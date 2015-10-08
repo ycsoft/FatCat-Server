@@ -6,10 +6,10 @@
 
 PlayerLogin::PlayerLogin()
 {
-    m_common = new STR_RoleJobAttribute[CommonGradeCount];
-    m_sales = new STR_RoleJobAttribute[OtherGradeCount];
-    m_technology = new STR_RoleJobAttribute[OtherGradeCount];
-    m_administration = new STR_RoleJobAttribute[OtherGradeCount];
+    m_common = new STR_RoleJobAttribute[CommonGradeCount + 1];
+    m_sales = new STR_RoleJobAttribute[CommonGradeCount + 1];
+    m_technology = new STR_RoleJobAttribute[CommonGradeCount + 1];
+    m_administration = new STR_RoleJobAttribute[CommonGradeCount + 1];
 }
 
 PlayerLogin::~PlayerLogin()
@@ -37,6 +37,9 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     {
         Logger::GetLogger()->Error("更新玩家位置信息失败");
     }
+
+
+    SaveRoleInfo(conn);       //更新角色属性
 
 //    UpdateLevel Playerlevel(roleid, (*smap)[conn].m_roleExp.Level);
 //    PlayerLogin::UpdatePlayerLevel(&Playerlevel); //更新玩家等级
@@ -328,7 +331,8 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
          <<pname<<"' and roleid=" << roleid << " and ifdelete = 0;";
     Logger::GetLogger()->Debug(sbd.str());
 
-    hf_int32 t_row = srv->getDiskDB()->GetSqlResult(sbd.str());
+    STR_RoleBasicInfo* t_roleBaseInfo = &(*smap)[conn].m_RoleBaseInfo;
+    hf_int32 t_row = srv->getDiskDB()->GetRoleBasicInfo(t_roleBaseInfo, sbd.str());
     if(t_row <= 0) //登录失败
     {
         t_packResult.result = RESULT_ERROR;
@@ -342,24 +346,6 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
 
         SessionMgr::Instance()->SaveSession(conn, roleid);
 
-
-        //查询角色昵称，后面添加好友用
-        //查询角色经验，发送给玩家
-        //查询角色基本信息
-        sbd.Clear();
-        sbd << "select * from t_playerrolelist where roleid = " << roleid << ";";
-        SessionMgr::umap_nickSock t_nickSock = SessionMgr::Instance()->GetNickSock();
-
-        RoleNick t_nick;
-        t_row = srv->getDiskDB()->GetRoleExperience(&t_nick, &(*smap)[conn].m_roleExp, &(*smap)[conn].m_RoleBaseInfo, sbd.str());
-        if(t_row == 1)
-        {
-            (*t_nickSock)[t_nick.nick] = conn;
-            memcpy(&(*smap)[conn].m_nick[0], t_nick.nick, sizeof(t_nick.nick));
-
-            conn->Write_all(&(*smap)[conn].m_roleExp, sizeof(STR_PackRoleExperience));
-        }
-
         sbd.Clear();
         sbd << "select * from t_playerbodyequipment where roleid = " << roleid << ";";
         Logger::GetLogger()->Debug(sbd.str());
@@ -371,16 +357,31 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
 
         //查询角色属性，发送给玩家
         STR_PackRoleInfo t_roleInfo;
-
         sbd.Clear();
-        sbd << "select * from t_roleInfo where roleid = " << roleid << ";";
+        sbd << "select * from t_roleInformation where roleid = " << roleid << ";";
         Logger::GetLogger()->Debug(sbd.str());
         t_row = srv->getDiskDB()->GetRoleInfo(&t_roleInfo.RoleInfo, sbd.str());
         if(t_row == 1)
         {
             conn->Write_all(&t_roleInfo, sizeof(STR_PackRoleInfo));
             SessionMgr::Instance()->SaveSession(conn, &t_roleInfo.RoleInfo);
+            sbd.Clear();
+            sbd << "delete from t_roleinformation where roleid = " << roleid << ";";
+            Logger::GetLogger()->Debug(sbd.str());
+            t_row = srv->getDiskDB()->Set(sbd.str());
+            if(t_row != 1)
+            {
+                Logger::GetLogger()->Error("删除角色属性信息失败");
+            }
         }
+        else if(t_row == 0) //服务器挂了，没有将玩家的属性信息写入数据库，需要重新计算角色属性值
+        {
+            CalculationRoleAttribute(&t_roleInfo.RoleInfo, &(*smap)[conn].m_BodyEqu, t_roleBaseInfo->Profession, t_roleBaseInfo->Level);
+
+            conn->Write_all(&t_roleInfo, sizeof(STR_PackRoleInfo));
+            SessionMgr::Instance()->SaveSession(conn, &t_roleInfo.RoleInfo);
+        }
+
 
         Logger::GetLogger()->Debug("Send Position data.....");
         UserPosition::Position_push(conn, roleid);
@@ -607,7 +608,7 @@ void PlayerLogin::SendRoleEquAttr(TCPConnection::Pointer conn, hf_uint32 RoleID)
     }
 
     StringBuilder sbd;
-    sbd << "select equid,typeid,physicalattack,physicaldefense,magicattack,magicdefense,addhp,addmagic,durability from t_playerequ where roleid = " << RoleID << ";";
+    sbd << "select * from t_playerequattr where roleid = " << RoleID << ";";
     Logger::GetLogger()->Debug(sbd.str());
 
     STR_PackHead t_packHead;
@@ -617,12 +618,12 @@ void PlayerLogin::SendRoleEquAttr(TCPConnection::Pointer conn, hf_uint32 RoleID)
         hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
         memset(&t_packHead, 0, sizeof(STR_PackHead));
         t_packHead.Flag = FLAG_EquGoodsAttr;
-        t_packHead.Len = playerEqu->size() * sizeof(STR_Equipment);
+        t_packHead.Len = playerEqu->size() * sizeof(STR_EquipmentAttr);
         memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         hf_int32 i = 0;
         for(_umap_roleEqu::iterator it = playerEqu->begin(); it != playerEqu->end(); it++)
         {
-            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Equipment), &(it->second.equAttr), sizeof(STR_Equipment));
+            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_EquipmentAttr), &(it->second.equAttr), sizeof(STR_EquipmentAttr));
             i++;
         }
         conn->Write_all(buff, t_packHead.Len + sizeof(STR_PackHead));
@@ -769,7 +770,7 @@ void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
     hf_uint32 i = 0;
     for(_umap_roleEqu::iterator it = roleEqu->begin(); it != roleEqu->end(); it++)
     {
-        sbd << roleid << "," << it->second.equAttr.EquID << "," << it->second.equAttr.TypeID << "," << it->second.equAttr.PhysicalAttack << "," << it->second.equAttr.PhysicalDefense << "," << it->second.equAttr.MagicAttack << "," << it->second.equAttr.MagicDefense << "," << it->second.equAttr.AddHp << "," << it->second.equAttr.AddMagic << "," << it->second.equAttr.Durability << ")";
+        sbd << roleid << "," << it->second.equAttr.EquID << "," << it->second.equAttr.TypeID << "," << it->second.equAttr.PhysicalAttack << "," << it->second.equAttr.PhysicalDefense << "," << it->second.equAttr.MagicAttack << "," << it->second.equAttr.MagicDefense << "," << it->second.equAttr.HP << "," << it->second.equAttr.Magic << "," << it->second.equAttr.Durability << ")";
         if(count == i+1)
         {
             sbd << ";";
@@ -998,6 +999,21 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
     }    
 }
 
+//玩家角色属性
+void PlayerLogin::SaveRoleInfo(TCPConnection::Pointer conn)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    STR_RoleInfo      t_roleinfo = (*smap)[conn].m_roleInfo;
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    StringBuilder sbd;
+    sbd << "insert into t_roleinformation values(" << roleid << "," << t_roleinfo.MaxHP << "," << t_roleinfo.HP << "," << t_roleinfo.MaxMagic << "," << t_roleinfo.Magic << "," << t_roleinfo.PhysicalDefense << "," << t_roleinfo.MagicDefense << "," << t_roleinfo.PhysicalAttack << "," << t_roleinfo.MagicAttack << "," << t_roleinfo.Crit_Rate << "," << t_roleinfo.Dodge_Rate << "," << t_roleinfo.Hit_Rate << "," << t_roleinfo.Resist_Rate << "," << t_roleinfo.Caster_Speed << "," << t_roleinfo.Move_Speed << "," << t_roleinfo.Hurt_Speed << "," << t_roleinfo.Small_Universe << "," << t_roleinfo.maxSmall_Universe << "," << t_roleinfo.RecoveryLife_Percentage << "," << t_roleinfo.RecoveryLife_value << "," << t_roleinfo.RecoveryMagic_Percentage << "," << t_roleinfo.RecoveryMagic_value << "," << t_roleinfo.MagicHurt_Reduction << "," << t_roleinfo.PhysicalHurt_Reduction << "," << t_roleinfo.CritHurt << "," << t_roleinfo.CritHurt_Reduction << "," << t_roleinfo.Magic_Pass << "," << t_roleinfo.Physical_Pass << "," << t_roleinfo.Rigorous << "," << t_roleinfo.Will << "," << t_roleinfo.Wise << "," << t_roleinfo.Mentality << "," << t_roleinfo.Physical_fitness << ");";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) != 1)
+    {
+        Logger::GetLogger()->Error("写入角色属性失败");
+    }
+}
+
 //更新玩家金钱
 void PlayerLogin::UpdatePlayerMoney(UpdateMoney* upMoney)
 {
@@ -1072,27 +1088,23 @@ void PlayerLogin::DeletePlayerGoods(hf_uint32 roleid, hf_uint16 pos)
 }
 
 //更新玩家装备属性
-void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_Equipment* upEquAttr)
+void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEquAttr)
 {
     StringBuilder sbd;
-    sbd << "update t_playerequ set physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->AddHp << ",addmagic = " << upEquAttr->AddMagic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << " and roleid = " << roleid << ";";
+    sbd << "update t_playerequ set physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->HP << ",addmagic = " << upEquAttr->Magic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << " and roleid = " << roleid << ";";
      Logger::GetLogger()->Debug(sbd.str());
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
     {
         Logger::GetLogger()->Error("更新玩家装备属性失败");
     }
-//    else if(t_value == 0)
-//    {
-//       PlayerLogin::InsertPlayerEquAttr(roleid, upEquAttr);
-//    }
 }
 
 //新装备更新属性
-void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_Equipment* insEquAttr)
+void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEquAttr)
 {
     StringBuilder sbd;
-    sbd << "insert into t_playerequ values(" << roleid << "," << insEquAttr->EquID << "," << insEquAttr->TypeID << "," << insEquAttr->PhysicalAttack << "," << insEquAttr->PhysicalDefense << "," << insEquAttr->MagicAttack << "," << insEquAttr->MagicDefense << "," << insEquAttr->AddHp << "," << insEquAttr->AddMagic << "," << insEquAttr->Durability << ");";
+    sbd << "insert into t_playerequ values(" << roleid << "," << insEquAttr->EquID << "," << insEquAttr->TypeID << "," << insEquAttr->PhysicalAttack << "," << insEquAttr->PhysicalDefense << "," << insEquAttr->MagicAttack << "," << insEquAttr->MagicDefense << "," << insEquAttr->HP << "," << insEquAttr->Magic << "," << insEquAttr->Durability << ");";
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
@@ -1294,7 +1306,8 @@ void PlayerLogin::QueryRoleJobAttribute()
     sbd.Clear();
     sbd << "select * from t_roleattribute where job = 1;";
     Logger::GetLogger()->Debug(sbd.str());
-    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_sales, sbd.str()) != OtherGradeCount)
+    STR_RoleJobAttribute* t_sales = m_sales + ChangeProfessionGrade;
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_sales, sbd.str()) != OtherGradeCount)
     {
         Logger::GetLogger()->Error("查询普通职业属性失败");
     }
@@ -1302,7 +1315,8 @@ void PlayerLogin::QueryRoleJobAttribute()
     sbd.Clear();
     sbd << "select * from t_roleattribute where job = 2;";
     Logger::GetLogger()->Debug(sbd.str());
-    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_technology, sbd.str()) != OtherGradeCount)
+    STR_RoleJobAttribute* t_technology = m_technology + ChangeProfessionGrade;
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_technology, sbd.str()) != OtherGradeCount)
     {
         Logger::GetLogger()->Error("查询技术职业属性失败");
     }
@@ -1310,9 +1324,107 @@ void PlayerLogin::QueryRoleJobAttribute()
     sbd.Clear();
     sbd << "select * from t_roleattribute where job = 3;";
     Logger::GetLogger()->Debug(sbd.str());
-    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_administration, sbd.str()) != OtherGradeCount)
+    STR_RoleJobAttribute* t_administration = m_administration + ChangeProfessionGrade;
+    if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_administration, sbd.str()) != OtherGradeCount)
     {
         Logger::GetLogger()->Error("查询行政职业属性失败");
     }
 }
 
+//计算玩家属性
+void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquipment* bodyEqu, hf_uint32 profession, hf_uint8 level)
+{
+    STR_RoleJobAttribute  t_roleAttr;
+    if(profession == CommonJob)
+    {
+        memcpy(&t_roleAttr, &m_common[level], sizeof(STR_RoleJobAttribute));
+    }
+    else if(profession == SaleJob)
+    {
+        memcpy(&t_roleAttr, &m_technology[level], sizeof(STR_RoleJobAttribute));
+    }
+    else if(profession == TechnologyJob)
+    {
+        memcpy(&t_roleAttr, &m_technology[level], sizeof(STR_RoleJobAttribute));
+    }
+    else if(profession == AdministrationJob)
+    {
+        memcpy(&t_roleAttr, &m_administration[level], sizeof(STR_RoleJobAttribute));
+    }
+
+    if(level >= SmallUniverseLevelValue)
+    {
+        roleInfo->Small_Universe = SmallValue;
+    }
+    else
+    {
+        roleInfo->Small_Universe = 0;
+    }
+    roleInfo->HP = t_roleAttr.Hp;
+    roleInfo->Magic = t_roleAttr.Magic;
+    roleInfo->PhysicalDefense = t_roleAttr.PhysicalDefense;
+    roleInfo->MagicDefense = t_roleAttr.MagicDefense;
+    roleInfo->PhysicalAttack = t_roleAttr.PhysicalAttack;
+    roleInfo->MagicAttack = t_roleAttr.MagicAttack;
+    roleInfo->Crit_Rate = RoleCritRate;
+    roleInfo->Dodge_Rate = RoleDodgeRate;
+    roleInfo->Hit_Rate = RoleHitRate;
+    roleInfo->Resist_Rate = RoleResistRate;
+    roleInfo->Caster_Speed = CasterSpeed;
+    roleInfo->Move_Speed = MoveSpeed;
+    roleInfo->Hurt_Speed = HurtSpeed;
+    roleInfo->maxSmall_Universe = 100;
+
+    roleInfo->Rigorous = t_roleAttr.Rigorous;
+    roleInfo->Will = t_roleAttr.Will;
+    roleInfo->Wise = t_roleAttr.Wise;
+    roleInfo->Mentality = t_roleAttr.Mentality;
+    roleInfo->Physical_fitness = t_roleAttr.Physical_fitness;
+
+
+    OperationGoods* t_operGoods = Server::GetInstance()->GetOperationGoods();
+    if(bodyEqu->Head != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->HeadType);
+    }
+    if(bodyEqu->UpperBody != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->UpperBodyType);
+    }
+    if(bodyEqu->Pants != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->PantsType);
+    }
+    if(bodyEqu->Shoes != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->ShoesType);
+    }
+    if(bodyEqu->Belt != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->BeltType);
+    }
+    if(bodyEqu->Neaklace != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->NeaklaceType);
+    }
+    if(bodyEqu->Bracelet != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->BraceletType);
+    }
+    if(bodyEqu->LeftRing != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->LeftRingType);
+    }
+    if(bodyEqu->RightRing != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->RightRingType);
+    }
+    if(bodyEqu->Phone != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->PhoneType);
+    }
+    if(bodyEqu->Weapon != 0)
+    {
+        t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->WeaponType);
+    }
+}

@@ -204,7 +204,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
              memcpy(newGoodsBuff + sizeof(STR_PackHead) + num*sizeof(STR_Goods), &t_equ.goods, sizeof(STR_Goods));
               t_post->PushUpdateGoods(roleid, &t_equ.goods, PostInsert); //将新买的物品添加到list
 
-             memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_Equipment), &t_equ.equAttr, sizeof(STR_Equipment));
+             memcpy(equAttrBuff + sizeof(STR_PackHead) + equCount*sizeof(STR_EquipmentAttr), &t_equ.equAttr, sizeof(STR_EquipmentAttr));
              t_post->PushUpdateEquAttr(roleid, &t_equ.equAttr, PostInsert); //将新买的物品添加到list
              memcpy(pickResultBuff+ sizeof(STR_PackHead) + i*sizeof(STR_PickGoodsResult), &t_pickResult, sizeof(STR_PickGoodsResult));
              num++;
@@ -336,7 +336,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
     if(equCount != 0)
     {
         t_packHead.Flag = FLAG_EquGoodsAttr;
-        t_packHead.Len = sizeof(STR_Equipment)*equCount;
+        t_packHead.Len = sizeof(STR_EquipmentAttr)*equCount;
         memcpy(equAttrBuff, &t_packHead, sizeof(STR_PackHead));
         conn->Write_all(equAttrBuff, t_packHead.Len + sizeof(STR_PackHead));
     }
@@ -384,7 +384,7 @@ void OperationGoods::QueryEquAttr()
 {
     DiskDBManager *db = Server::GetInstance()->getDiskDB();
     StringBuilder       sbd;
-    sbd << "select * from t_equipmentAttr;";    
+    sbd << "select * from t_equipmentAttribute;";
     hf_int32 count = db->GetEquAttr(m_equAttr, sbd.str());
     if ( count < 0 )
     {
@@ -845,19 +845,20 @@ hf_uint32  OperationGoods::GetThisGoodsCount(TCPConnection::Pointer conn, hf_uin
 }
 
 //给新捡的装备属性 附初值
-void OperationGoods::SetEquAttr(STR_Equipment* equAttr, hf_uint32 typeID)
+void OperationGoods::SetEquAttr(STR_EquipmentAttr* equAttr, hf_uint32 typeID)
 {
     umap_equAttr::iterator attr_it = m_equAttr->find(typeID);
     if(attr_it != m_equAttr->end())
     {
-        equAttr->TypeID = attr_it->second.TypeID;
-        equAttr->PhysicalAttack = attr_it->second.PhysicalAttack;
-        equAttr->PhysicalDefense = attr_it->second.PhysicalDefense;
-        equAttr->MagicAttack = attr_it->second.MagicAttack;
-        equAttr->MagicDefense = attr_it->second.MagicDefense;
-        equAttr->AddHp = attr_it->second.AddHp;
-        equAttr->AddMagic = attr_it->second.AddMagic;
-        equAttr->Durability = attr_it->second.Durability;
+        memcpy(equAttr, &attr_it->second, sizeof(STR_EquipmentAttr));
+//        equAttr->TypeID = attr_it->second.TypeID;
+//        equAttr->PhysicalAttack = attr_it->second.PhysicalAttack;
+//        equAttr->PhysicalDefense = attr_it->second.PhysicalDefense;
+//        equAttr->MagicAttack = attr_it->second.MagicAttack;
+//        equAttr->MagicDefense = attr_it->second.MagicDefense;
+//        equAttr->AddHp = attr_it->second.HP;
+//        equAttr->AddMagic = attr_it->second.Magic;
+//        equAttr->Durability = attr_it->second.Durability;
     }
 }
 
@@ -898,7 +899,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
         memcpy(buff + sizeof(STR_PackHead) + i * sizeof(STR_Goods), &t_equ.goods, sizeof(STR_Goods));
         t_post->PushUpdateGoods(roleid, &t_equ.goods, PostInsert); //将新买的物品添加到list
 
-        memcpy(attrbuff + sizeof(STR_PackHead) + i * sizeof(STR_Equipment), &t_equ.equAttr, sizeof(STR_Equipment)); //装备属性
+        memcpy(attrbuff + sizeof(STR_PackHead) + i * sizeof(STR_EquipmentAttr), &t_equ.equAttr, sizeof(STR_EquipmentAttr)); //装备属性
         t_post->PushUpdateEquAttr(roleid, &t_equ.equAttr, PostInsert); //将新买的物品添加到list
     }
     Server::GetInstance()->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, buyGoods->GoodsID);
@@ -909,7 +910,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
 
-    t_packHead.Len = sizeof(STR_Equipment)*buyGoods->Count;
+    t_packHead.Len = sizeof(STR_EquipmentAttr)*buyGoods->Count;
     t_packHead.Flag = FLAG_EquGoodsAttr;
     memcpy(attrbuff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(attrbuff, sizeof(STR_PackHead) + t_packHead.Len);
@@ -1200,6 +1201,196 @@ void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
 void OperationGoods::WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, hf_uint8 pos)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
+    _umap_roleEqu::iterator it = playerEqu->find(equid);
+    if(it == playerEqu->end())
+    {
+        return;
+    }
+    if(it->second.goods.Position == 0) //此装备已经穿在身上
+    {
+        return;
+    }
+    STR_RoleInfo*  roleInfo = &(*smap)[conn].m_roleInfo;
+    STR_BodyEquipment* bodyEqu = &(*smap)[conn].m_BodyEqu;
+    OperationGoods* t_operGoods = Server::GetInstance()->GetOperationGoods();
+
+
+    STR_PackGoods packGoods(&it->second.goods);
+    packGoods.goods.Count = 0;
+    conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+
+    it->second.goods.Position = 0;  //将位置置为0，表示穿在身上
+
+    switch(it->second.equAttr.bodyPos)
+    {
+    case BodyPos_Head:
+    {
+        if(bodyEqu->Head != 0) //头上穿着装备
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->HeadType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Head];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Head = equid;
+        break;
+    }
+    case BodyPos_UpperBody:
+    {
+        if(bodyEqu->UpperBody != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->UpperBodyType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->UpperBody];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->UpperBody = equid;
+        break;
+    }
+    case BodyPos_Pants:
+    {
+        if(bodyEqu->Pants != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->PantsType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Pants];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Pants = equid;
+        break;
+    }
+    case BodyPos_Shoes:
+    {
+        if(bodyEqu->Shoes != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->ShoesType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Shoes];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Shoes = equid;
+        break;
+    }
+    case BodyPos_Belt:
+    {
+        if(bodyEqu->Belt != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->BeltType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Belt];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Belt = equid;
+        break;
+    }
+    case BodyPos_Neaklace:
+    {
+        if(bodyEqu->Neaklace != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->NeaklaceType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Neaklace];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Neaklace = equid;
+        break;
+    }
+    case BodyPos_Bracelet:
+    {
+        if(bodyEqu->Bracelet != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->BraceletType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Bracelet];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Bracelet = equid;
+        break;
+    }
+    case BodyPos_Ring:
+    {
+        if(pos == 1)
+        {
+            if(bodyEqu->LeftRing != 0)
+            {
+                t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->LeftRingType);
+                STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->UpperBodyType];
+                t_playerEqu->goods.Position = it->second.goods.Position;
+                t_playerEqu->goods.Source = Source_Bag;
+                STR_PackGoods packGoods(&t_playerEqu->goods);
+                conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+            }
+            bodyEqu->LeftRing = equid;
+        }
+        else
+        {
+            if(bodyEqu->RightRing != 0)
+            {
+                t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->RightRingType);
+                STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->RightRing];
+                t_playerEqu->goods.Position = it->second.goods.Position;
+                t_playerEqu->goods.Source = Source_Bag;
+                STR_PackGoods packGoods(&t_playerEqu->goods);
+                conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+            }
+            bodyEqu->RightRing = equid;
+        }
+        break;
+    }
+    case BodyPos_Phone:
+    {
+        if(bodyEqu->Phone != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->PhoneType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Phone];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Phone = equid;
+        break;
+    }
+    case BodyPos_Weapon:
+    {
+        if(bodyEqu->Weapon != 0)
+        {
+            t_operGoods->DeleteEquAttrToRole(roleInfo, bodyEqu->WeaponType);
+            STR_PlayerEqu* t_playerEqu = &(*playerEqu)[bodyEqu->Weapon];
+            t_playerEqu->goods.Position = it->second.goods.Position;
+            t_playerEqu->goods.Source = Source_Bag;
+            STR_PackGoods packGoods(&t_playerEqu->goods);
+            conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+        }
+        bodyEqu->Weapon = equid;
+        break;
+    }
+
+    default :
+        break;
+    }
+
+    t_operGoods->AddEquAttrToRole(roleInfo, equid);
+    STR_PackRoleInfo packRoleInfo(roleInfo);
+    conn->Write_all(&packRoleInfo, sizeof(STR_PackRoleInfo));
+
+    STR_PackBodyEquipment packBody(bodyEqu);
+    conn->Write_all(&packBody, sizeof(STR_PackBodyEquipment));
 }
 
 void OperationGoods::TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid)
@@ -1211,7 +1402,167 @@ void OperationGoods::TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid
     {
         return;
     }
+    if(it->second.goods.Position == 0)
+    {
+        return;
+    }
 
-//    umap_equAttr::iterator it = m_equAttr->find();
+    hf_uint8 posvalue = GetEmptyPos(conn);
+    if(posvalue == 0) //没有空位置
+    {
+        return;
+    }
+
+    STR_PlayerEqu* t_playerEqu = &(*playerEqu)[equid];
+    t_playerEqu->goods.Position = posvalue;
+    STR_PackGoods packGoods(&t_playerEqu->goods);
+    conn->Write_all(&packGoods, sizeof(STR_PackGoods));
+
+    STR_RoleInfo*  roleInfo = &(*smap)[conn].m_roleInfo;
+    OperationGoods* t_operGoods = Server::GetInstance()->GetOperationGoods();
+    t_operGoods->DeleteEquAttrToRole(roleInfo, equid);
+    STR_PackRoleInfo packRoleInfo(roleInfo);
+    conn->Write_all(&packRoleInfo, sizeof(STR_PackRoleInfo));
+
+    STR_BodyEquipment* bodyEqu = &(*smap)[conn].m_BodyEqu;
+
+    switch(t_playerEqu->equAttr.bodyPos)
+    {
+    case BodyPos_Head:
+    {
+        bodyEqu->Head = 0;
+        break;
+    }
+    case BodyPos_UpperBody:
+    {
+        bodyEqu->UpperBody = 0;
+        break;
+    }
+    case BodyPos_Pants:
+    {
+        bodyEqu->Pants = 0;
+        break;
+    }
+    case BodyPos_Shoes:
+    {
+        bodyEqu->Shoes = 0;
+        break;
+    }
+    case BodyPos_Belt:
+    {
+        bodyEqu->Belt = 0;
+        break;
+    }
+    case BodyPos_Neaklace:
+    {
+        bodyEqu->Neaklace = 0;
+        break;
+    }
+    case BodyPos_Bracelet:
+    {
+        bodyEqu->Bracelet = 0;
+        break;
+    }
+    case BodyPos_Ring:
+    {
+        if(bodyEqu->LeftRing == equid)
+        {
+            bodyEqu->LeftRing = 0;
+        }
+        else
+        {
+            bodyEqu->RightRing = 0;
+        }
+        break;
+    }
+    case BodyPos_Phone:
+    {
+        bodyEqu->Phone = 0;
+        break;
+    }
+    case BodyPos_Weapon:
+    {
+        bodyEqu->Weapon = 0;
+        break;
+    }
+    default :
+        break;
+    }
+
+    STR_PackBodyEquipment packBody(bodyEqu);
+    conn->Write_all(&packBody, sizeof(STR_PackBodyEquipment));
 }
 
+//角色属性加上装备属性
+void OperationGoods::AddEquAttrToRole(STR_RoleInfo* roleinfo, hf_uint32 equTypeid)
+{
+    STR_EquipmentAttr* equAttr = &(*m_equAttr)[equTypeid];
+
+    roleinfo->Crit_Rate += equAttr->Crit_Rate;
+    roleinfo->Dodge_Rate += equAttr->Dodge_Rate;
+    roleinfo->Hit_Rate += equAttr->Hit_Rate;
+    roleinfo->Resist_Rate += equAttr->Resist_Rate;
+    roleinfo->Caster_Speed += equAttr->Caster_Speed;
+    roleinfo->Move_Speed += equAttr->Move_Speed;
+    roleinfo->Hurt_Speed += equAttr->Hurt_Speed;
+    roleinfo->RecoveryLife_Percentage += equAttr->RecoveryLife_Percentage;
+    roleinfo->RecoveryLife_value += equAttr->RecoveryLife_value;
+    roleinfo->RecoveryMagic_Percentage += equAttr->RecoveryMagic_Percentage;
+    roleinfo->RecoveryMagic_value += equAttr->RecoveryMagic_value;
+    roleinfo->MagicHurt_Reduction += equAttr->MagicHurt_Reduction;
+    roleinfo->PhysicalHurt_Reduction += equAttr->PhysicalHurt_Reduction;
+    roleinfo->CritHurt += equAttr->CritHurt;
+    roleinfo->CritHurt_Reduction += equAttr->CritHurt_Reduction;
+
+    roleinfo->MaxHP += equAttr->HP;
+    roleinfo->HP += equAttr->HP;
+    roleinfo->MaxMagic += equAttr->Magic;
+    roleinfo->Magic += equAttr->Magic;
+    roleinfo->PhysicalDefense += equAttr->PhysicalDefense;
+    roleinfo->MagicDefense += equAttr->MagicDefense;
+    roleinfo->PhysicalAttack += equAttr->PhysicalAttack;
+    roleinfo->MagicAttack += equAttr->MagicAttack;
+    roleinfo->Rigorous += equAttr->Rigorous;
+    roleinfo->Will += equAttr->Will;
+    roleinfo->Wise += equAttr->Wise;
+    roleinfo->Mentality += equAttr->Mentality;
+    roleinfo->Physical_fitness += equAttr->Physical_fitness;
+
+}
+
+
+//角色属性去掉此装备属性
+void OperationGoods::DeleteEquAttrToRole(STR_RoleInfo* roleInfo, hf_uint32 equTypeid)
+{
+    STR_EquipmentAttr* equAttr = &(*m_equAttr)[equTypeid];
+
+    roleInfo->Crit_Rate -= equAttr->Crit_Rate;
+    roleInfo->Dodge_Rate -= equAttr->Dodge_Rate;
+    roleInfo->Hit_Rate -= equAttr->Hit_Rate;
+    roleInfo->Resist_Rate -= equAttr->Resist_Rate;
+    roleInfo->Caster_Speed -= equAttr->Caster_Speed;
+    roleInfo->Move_Speed -= equAttr->Move_Speed;
+    roleInfo->Hurt_Speed -= equAttr->Hurt_Speed;
+    roleInfo->RecoveryLife_Percentage -= equAttr->RecoveryLife_Percentage;
+    roleInfo->RecoveryLife_value -= equAttr->RecoveryLife_value;
+    roleInfo->RecoveryMagic_Percentage -= equAttr->RecoveryMagic_Percentage;
+    roleInfo->RecoveryMagic_value -= equAttr->RecoveryMagic_value;
+    roleInfo->MagicHurt_Reduction -= equAttr->MagicHurt_Reduction;
+    roleInfo->PhysicalHurt_Reduction -= equAttr->PhysicalHurt_Reduction;
+    roleInfo->CritHurt -= equAttr->CritHurt;
+    roleInfo->CritHurt_Reduction -= equAttr->CritHurt_Reduction;
+
+    roleInfo->MaxHP -= equAttr->HP;
+    roleInfo->HP -= equAttr->HP;
+    roleInfo->MaxMagic -= equAttr->Magic;
+    roleInfo->Magic -= equAttr->Magic;
+    roleInfo->PhysicalDefense -= equAttr->PhysicalDefense;
+    roleInfo->MagicDefense -= equAttr->MagicDefense;
+    roleInfo->PhysicalAttack -= equAttr->PhysicalAttack;
+    roleInfo->MagicAttack -= equAttr->MagicAttack;
+    roleInfo->Rigorous -= equAttr->Rigorous;
+    roleInfo->Will -= equAttr->Will;
+    roleInfo->Wise -= equAttr->Wise;
+    roleInfo->Mentality -= equAttr->Mentality;
+    roleInfo->Physical_fitness -= equAttr->Physical_fitness;
+}

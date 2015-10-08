@@ -181,6 +181,9 @@ public:
      //查询职业属性
      hf_int32 GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* str);
 
+     //查询玩家基本信息
+     hf_int32 GetRoleBasicInfo(STR_RoleBasicInfo* basicinfo, hf_char* str);
+
 
 private:
 

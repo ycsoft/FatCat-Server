@@ -115,6 +115,35 @@
 #define    ChangeProfessionGrade          14    //改变职业需要的等级
 #define    OtherGradeCount                96    //其他等级总数 CommonGradeCount - ChangeProfessionGrade
 
+#define   RoleCritRate                    0.02   //暴击率
+#define   RoleDodgeRate                   0.05   //闪避率
+#define   RoleHitRate                     0.80   //命中率
+#define   RoleResistRate                  0.05   //抵挡率
+#define   CasterSpeed                     1.00   //施法速度
+#define   MoveSpeed                       1.00   //移动速度
+#define   HurtSpeed                       1.00   //攻击速度
+#define   MaxSmallUniverse                100    //最大小宇宙
+
+#define   CommonJob                       0     //基本职业
+#define   SaleJob                         1     //销售职业
+#define   TechnologyJob                   2     //技术职业
+#define   AdministrationJob               3     //行政职业
+
+#define   SmallUniverseLevelValue         60    //到这个等级小宇宙才有值
+#define   SmallValue                      100   //到等级后小宇宙的值
+
+#define  BodyPos_Head                     1    //头部1
+#define  BodyPos_UpperBody                2    //上身2
+#define  BodyPos_Pants                    3    //下身3
+#define  BodyPos_Shoes                    4    //鞋子4
+#define  BodyPos_Belt                     5    //腰带5
+#define  BodyPos_Neaklace                 6    //项链6
+#define  BodyPos_Bracelet                 7    //手镯7
+#define  BodyPos_Ring                     8    //戒指8
+#define  BodyPos_Phone                    9    //手机9
+#define  BodyPos_Weapon                   10   //武器10
+
+
 namespace hf_types{
 
 typedef unsigned int            hf_uint32;

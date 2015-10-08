@@ -43,12 +43,12 @@ public:
 
     static void UsePos(TCPConnection::Pointer conn, hf_uint16 pos);      //使用位置
     static void ReleasePos(TCPConnection::Pointer conn, hf_uint16 pos);  //释放位置
-    static hf_uint8 GetEmptyPosCount(TCPConnection::Pointer conn);      //得到空位置总数
-    static hf_uint8 GetEmptyPos(TCPConnection::Pointer conn);           //查找空位置
+    static hf_uint8 GetEmptyPosCount(TCPConnection::Pointer conn);       //得到空位置总数
+    static hf_uint8 GetEmptyPos(TCPConnection::Pointer conn);            //查找空位置
     static hf_uint8 UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count);
 
     //给新捡的装备属性 附初值
-    void SetEquAttr(STR_Equipment* equAttr, hf_uint32 typeID);
+    void SetEquAttr(STR_EquipmentAttr* equAttr, hf_uint32 typeID);
 
     void SetEquIDInitialValue();
 
@@ -58,6 +58,13 @@ public:
     //换装
     void WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, hf_uint8 pos);
     void TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid);
+
+    //角色属性加上此装备属性
+    void AddEquAttrToRole(STR_RoleInfo* roleinfo, hf_uint32 equTypeid);
+
+    //角色属性去掉此装备属性
+    void DeleteEquAttrToRole(STR_RoleInfo* roleinfo, hf_uint32 equTypeid);
+
 private:
     umap_goodsPrice    m_goodsPrice;   //物品价格
     umap_equAttr*      m_equAttr;      //装备属性

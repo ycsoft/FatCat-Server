@@ -616,46 +616,40 @@ hf_int32 DiskDBManager::GetRoleInfo(STR_RoleInfo* roleinfo, const hf_char* str)
         hf_int32 t_row = PQntuples(t_PGresult);
         if(t_row == 1)
         {
-            roleinfo->Roleid = atoi(PQgetvalue(t_PGresult,0,0));
-            roleinfo->Rigorous = atoi(PQgetvalue(t_PGresult, 0, 1));
-            roleinfo->Will = atoi(PQgetvalue(t_PGresult, 0, 2));
-            roleinfo->Wise = atoi(PQgetvalue(t_PGresult, 0, 3));
-            roleinfo->Mentality = atoi(PQgetvalue(t_PGresult, 0, 4));
-            roleinfo->Physical_fitness = atoi(PQgetvalue(t_PGresult, 0, 5));
+            roleinfo->MaxHP = atoi(PQgetvalue(t_PGresult, 0, 1));
+            roleinfo->HP = atoi(PQgetvalue(t_PGresult, 0, 2));
+            roleinfo->MaxMagic = atoi(PQgetvalue(t_PGresult, 0, 3));
+            roleinfo->Magic = atoi(PQgetvalue(t_PGresult, 0, 4));
 
-            roleinfo->maxHP = atoi(PQgetvalue(t_PGresult, 0, 6));
-            roleinfo->HP = atoi(PQgetvalue(t_PGresult, 0, 7));
-            roleinfo->maxMagic = atoi(PQgetvalue(t_PGresult, 0, 8));
-            roleinfo->Magic = atoi(PQgetvalue(t_PGresult, 0, 9));
+            roleinfo->PhysicalDefense = atoi(PQgetvalue(t_PGresult, 0, 5));
+            roleinfo->MagicDefense = atoi(PQgetvalue(t_PGresult, 0, 6));
+            roleinfo->PhysicalAttack = atoi(PQgetvalue(t_PGresult, 0, 7));
+            roleinfo->MagicAttack = atoi(PQgetvalue(t_PGresult, 0, 8));
 
-            roleinfo->Small_Universe = atoi(PQgetvalue(t_PGresult, 0, 10));
-            roleinfo->maxSmall_Universe = atoi(PQgetvalue(t_PGresult, 0, 11));
-            roleinfo->RecoveryLife_Percentage = atof(PQgetvalue(t_PGresult, 0, 12));
-            roleinfo->RecoveryLife_value = atoi(PQgetvalue(t_PGresult, 0, 13));
-            roleinfo->RecoveryMagic_Percentage = atof(PQgetvalue(t_PGresult, 0, 14));
-            roleinfo->RecoveryMagic_value = atoi(PQgetvalue(t_PGresult, 0, 15));
-
-            roleinfo->PhysicalDefense = atoi(PQgetvalue(t_PGresult, 0, 16));
-            roleinfo->MagicDefense = atoi(PQgetvalue(t_PGresult, 0, 17));
-            roleinfo->PhysicalAttack = atoi(PQgetvalue(t_PGresult, 0, 18));
-            roleinfo->MagicAttack = atoi(PQgetvalue(t_PGresult, 0, 19));
-
-            roleinfo->Crit_Rate = atof(PQgetvalue(t_PGresult, 0, 20));
-            roleinfo->Dodge_Rate = atof(PQgetvalue(t_PGresult, 0, 21));
-            roleinfo->Hit_Rate = atof(PQgetvalue(t_PGresult, 0, 22));
-            roleinfo->Resist_Rate = atof(PQgetvalue(t_PGresult, 0, 23));
-
-            roleinfo->Magic_Pass = atof(PQgetvalue(t_PGresult, 0, 24));
-            roleinfo->Physical_Pass = atof(PQgetvalue(t_PGresult, 0, 25));
-            roleinfo->MagicHurt_Reduction = atof(PQgetvalue(t_PGresult, 0, 26));
-            roleinfo->PhysicalHurt_Reduction = atof(PQgetvalue(t_PGresult, 0, 27));
-
-
-            roleinfo->CritHurt = atof(PQgetvalue(t_PGresult, 0, 28));
-            roleinfo->CritHurt_Reduction = atof(PQgetvalue(t_PGresult, 0, 29));
-            roleinfo->Hurt_Speed = atoi(PQgetvalue(t_PGresult, 0, 30));
-            roleinfo->Caster_Speed = atoi(PQgetvalue(t_PGresult, 0, 31));
-            roleinfo->Move_Speed = atoi(PQgetvalue(t_PGresult, 0, 32));
+            roleinfo->Crit_Rate = atof(PQgetvalue(t_PGresult, 0, 9));
+            roleinfo->Dodge_Rate = atof(PQgetvalue(t_PGresult, 0, 10));
+            roleinfo->Hit_Rate = atof(PQgetvalue(t_PGresult, 0, 11));
+            roleinfo->Resist_Rate = atof(PQgetvalue(t_PGresult, 0, 12));
+            roleinfo->Caster_Speed = atoi(PQgetvalue(t_PGresult, 0, 13));
+            roleinfo->Move_Speed = atoi(PQgetvalue(t_PGresult, 0, 14));
+            roleinfo->Hurt_Speed = atoi(PQgetvalue(t_PGresult, 0, 15));
+            roleinfo->Small_Universe = atoi(PQgetvalue(t_PGresult, 0, 16));
+            roleinfo->maxSmall_Universe = atoi(PQgetvalue(t_PGresult, 0, 17));
+            roleinfo->RecoveryLife_Percentage = atof(PQgetvalue(t_PGresult, 0, 18));
+            roleinfo->RecoveryLife_value = atoi(PQgetvalue(t_PGresult, 0, 19));
+            roleinfo->RecoveryMagic_Percentage = atof(PQgetvalue(t_PGresult, 0, 20));
+            roleinfo->RecoveryMagic_value = atoi(PQgetvalue(t_PGresult, 0, 21));
+            roleinfo->MagicHurt_Reduction = atof(PQgetvalue(t_PGresult, 0, 22));
+            roleinfo->PhysicalHurt_Reduction = atof(PQgetvalue(t_PGresult, 0, 23));
+            roleinfo->CritHurt = atof(PQgetvalue(t_PGresult, 0, 24));
+            roleinfo->CritHurt_Reduction = atof(PQgetvalue(t_PGresult, 0, 25));
+            roleinfo->Magic_Pass = atof(PQgetvalue(t_PGresult, 0, 26));
+            roleinfo->Physical_Pass = atof(PQgetvalue(t_PGresult, 0, 27));
+            roleinfo->Rigorous = atoi(PQgetvalue(t_PGresult, 0, 28));
+            roleinfo->Will = atoi(PQgetvalue(t_PGresult, 0, 29));
+            roleinfo->Wise = atoi(PQgetvalue(t_PGresult, 0, 30));
+            roleinfo->Mentality = atoi(PQgetvalue(t_PGresult, 0, 21));
+            roleinfo->Physical_fitness = atoi(PQgetvalue(t_PGresult, 0, 32));
         }
         return t_row;
     }
@@ -975,19 +969,44 @@ hf_int32 DiskDBManager::GetPlayerEqu(umap_roleEqu playerEqu, const hf_char* str)
     else
     {
         hf_int32 t_row = PQntuples(t_PGresult);
-        STR_Equipment t_equ;
+        STR_EquipmentAttr t_equAttr;
         for(hf_int32 i = 0; i < t_row; i++)
         {
-            t_equ.EquID = atoi(PQgetvalue(t_PGresult, i, 0));
-            t_equ.TypeID = atoi(PQgetvalue(t_PGresult, i, 1));
-            t_equ.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 2));
-            t_equ.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 3));
-            t_equ.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 4));
-            t_equ.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 5));
-            t_equ.AddHp = atoi(PQgetvalue(t_PGresult, i, 6));
-            t_equ.AddMagic = atoi(PQgetvalue(t_PGresult, i, 7));
-            t_equ.Durability = atoi(PQgetvalue(t_PGresult, i, 8));
-            memcpy(&((*playerEqu)[t_equ.EquID].equAttr), &t_equ, sizeof(STR_Equipment));
+            t_equAttr.EquID = atoi(PQgetvalue(t_PGresult, i, 1));
+            t_equAttr.TypeID = atoi(PQgetvalue(t_PGresult, i, 2));
+            t_equAttr.Crit_Rate = atof(PQgetvalue(t_PGresult, i, 3));
+            t_equAttr.Dodge_Rate = atof(PQgetvalue(t_PGresult, i, 4));
+            t_equAttr.Hit_Rate = atof(PQgetvalue(t_PGresult, i, 5));
+            t_equAttr.Resist_Rate = atof(PQgetvalue(t_PGresult, i, 6));
+            t_equAttr.Caster_Speed = atof(PQgetvalue(t_PGresult, i, 7));
+            t_equAttr.Move_Speed = atof(PQgetvalue(t_PGresult, i, 8));
+            t_equAttr.Hurt_Speed = atof(PQgetvalue(t_PGresult, i, 9));
+            t_equAttr.RecoveryLife_Percentage = atof(PQgetvalue(t_PGresult, i, 10));
+            t_equAttr.RecoveryLife_value = atoi(PQgetvalue(t_PGresult, i, 11));
+            t_equAttr.RecoveryMagic_Percentage = atof(PQgetvalue(t_PGresult, i, 12));
+            t_equAttr.RecoveryMagic_value = atoi(PQgetvalue(t_PGresult, i, 13));
+            t_equAttr.MagicHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 14));
+            t_equAttr.PhysicalHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 15));
+            t_equAttr.CritHurt = atof(PQgetvalue(t_PGresult, i, 16));
+            t_equAttr.CritHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 17));
+            t_equAttr.HP = atoi(PQgetvalue(t_PGresult, i, 18));
+            t_equAttr.Magic = atoi(PQgetvalue(t_PGresult, i, 19));
+            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 20));
+            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 21));
+            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 22));
+            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 23));
+            t_equAttr.Rigorous = atoi(PQgetvalue(t_PGresult, i, 24));
+            t_equAttr.Will = atoi(PQgetvalue(t_PGresult, i, 25));
+            t_equAttr.Wise = atoi(PQgetvalue(t_PGresult, i, 26));
+            t_equAttr.Mentality = atoi(PQgetvalue(t_PGresult, i, 27));
+            t_equAttr.Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 28));
+            t_equAttr.bodyPos = atoi(PQgetvalue(t_PGresult, i, 29));
+            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 30));
+            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 31));
+            t_equAttr.StrengthenLevel = atoi(PQgetvalue(t_PGresult, i, 32));
+            t_equAttr.Durability = atoi(PQgetvalue(t_PGresult, i, 33));
+
+            memcpy(&((*playerEqu)[t_equAttr.EquID].equAttr), &t_equAttr, sizeof(STR_EquipmentAttr));
         }
         return t_row;
     }
@@ -1109,16 +1128,37 @@ hf_int32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
         for(hf_int32 i = 0; i < t_row; i++)
         {
             t_equAttr.TypeID = atoi(PQgetvalue(t_PGresult, i, 0));
-            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 1));
-            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 2));
-            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 3));
-            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 4));
-            t_equAttr.AddHp = atoi(PQgetvalue(t_PGresult, i, 5));
-            t_equAttr.AddMagic = atoi(PQgetvalue(t_PGresult, i, 6));
-            t_equAttr.bodyPos = atoi(PQgetvalue(t_PGresult, i, 7));
-            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 8));
-            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 9));
-            t_equAttr.Durability = atoi(PQgetvalue(t_PGresult, i, 10));
+            t_equAttr.Crit_Rate = atof(PQgetvalue(t_PGresult, i, 1));
+            t_equAttr.Dodge_Rate = atof(PQgetvalue(t_PGresult, i, 2));
+            t_equAttr.Hit_Rate = atof(PQgetvalue(t_PGresult, i, 3));
+            t_equAttr.Resist_Rate = atof(PQgetvalue(t_PGresult, i, 4));
+            t_equAttr.Caster_Speed = atof(PQgetvalue(t_PGresult, i, 5));
+            t_equAttr.Move_Speed = atof(PQgetvalue(t_PGresult, i, 6));
+            t_equAttr.Hurt_Speed = atof(PQgetvalue(t_PGresult, i, 7));
+            t_equAttr.RecoveryLife_Percentage = atof(PQgetvalue(t_PGresult, i, 8));
+            t_equAttr.RecoveryLife_value = atoi(PQgetvalue(t_PGresult, i, 9));
+            t_equAttr.RecoveryMagic_Percentage = atof(PQgetvalue(t_PGresult, i, 10));
+            t_equAttr.RecoveryMagic_value = atoi(PQgetvalue(t_PGresult, i, 11));
+            t_equAttr.MagicHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 12));
+            t_equAttr.PhysicalHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 13));
+            t_equAttr.CritHurt = atof(PQgetvalue(t_PGresult, i, 14));
+            t_equAttr.CritHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 15));
+            t_equAttr.HP = atoi(PQgetvalue(t_PGresult, i, 16));
+            t_equAttr.Magic = atoi(PQgetvalue(t_PGresult, i, 17));
+            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 18));
+            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 19));
+            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 20));
+            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 21));
+            t_equAttr.Rigorous = atoi(PQgetvalue(t_PGresult, i, 22));
+            t_equAttr.Will = atoi(PQgetvalue(t_PGresult, i, 23));
+            t_equAttr.Wise = atoi(PQgetvalue(t_PGresult, i, 24));
+            t_equAttr.Mentality = atoi(PQgetvalue(t_PGresult, i, 25));
+            t_equAttr.Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 26));
+            t_equAttr.bodyPos = atoi(PQgetvalue(t_PGresult, i, 27));
+            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 28));
+            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 29));
+            t_equAttr.StrengthenLevel = atoi(PQgetvalue(t_PGresult, i, 30));
+            t_equAttr.Durability = atoi(PQgetvalue(t_PGresult, i, 31));
 
             (*equAttr)[t_equAttr.TypeID] = t_equAttr;
         }
@@ -1173,7 +1213,7 @@ hf_int32 DiskDBManager::GetUserBodyEqu(hf_char* buff, hf_char* str)
             bodyEqu.Shoes = atoi(PQgetvalue(t_PGresult, 0, 7));
             bodyEqu.ShoesType = atoi(PQgetvalue(t_PGresult, 0, 8));
             bodyEqu.Belt = atoi(PQgetvalue(t_PGresult, 0, 9));
-            bodyEqu.BelfType = atoi(PQgetvalue(t_PGresult, 0, 10));
+            bodyEqu.BeltType = atoi(PQgetvalue(t_PGresult, 0, 10));
             bodyEqu.Neaklace = atoi(PQgetvalue(t_PGresult, 0, 11));
             bodyEqu.NeaklaceType = atoi(PQgetvalue(t_PGresult, 0, 12));
             bodyEqu.Bracelet = atoi(PQgetvalue(t_PGresult, 0, 13));
@@ -1218,7 +1258,7 @@ hf_int32 DiskDBManager::GetRoleBodyEqu(STR_BodyEquipment* bodyEqu, hf_char* str)
             bodyEqu->Shoes = atoi(PQgetvalue(t_PGresult, 0, 7));
             bodyEqu->ShoesType = atoi(PQgetvalue(t_PGresult, 0, 8));
             bodyEqu->Belt = atoi(PQgetvalue(t_PGresult, 0, 9));
-            bodyEqu->BelfType = atoi(PQgetvalue(t_PGresult, 0, 10));
+            bodyEqu->BeltType = atoi(PQgetvalue(t_PGresult, 0, 10));
             bodyEqu->Neaklace = atoi(PQgetvalue(t_PGresult, 0, 11));
             bodyEqu->NeaklaceType = atoi(PQgetvalue(t_PGresult, 0, 12));
             bodyEqu->Bracelet = atoi(PQgetvalue(t_PGresult, 0, 13));
@@ -1250,17 +1290,59 @@ hf_int32 DiskDBManager::GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* 
     }
     else
     {
+        jobAttr++;
         hf_int32 t_row = PQntuples(t_PGresult);
         for(hf_int32 i = 0; i < t_row; i++)
         {
-            jobAttr->physicalAttack = atoi(PQgetvalue(t_PGresult, i, 0));
-            jobAttr->physicalDefense = atoi(PQgetvalue(t_PGresult, i, 1));
-            jobAttr->magicAttack = atoi(PQgetvalue(t_PGresult, i, 2));
-            jobAttr->magicDefense = atoi(PQgetvalue(t_PGresult, i, 3));
-            jobAttr->magic = atoi(PQgetvalue(t_PGresult, i, 4));
-            jobAttr->hp = atoi(PQgetvalue(t_PGresult, i, 5));
-            jobAttr->job = atoi(PQgetvalue(t_PGresult, i, 6));
+            jobAttr->Hp = atoi(PQgetvalue(t_PGresult, i, 0));;
+            jobAttr->Magic = atoi(PQgetvalue(t_PGresult, i, 1));;
+            jobAttr->PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 2));;
+            jobAttr->MagicDefense = atoi(PQgetvalue(t_PGresult, i, 3));;
+            jobAttr->PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 4));
+            jobAttr->PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 5));
+            jobAttr->Rigorous = atoi(PQgetvalue(t_PGresult, i, 6));
+            jobAttr->Will = atoi(PQgetvalue(t_PGresult, i, 7));
+            jobAttr->Wise = atoi(PQgetvalue(t_PGresult, i, 8));
+            jobAttr->Mentality = atoi(PQgetvalue(t_PGresult, i, 9));
+            jobAttr->Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 10));
             jobAttr++;
+        }
+        return t_row;
+    }
+}
+
+
+//查询玩家基本信息
+hf_int32 DiskDBManager::GetRoleBasicInfo(STR_RoleBasicInfo* roleInfo, hf_char* str)
+{
+    mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    mtx.unlock();
+
+    ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
+    if(t_ExecStatusType != PGRES_TUPLES_OK)
+    {
+        printf("PQexec error\n");
+        return -1;
+    }
+    else
+    {
+        int t_row = PQntuples(t_PGresult);   //行数
+        if(t_row == 1)
+        {
+            memcpy(roleInfo->Nick, PQgetvalue(t_PGresult, 0, 0), PQgetlength(t_PGresult, 0, 0));
+            roleInfo->RoleID = atoi(PQgetvalue(t_PGresult, 0, 1));
+            roleInfo->Profession = atoi(PQgetvalue(t_PGresult, 0, 2));
+            roleInfo->Level = atoi(PQgetvalue(t_PGresult, 0, 3));
+            roleInfo->Sex = atoi(PQgetvalue(t_PGresult, 0, 4));
+            roleInfo->Figure = atoi(PQgetvalue(t_PGresult, 0, 5));
+            roleInfo->FigureColor = atoi(PQgetvalue(t_PGresult, 0, 6));
+            roleInfo->Face = atoi(PQgetvalue(t_PGresult, 0, 7));
+            roleInfo->Eye = atoi(PQgetvalue(t_PGresult, 0, 8));
+            roleInfo->Hair = atoi(PQgetvalue(t_PGresult, 0, 9));
+            roleInfo->HairColor = atoi(PQgetvalue(t_PGresult, 0, 10));
+            roleInfo->ModeID = atoi(PQgetvalue(t_PGresult, 0, 11));
+            roleInfo->SkirtID = atoi(PQgetvalue(t_PGresult, 0, 12));
         }
         return t_row;
     }

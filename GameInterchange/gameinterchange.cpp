@@ -569,7 +569,7 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
         if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
         {
 
-            STR_Equipment equAttr = (*((*sp)[conn].m_playerEqu))[iter->GoodsID].equAttr;
+            STR_EquipmentAttr equAttr = (*((*sp)[conn].m_playerEqu))[iter->GoodsID].equAttr;
             interchange->vecEqui.push_back(equAttr);
             STR_PlayerEqu equ;
             equ.goods = goods;
@@ -617,7 +617,7 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
 
         if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
         {
-            STR_Equipment equAttr = (*((*sp)[partnerConn].m_playerEqu))[iter->GoodsID].equAttr;
+            STR_EquipmentAttr equAttr = (*((*sp)[partnerConn].m_playerEqu))[iter->GoodsID].equAttr;
             pInterchange->vecEqui.push_back(equAttr);
             STR_PlayerEqu equ;
             equ.goods = goods;
@@ -732,7 +732,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
 
     //向对方发送本方交易中装备的属性
 
-    head.Len = interchange->vecEqui.size()*sizeof(STR_Equipment);
+    head.Len = interchange->vecEqui.size()*sizeof(STR_EquipmentAttr);
     if(head.Len != 0)       //如果交易中有装备
     {
         head.Flag = FLAG_EquGoodsAttr;
@@ -741,7 +741,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
 
         for(int i = 0; i < interchange->vecEqui.size(); ++i)
         {
-            memcpy(bufToPartner+sizeof(STR_PackHead)+sizeof(STR_Equipment)*i,&(interchange->vecEqui[i]),sizeof(STR_Equipment));
+            memcpy(bufToPartner+sizeof(STR_PackHead)+sizeof(STR_EquipmentAttr)*i,&(interchange->vecEqui[i]),sizeof(STR_EquipmentAttr));
         }
         partnerConn->Write_all(bufToPartner, sizeof(STR_PackHead)+head.Len);   //本方交易的物品是装备，要向对方发送属性信息
     }
@@ -761,7 +761,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
     }
 
     //向本方发送对方交易中装备的属性
-    head.Len = pInterchange->vecEqui.size()*sizeof(STR_Equipment);
+    head.Len = pInterchange->vecEqui.size()*sizeof(STR_EquipmentAttr);
     cout<<"                   head.len2    "<<head.Len<<endl;
     if(head.Len != 0)      //如果交易中有装备
     {
@@ -770,7 +770,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
         memcpy(bufToConn,&head,sizeof(head));
         for(int i = 0; i < pInterchange->vecEqui.size(); ++i)
         {
-            memcpy(bufToConn+sizeof(STR_PackHead)+sizeof(STR_Equipment)*i,&(pInterchange->vecEqui[i]),sizeof(STR_Equipment));
+            memcpy(bufToConn+sizeof(STR_PackHead)+sizeof(STR_EquipmentAttr)*i,&(pInterchange->vecEqui[i]),sizeof(STR_EquipmentAttr));
         }
         conn->Write_all(bufToConn, sizeof(STR_PackHead)+head.Len);  //对方交易的如果是装备，则向本方发送装备属性信息
     }

@@ -40,6 +40,11 @@
 #define FLAG_WearBodyEqu             138    //穿装备
 #define FLAG_TakeOffEqu              139    //脱装备
 
+#define FLAG_CreateEqu               142    //生成装备时
+#define FLAG_StrengthenEqu           143    //强化装备时
+#define FLAG_UseEqu                  144    //使用装备时
+
+
 #define FLAG_BuyGoods                154    //从商店购买物品
 #define FLAG_SellGoods               155    //出售物品到商店
 

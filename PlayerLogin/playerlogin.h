@@ -49,9 +49,9 @@ public:
     //删除玩家背包物品
     static void DeletePlayerGoods(hf_uint32 roleid, hf_uint16 Pos);
     //更新玩家装备属性
-    static void UpdatePlayerEquAttr(hf_uint32 roleid, STR_Equipment* upEquAttr);
+    static void UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEquAttr);
     //新装备更新属性
-    static void InsertPlayerEquAttr(hf_uint32 roleid, STR_Equipment* insEquAttr);
+    static void InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEquAttr);
     //删除玩家背包装备属性
     static void DeletePlayerEquAttr(hf_uint32 roleid, hf_uint32 equid);
     //更新玩家任务进度
@@ -101,11 +101,17 @@ public:
     //保存玩家未捡取的物品
     void SaveRoleNotPickGoods(TCPConnection::Pointer conn);
 
+    //玩家角色属性
+    void SaveRoleInfo(TCPConnection::Pointer conn);
+
     //判断两个玩家能否看到
     hf_uint8 caculateDistanceWithRole(STR_PackPlayerPosition* pos1, STR_PackPlayerPosition* pos2);
 
     //查询角色职业属性
     void QueryRoleJobAttribute();
+
+    //计算玩家属性
+    void CalculationRoleAttribute(STR_RoleInfo* roleinfo, STR_BodyEquipment* bodyEqu, hf_uint32 profession, hf_uint8 level);
 
 
 
