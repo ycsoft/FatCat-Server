@@ -1330,19 +1330,19 @@ hf_int32 DiskDBManager::GetRoleBasicInfo(STR_RoleBasicInfo* roleInfo, hf_char* s
         int t_row = PQntuples(t_PGresult);   //行数
         if(t_row == 1)
         {
-            memcpy(roleInfo->Nick, PQgetvalue(t_PGresult, 0, 0), PQgetlength(t_PGresult, 0, 0));
-            roleInfo->RoleID = atoi(PQgetvalue(t_PGresult, 0, 1));
-            roleInfo->Profession = atoi(PQgetvalue(t_PGresult, 0, 2));
-            roleInfo->Level = atoi(PQgetvalue(t_PGresult, 0, 3));
-            roleInfo->Sex = atoi(PQgetvalue(t_PGresult, 0, 4));
-            roleInfo->Figure = atoi(PQgetvalue(t_PGresult, 0, 5));
-            roleInfo->FigureColor = atoi(PQgetvalue(t_PGresult, 0, 6));
-            roleInfo->Face = atoi(PQgetvalue(t_PGresult, 0, 7));
-            roleInfo->Eye = atoi(PQgetvalue(t_PGresult, 0, 8));
-            roleInfo->Hair = atoi(PQgetvalue(t_PGresult, 0, 9));
-            roleInfo->HairColor = atoi(PQgetvalue(t_PGresult, 0, 10));
-            roleInfo->ModeID = atoi(PQgetvalue(t_PGresult, 0, 11));
-            roleInfo->SkirtID = atoi(PQgetvalue(t_PGresult, 0, 12));
+            memcpy(roleInfo->Nick, PQgetvalue(t_PGresult, 0, 1), PQgetlength(t_PGresult, 0, 1));
+            roleInfo->RoleID = atoi(PQgetvalue(t_PGresult, 0, 2));
+            roleInfo->Profession = atoi(PQgetvalue(t_PGresult, 0, 3));
+            roleInfo->Level = atoi(PQgetvalue(t_PGresult, 0, 4));
+            roleInfo->Sex = atoi(PQgetvalue(t_PGresult, 0, 5));
+            roleInfo->Figure = atoi(PQgetvalue(t_PGresult, 0, 6));
+            roleInfo->FigureColor = atoi(PQgetvalue(t_PGresult, 0, 7));
+            roleInfo->Face = atoi(PQgetvalue(t_PGresult, 0, 8));
+            roleInfo->Eye = atoi(PQgetvalue(t_PGresult, 0, 9));
+            roleInfo->Hair = atoi(PQgetvalue(t_PGresult, 0, 10));
+            roleInfo->HairColor = atoi(PQgetvalue(t_PGresult, 0, 11));
+            roleInfo->ModeID = atoi(PQgetvalue(t_PGresult, 0, 13));
+            roleInfo->SkirtID = atoi(PQgetvalue(t_PGresult, 0, 14));
         }
         return t_row;
     }

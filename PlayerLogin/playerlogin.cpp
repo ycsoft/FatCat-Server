@@ -41,6 +41,9 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
 
     SaveRoleInfo(conn);       //更新角色属性
 
+    //从怪物可视范围内删除该玩家
+    DeleteFromMonsterView(conn);
+
 //    UpdateLevel Playerlevel(roleid, (*smap)[conn].m_roleExp.Level);
 //    PlayerLogin::UpdatePlayerLevel(&Playerlevel); //更新玩家等级
 //    UpdateExp PlayerExp(roleid, (*smap)[conn].m_roleExp.CurrentExp);
@@ -1332,7 +1335,7 @@ void PlayerLogin::QueryRoleJobAttribute()
 }
 
 //计算玩家属性
-void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquipment* bodyEqu, hf_uint32 profession, hf_uint8 level)
+void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquipment* bodyEqu, hf_uint8 profession, hf_uint8 level)
 {
     STR_RoleJobAttribute  t_roleAttr;
     if(profession == CommonJob)
@@ -1426,5 +1429,19 @@ void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquip
     if(bodyEqu->Weapon != 0)
     {
         t_operGoods->AddEquAttrToRole(roleInfo, bodyEqu->WeaponType);
+    }
+}
+
+
+//从怪物可视范围内删除该玩家
+void PlayerLogin::DeleteFromMonsterView(TCPConnection::Pointer conn)
+{
+    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
+    umap_playerViewMonster  viewMonster = (*smap)[conn].m_viewMonster;
+    for(_umap_playerViewMonster::iterator it = viewMonster->begin(); it != viewMonster->end(); it++)
+    {
+        (*monsterViewRole)[it->first].erase(roleid);
     }
 }

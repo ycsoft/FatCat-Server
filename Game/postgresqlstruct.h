@@ -212,6 +212,19 @@ typedef struct _STR_MonsterBasicInfo
     hf_uint8   Flag;               //1主动攻击怪 2被动攻击怪
 }STR_MonsterBasicInfo;
 
+typedef struct _STR_PackMonsterBasicInfo
+{
+    _STR_PackMonsterBasicInfo(STR_MonsterBasicInfo* _monster)
+    {
+        bzero(&head, sizeof(_STR_PackMonsterBasicInfo));
+        head.Flag = FLAG_MonsterCome;
+        head.Len = sizeof(_STR_PackMonsterBasicInfo) - sizeof(STR_PackHead);
+        memcpy(&monster, _monster, sizeof(STR_MonsterBasicInfo));
+    }
+    STR_PackHead head;
+    STR_MonsterBasicInfo monster;
+}STR_PackMonsterBasicInfo;
+
 typedef struct _STR_Position
 {
     hf_float             Come_x;

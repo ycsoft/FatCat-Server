@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 #include "memManage/diskdbmanager.h"
 #include "utils/stringbuilder.hpp"
 #include "Game/session.hpp"
@@ -140,6 +140,7 @@ void Monster::CreateMonster()
     STR_MonsterAttackInfo    t_MonsterAttackInfo;
     hf_uint32 monsterID = 30000000;
     _umap_roleSock t_roleSock;
+    hf_double currentTime = GetCurrentTime();
     for(umap_monsterSpawns::iterator it = m_monsterSpawns->begin(); it != m_monsterSpawns->end(); it++)
     {
         umap_monsterType::iterator iter = m_monsterType->find(it->second.MonsterTypeID);
@@ -173,11 +174,15 @@ void Monster::CreateMonster()
 
             t_monsterInfo.monster.MonsterID = monsterID;
             t_MonsterAttackInfo.MonsterID = monsterID;
-            monsterID++;
+            hf_float dx = fabs(t_monsterInfo.monster.Target_x - t_monsterInfo.monster.Current_x);
+            hf_float dz = fabs(t_monsterInfo.monster.Target_z - t_monsterInfo.monster.Current_z);
 
-            (*m_monsterBasic)[t_monsterInfo.monster.MonsterID] = t_monsterInfo;
-            (*m_monsterAttack)[t_MonsterAttackInfo.MonsterID] = t_MonsterAttackInfo;
-//            (*m_monsterSpawnsPos)[t_MonsterBasicInfo.MonsterID] = it->second.SpawnsPosID; //保存怪物刷怪点
+            t_monsterInfo.aimTime = currentTime + sqrt(dx*dx + dz*dz) / ((hf_double)t_monsterInfo.monster.MoveRate/100 * MonsterMoveDistance);
+
+
+            (*m_monsterBasic)[monsterID] = t_monsterInfo;
+            (*m_monsterAttack)[monsterID] = t_MonsterAttackInfo;
+             monsterID++;
 
             //给怪物可视范围内的玩家初始化为空_umap_roleSock
             (*m_monsterViewRole)[t_monsterInfo.monster.MonsterID] = t_roleSock;
@@ -222,15 +227,15 @@ void Monster::Monsteractivity()
 
     while(1)
     {
-        hf_double currentTime = GameAttack::GetCurrentTime();
+        hf_double currentTime = /*GameAttack::*/GetCurrentTime();
         for(_umap_monsterInfo::iterator it = t_monsterBasic->begin(); it != t_monsterBasic->end(); it++)
         {
-            if(it->second.monster.HP == 0 )
-            {                
-                if(currentTime >= it->second.aimTime)//怪物复活时间到了
+            if(currentTime >= it->second.aimTime)//怪物复活时间到了
+            {
+                STR_MonsterSpawns* t_monsterSpawns = &(*monsterSpawns)[it->second.spawnsPos];
+                if(it->second.monster.HP == 0 )
                 {
-                    umap_monsterSpawns::iterator spawns_it = monsterSpawns->find(it->second.spawnsPos);
-                    MonsterSpawns(&it->second, &spawns_it->second); //怪物复活
+                    MonsterSpawns(&it->second, t_monsterSpawns); //怪物复活
 
                     //查找怪物周围的玩家,给玩家发送新生成的怪物
                     _umap_roleSock t_roleSock;
@@ -247,12 +252,12 @@ void Monster::Monsteractivity()
                         (*(role_it->second.m_viewMonster))[it->second.monster.MonsterID] = it->second.monster.MonsterID;
                     }
                  }
-            }
-            else
-            {
-                if(currentTime >= it->second.aimTime) //计算下一目标点时间
+                else
                 {
-
+                    NewMovePosition(&it->second, t_monsterSpawns);
+//                    printf("%lf,%lf\n", currentTime, it->second.aimTime);
+//                    cout << it->second.monster.Current_x << it->second.monster.Current_z << endl;
+                    SendMonsterToViewRole(&it->second.monster);
                 }
             }
         }
@@ -282,7 +287,41 @@ void Monster::MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* mon
             monsterInfo->monster.ActID = 1;
             monsterInfo->spawnsPos = monsterSpawns->SpawnsPosID;
             monsterInfo->monster.HP = monsterInfo->monster.MaxHP;
+
+
+            hf_uint32 boundary = monsterSpawns->Boundary/monsterSpawns->Amount;
+            monsterInfo->monster.Target_x = monsterSpawns->Pos_x - boundary + (float)rand()/(float)RAND_MAX * boundary*2;
+            monsterInfo->monster.Target_y = monsterInfo->monster.Current_y;
+            monsterInfo->monster.Target_z = monsterSpawns->Pos_z - boundary + (float)rand()/RAND_MAX * boundary*2;
         }
     }
 }
 
+//怪物新的移动点
+void Monster::NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns)
+{
+    monsterInfo->monster.Current_x = monsterInfo->monster.Target_x;
+    monsterInfo->monster.Current_y = monsterInfo->monster.Target_y;
+    monsterInfo->monster.Current_z = monsterInfo->monster.Target_z;
+
+    hf_uint32 boundary = monsterSpawns->Boundary/monsterSpawns->Amount;
+    monsterInfo->monster.Target_x = monsterSpawns->Pos_x - boundary + (float)rand()/(float)RAND_MAX * boundary*2;
+    monsterInfo->monster.Target_y = monsterInfo->monster.Target_z;
+    monsterInfo->monster.Target_z = monsterSpawns->Pos_z - boundary + (float)rand()/RAND_MAX * boundary*2;
+
+    hf_float dx = monsterInfo->monster.Target_x - monsterInfo->monster.Current_x;
+    hf_float dz = monsterInfo->monster.Target_z - monsterInfo->monster.Current_z;
+
+    monsterInfo->aimTime += sqrt(dx*dx + dz*dz) / ((hf_double)monsterInfo->monster.MoveRate/100 * MonsterMoveDistance);
+}
+
+//将变化的怪物信息发送给怪物可视范围内的玩家
+void Monster::SendMonsterToViewRole(STR_MonsterBasicInfo* monster)
+{
+    _umap_roleSock* t_roleSock = &(*m_monsterViewRole)[monster->MonsterID];
+    STR_PackMonsterBasicInfo t_monster(monster);
+    for(_umap_roleSock::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
+    {
+        it->second->Write_all(&t_monster, sizeof(STR_PackMonsterBasicInfo));
+    }
+}

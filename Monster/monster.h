@@ -84,6 +84,20 @@ public:
     //怪物复活
     void MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);
 
+    //怪物新的移动点
+    void NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);
+
+    //将变化的怪物信息发送给怪物可视范围内的玩家
+    void SendMonsterToViewRole(STR_MonsterBasicInfo* monster);
+
+    //返回当前时间
+    hf_double GetCurrentTime()
+    {
+        struct timeval start;
+        gettimeofday( &start, NULL );
+        return (hf_double)start.tv_sec + (hf_double)start.tv_usec / 1000000;
+    }
+
     umap_monsterInfo GetMonsterBasic()
     {
         return m_monsterBasic;

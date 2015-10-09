@@ -111,9 +111,10 @@ public:
     void QueryRoleJobAttribute();
 
     //计算玩家属性
-    void CalculationRoleAttribute(STR_RoleInfo* roleinfo, STR_BodyEquipment* bodyEqu, hf_uint32 profession, hf_uint8 level);
+    void CalculationRoleAttribute(STR_RoleInfo* roleinfo, STR_BodyEquipment* bodyEqu, hf_uint8 profession, hf_uint8 level);
 
-
+    //从怪物可视范围内删除该玩家
+    void DeleteFromMonsterView(TCPConnection::Pointer conn);
 
     STR_RoleJobAttribute* m_common;                //普通职业
     STR_RoleJobAttribute* m_sales;                 //销售
