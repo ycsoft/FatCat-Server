@@ -1,7 +1,6 @@
 #ifndef CMDPARSE_H
 #define CMDPARSE_H
 
-//#include <list>
 #include <queue>
 
 #include "NetWork/tcpconnection.h"

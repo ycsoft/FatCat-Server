@@ -174,8 +174,30 @@ void Monster::CreateMonster()
 
             t_monsterInfo.monster.MonsterID = monsterID;
             t_MonsterAttackInfo.MonsterID = monsterID;
-            hf_float dx = fabs(t_monsterInfo.monster.Target_x - t_monsterInfo.monster.Current_x);
-            hf_float dz = fabs(t_monsterInfo.monster.Target_z - t_monsterInfo.monster.Current_z);
+            hf_float dx = t_monsterInfo.monster.Target_x - t_monsterInfo.monster.Current_x;
+            hf_float dz = t_monsterInfo.monster.Target_z - t_monsterInfo.monster.Current_z;
+
+            if(dx == 0)
+            {
+                if(dz > 0)
+                    t_monsterInfo.monster.Direct = 90;
+                else
+                    t_monsterInfo.monster.Direct = 270;
+            }
+            if(dz > 0)
+            {
+                if(dx > 0)
+                    t_monsterInfo.monster.Direct = atan2(dz, dx)/PI*180;
+                else
+                    t_monsterInfo.monster.Direct = atan2(dz, dx)/PI*180 + 180;
+            }
+            else
+            {
+                if(dx > 0)
+                    t_monsterInfo.monster.Direct = atan2(dz, dx)/PI*180 + 180;
+                else
+                    t_monsterInfo.monster.Direct = atan2(dz, dx)/PI*180 + 360;
+            }
 
             t_monsterInfo.aimTime = currentTime + sqrt(dx*dx + dz*dz) / ((hf_double)t_monsterInfo.monster.MoveRate/100 * MonsterMoveDistance);
 
@@ -218,6 +240,7 @@ void Monster::Monsteractivity()
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     umap_monsterInfo t_monsterBasic = Server::GetInstance()->GetMonster()->GetMonsterBasic();
     umap_monsterSpawns* monsterSpawns = Server::GetInstance()->GetMonster()->GetMonsterSpawns();
+    umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
 
     hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
     STR_PackHead t_packHead;
@@ -227,7 +250,7 @@ void Monster::Monsteractivity()
 
     while(1)
     {
-        hf_double currentTime = /*GameAttack::*/GetCurrentTime();
+        hf_double currentTime = GetCurrentTime();
         for(_umap_monsterInfo::iterator it = t_monsterBasic->begin(); it != t_monsterBasic->end(); it++)
         {
             if(currentTime >= it->second.aimTime)//怪物复活时间到了
@@ -249,7 +272,9 @@ void Monster::Monsteractivity()
                         }
                         role_it->first->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
                         t_roleSock[role_it->second.m_roleid] = role_it->first;
-                        (*(role_it->second.m_viewMonster))[it->second.monster.MonsterID] = it->second.monster.MonsterID;
+                        (*(role_it->second.m_viewMonster))[it->first] = it->first;
+
+                        ((*monsterViewRole)[it->first])[role_it->second.m_roleid] = role_it->first;
                     }
                  }
                 else
@@ -304,14 +329,35 @@ void Monster::NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* m
     monsterInfo->monster.Current_y = monsterInfo->monster.Target_y;
     monsterInfo->monster.Current_z = monsterInfo->monster.Target_z;
 
-    hf_uint32 boundary = monsterSpawns->Boundary/monsterSpawns->Amount;
+    hf_uint32 boundary = monsterSpawns->Boundary/*/monsterSpawns->Amount*/;
     monsterInfo->monster.Target_x = monsterSpawns->Pos_x - boundary + (float)rand()/(float)RAND_MAX * boundary*2;
-    monsterInfo->monster.Target_y = monsterInfo->monster.Target_z;
+    monsterInfo->monster.Target_y = monsterInfo->monster.Target_y;
     monsterInfo->monster.Target_z = monsterSpawns->Pos_z - boundary + (float)rand()/RAND_MAX * boundary*2;
 
     hf_float dx = monsterInfo->monster.Target_x - monsterInfo->monster.Current_x;
     hf_float dz = monsterInfo->monster.Target_z - monsterInfo->monster.Current_z;
 
+    if(dx == 0)
+    {
+        if(dz > 0)
+            monsterInfo->monster.Direct = 90;
+        else
+            monsterInfo->monster.Direct = 270;
+    }
+    if(dz > 0)
+    {
+        if(dx > 0)
+            monsterInfo->monster.Direct = atan2(dz, dx)/PI*180;
+        else
+            monsterInfo->monster.Direct = atan2(dz, dx)/PI*180 + 180;
+    }
+    else
+    {
+        if(dx > 0)
+            monsterInfo->monster.Direct = atan2(dz, dx)/PI*180 + 180;
+        else
+            monsterInfo->monster.Direct = atan2(dz, dx)/PI*180 + 360;
+    }
     monsterInfo->aimTime += sqrt(dx*dx + dz*dz) / ((hf_double)monsterInfo->monster.MoveRate/100 * MonsterMoveDistance);
 }
 

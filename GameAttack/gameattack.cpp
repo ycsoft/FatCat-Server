@@ -248,6 +248,9 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
         MonsterDeath(conn, monster);
         //从玩家可视范围内的怪物列表中删除该怪物
         RoleViewDeleteMonster(t_monsterBt.MonsterID);
+        //删除该怪物可视范围内的玩家
+        umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
+        monsterViewRole->erase(t_monsterBt.MonsterID);
     }
 }
 
