@@ -17,6 +17,7 @@
 #include "OperationPostgres/operationpostgres.h"
 #include "Game/userposition.hpp"
 #include "Game/cmdparse.h"
+#include "GameChat/gamechat.h"
 
 #include "server.h"
 
@@ -36,7 +37,8 @@ Server::Server() :
     m_gameInterchange(new GameInterchange),
     m_operationGoods(new OperationGoods),
     m_operationPostgres(new OperationPostgres),
-    m_cmdParse(new CmdParse)
+    m_cmdParse(new CmdParse),
+    m_gameChat(new GameChat)
 {
 
 }

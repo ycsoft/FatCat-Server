@@ -90,6 +90,12 @@ public:
     //将变化的怪物信息发送给怪物可视范围内的玩家
     void SendMonsterToViewRole(STR_MonsterBasicInfo* monster);
 
+    //发送伤害给可是范围内的玩家
+    void SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt);
+
+    //计算方向
+    hf_float CalculationDirect(hf_float dx, hf_float dz);
+
     //返回当前时间
     hf_double GetCurrentTime()
     {

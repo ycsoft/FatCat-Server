@@ -15,16 +15,16 @@
 using namespace std;
 using namespace hf_types;
 
-typedef boost::unordered_map<hf_uint32,STR_TaskDlg>            umap_dialogue;
+typedef boost::unordered_map<hf_uint32,STR_TaskDlg>                umap_dialogue;
 typedef boost::unordered_map<hf_uint32,STR_PackTaskDescription>    umap_taskDescription;
 typedef boost::unordered_map<hf_uint32,vector<STR_TaskAim> >       umap_taskAim;
-typedef boost::unordered_map<hf_uint32,STR_TaskReward>         umap_taskReward;
+typedef boost::unordered_map<hf_uint32,STR_TaskReward>             umap_taskReward;
 
 //任务奖励
 // <任务ID，物品奖励>
 typedef boost::unordered_map<hf_uint32, vector<STR_GoodsReward> >  umap_goodsReward;
 
-typedef boost::unordered_map<hf_uint32,STR_TaskPremise>              umap_taskPremise;
+typedef boost::unordered_map<hf_uint32,STR_TaskPremise>            umap_taskPremise;
 
 
 //<NPCID,NPC信息>
@@ -46,7 +46,7 @@ typedef boost::unordered_map<hf_uint32, hf_uint32> _umap_playerViewMonster;
 typedef boost::shared_ptr<_umap_playerViewMonster> umap_playerViewMonster;
 
 //怪物攻击信息
-typedef boost::unordered_map<hf_uint8,STR_MonsterAttackInfo> umap_monsterAttackInfo;
+typedef boost::unordered_map<hf_uint32, STR_MonsterAttackInfo> umap_monsterAttackInfo;
 
 //玩家延时技能攻击数据，选取地图上的目标
 typedef boost::unordered_map<hf_uint32, RoleAttackAim> _umap_roleAttackAim;
@@ -82,9 +82,12 @@ typedef boost::unordered_map<hf_uint32, TCPConnection::Pointer> _umap_roleSock;
 typedef boost::shared_ptr<_umap_roleSock> umap_roleSock;
 
 
-//<怪物ID,_umap_roleSock>
-typedef boost::unordered_map<hf_uint32, _umap_roleSock> _umap_monsterViewRole;
-typedef boost::shared_ptr<_umap_monsterViewRole> umap_monsterViewRole;
+//typedef boost::unordered_map<hf_uint32, STR_MonsterViewRole> _umap_viewRole;
+//typedef boost::shared_ptr<_umap_viewRole> umap_viewRole;
+
+////<怪物ID,_umap_roleSock>
+//typedef boost::unordered_map<hf_uint32, _umap_roleSock> _umap_monsterViewRole;
+//typedef boost::shared_ptr<_umap_monsterViewRole> umap_monsterViewRole;
 
 //装备属性
 typedef boost::unordered_map<hf_uint32, STR_EquipmentAttr> umap_equAttr;
@@ -124,9 +127,6 @@ typedef boost::unordered_map<hf_uint32, hf_uint32> umap_monsterSpawnsPos;
 typedef boost::unordered_map<hf_uint32, STR_MonsterSpawns> umap_monsterSpawns;
 //<怪物类型ID,类型信息>
 typedef boost::unordered_map<hf_uint32, STR_MonsterType> umap_monsterType;
-////保存怪物死亡信息 <怪物ID,刷新信息>
-//typedef boost::unordered_map<hf_uint32, STR_MonsterDeath> _umap_monsterDeath;
-//typedef boost::shared_ptr<_umap_monsterDeath> umap_monsterDeath;
 
 //保存玩家任务物品 <物品ID,vector<任务编号> >  一个物品同时可能为多个任务目标
 typedef boost::unordered_map<hf_uint32, vector<hf_uint32> > _umap_taskGoods;

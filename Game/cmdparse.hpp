@@ -19,6 +19,8 @@
 #include "GameInterchange/gameinterchange.h"
 #include "OperationGoods/operationgoods.h"
 #include "Game/cmdparse.h"
+#include "GameChat/gamechat.h"
+
 
 void CommandParse(TCPConnection::Pointer conn , void *reg)
 {
@@ -36,6 +38,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     GameAttack* t_gameAttack = srv->GetGameAttack();
     GameInterchange* t_gameInterchange = srv->GetGameInterchange();
     OperationGoods* t_operationGoods = srv->GetOperationGoods();
+    GameChat* t_gameChat = srv->GetGameChat();
 
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
     SessionMgr::SessionMap::iterator it = smap->find(conn);
@@ -295,6 +298,14 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     {
         hf_uint32 equid = *(hf_uint32*)(buf + sizeof(STR_PackHead));
         Server::GetInstance()->GetCmdParse()->PushTakeOffBodyEqu(conn, equid);
+        break;
+    }
+
+    case FLAG_Chat:   //聊天 test
+    {
+        STR_PackRecvChat* t_chat = (STR_PackRecvChat*)srv->malloc();
+        memcpy(t_chat, buf, len +sizeof(STR_PackHead));
+        srv->RunTask(boost::bind(&GameChat::Chat, t_gameChat, conn, t_chat));
         break;
     }
     case FLAG_OperRequest:

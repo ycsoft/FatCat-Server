@@ -4,7 +4,7 @@
 #include "Game/postgresqlstruct.h"
 #include "NetWork/tcpconnection.h"
 #include "Game/cmdtypes.h"
-
+#include "Game/rolestruct.h"
 
 class OperationGoods
 {

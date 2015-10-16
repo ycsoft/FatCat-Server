@@ -14,6 +14,8 @@
 #include "Game/log.hpp"
 #include "Game/cmdtypes.h"
 
+#include "Game/rolestruct.h"
+
 using boost::asio::ip::tcp;
 
 class Interchange
@@ -96,7 +98,7 @@ public:
         m_skillUseTime = 0;
         m_roleid = 0;
         m_usrid.assign(0);
-        m_nick.assign(0);
+//        m_nick.assign(0);
     }
 
     ~Session()
@@ -106,7 +108,7 @@ public:
 
     typedef boost::array<char,40>    Buff;
     Buff                    m_usrid;             //用户名
-    Buff                    m_nick;              //昵称
+//    Buff                    m_nick;              //昵称
     hf_uint32               m_roleid;            //角色ID
     hf_double               m_publicCoolTime;    //公共冷却时间
     hf_double               m_skillUseTime;      //再次使用技能的时间

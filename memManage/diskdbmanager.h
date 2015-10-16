@@ -6,6 +6,7 @@
 
 #include "idbmanager.h"
 #include "Game/postgresqlstruct.h"
+#include "Game/rolestruct.h"
 
 /**
  * @brief The DiskDbManager class

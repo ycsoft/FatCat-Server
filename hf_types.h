@@ -13,7 +13,7 @@
 #define  CHUNK_COUNT           4096        //内存池块数
 //#define     SRV_PORT_DEFAULT      7000         //监听端口
 #define  CORE_NUM              4           //CPU核心数
-#define  PI                    3.1415926
+#define  PI                    3.141592654
 
 #define  View                  1           //能看到，用来表示玩家之间和玩家与怪物之间
 #define  NotView               2           //看不到
@@ -23,15 +23,21 @@
 #define  BAGCAPACITY           65          //背包容量
 #define  GOODSMAXCOUNT         99          //每个格子物品最大数量
 
-#define  PlayerView            500         //玩家可视范围 80
-#define  MonsterView           490         //怪物仇恨范围 60
-#define  PlayerAttackView      480         //玩家攻击范围 40
+#define  PlayerView            1000        //玩家可视范围 80
+#define  MonsterHatredView     1000         //怪物仇恨范围 60
+#define  MonsterPursuitDis     1000         //怪物追击玩家与起始追击点的距离
+
+#define  PlayerAttackView      1000          //玩家普通攻击范围
+#define  MonsterAttackView     10          //怪物普通攻击范围
 
 #define  MonsterMoveDistance   5           //怪物移动一次的距离
 #define  PlayerMoveDistance    5           //玩家移动一次的距离  单位分米
-
 #define  RefreshDistance       20          //玩家刷新数据的距离
 
+#define  PursuitFarDistance    10          //怪物追击玩家，距离较远一次移动的距离  单位分米
+#define  PursuitNearlyDistance 5           //怪物追击玩家，距离较近一次移动的距离
+
+#define  MonsterAttackSpeed    1           //怪物攻速 每隔多久攻击一次
 //位置的状态，0 空闲，1使用，2锁定
 #define  POS_EMPTY             0           //位置为空
 #define  POS_NONEMPTY          1           //位置非空
@@ -66,11 +72,11 @@
 
 #define  PICK_SUCCESS           1           //捡取成功
 #define  PICK_BAGFULL           2           //背包满了,未捡取物品
-#define  PICKPART_BAGFULL       3           //背包满了 ，捡取部分物品
+#define  PICKPART_BAGFULL       3           //背包满了,捡取部分物品
 #define  PICK_GOODNOTEXIST      4           //捡取的物品不存在
 
 #define  PUBLIC_COOLTIME        1           //公共冷却时间
-#define  GOODS_CONTINUETIME     8         //掉落物品持续时间
+#define  GOODS_CONTINUETIME     8           //掉落物品持续时间
 #define  MonsterDeathTime       10          //怪物死亡时间
 
 #define  RESULT_SUCCESS         1     //成功
@@ -91,6 +97,7 @@
 #define  NOT_RESIST             6      //未抵挡
 #define  CRIT                   7      //暴击
 #define  NOT_CRIT               8      //未暴击
+#define  Dodge                  9      //闪避  怪物返回中
 
 #define  SKILL_SUCCESS          3      //技能使用成功
 #define  SKILL_ERROR            4      //技能使用错误

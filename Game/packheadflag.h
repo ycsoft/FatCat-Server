@@ -28,6 +28,8 @@
 #define FLAG_UserDeleteRole          119     //用户删除角色
 #define FLAG_FriendOffLine           120     //好友下线
 
+#define FLAG_Chat                    121      //聊天
+
 #define FLAG_BagGoods                130    //玩家新捡的物品
 #define FLAG_PlayerMoney             131    //玩家金币
 #define FLAG_EquGoodsAttr            132    //装备属性
@@ -56,12 +58,12 @@
 #define FLAG_PickGoods               206    //玩家捡取物品
 #define FLAG_PickGoodsResult         207    //玩家捡取物品结果
 #define FLAG_LootGoodsOverTime       208    //掉落物品延时
+#define FLAG_RoleAttribute           209    //玩家属性信息
 
 
 #define FLAG_MonsterCome      301   //怪物进入可视范围
 #define FLAG_MonsterAttribute 302   //怪物受攻击(攻击)属性数据包Flag
 #define FLAG_MonsterPosition  303   //怪物位置数据包Flag
-#define FLAG_RoleAttribute    304   //玩家受攻击(攻击)后属性
 #define FLAG_MonsterLeave     305   //怪物离开可视范围
 
 

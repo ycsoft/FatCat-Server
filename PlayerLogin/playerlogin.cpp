@@ -83,7 +83,7 @@ void PlayerLogin::DeleteNickSock(TCPConnection::Pointer conn)
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
 
     SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
-    SessionMgr::_umap_nickSock::iterator t_nickSock = nickSock->find(&(*smap)[conn].m_nick[0]);
+    SessionMgr::_umap_nickSock::iterator t_nickSock = nickSock->find((*smap)[conn].m_RoleBaseInfo.Nick);
     if(t_nickSock != nickSock->end())
     {
         nickSock->erase(t_nickSock); //删除m_nickSock
@@ -348,6 +348,10 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         Logger::GetLogger()->Debug("Login Role Success");
 
         SessionMgr::Instance()->SaveSession(conn, roleid);
+
+        SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
+        (*nickSock)[t_roleBaseInfo->Nick] = conn;
+
 
         sbd.Clear();
         sbd << "select * from t_playerbodyequipment where roleid = " << roleid << ";";

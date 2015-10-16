@@ -4,6 +4,7 @@
 #include "NetWork/tcpconnection.h"
 #include "Game/postgresqlstruct.h"
 #include "Game/cmdtypes.h"
+#include "Game/rolestruct.h"
 
 class PlayerLogin
 {

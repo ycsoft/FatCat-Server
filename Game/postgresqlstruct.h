@@ -4,6 +4,7 @@
 #include <string.h>
 #include <vector>
 #include <boost/thread/mutex.hpp>
+#include <boost/atomic.hpp>
 
 #include "hf_types.h"
 #include "packheadflag.h"
@@ -59,8 +60,8 @@ typedef struct _STR_PackTaskDescription
     _STR_PackTaskDescription()
     {
         bzero(&head,sizeof(_STR_PackTaskDescription));
-        head.Flag = /*htons*/(FLAG_TaskDescription);
-        head.Len = /*htons*/(sizeof(_STR_PackTaskDescription)-sizeof(STR_PackHead));
+        head.Flag = FLAG_TaskDescription;
+        head.Len = sizeof(_STR_PackTaskDescription)-sizeof(STR_PackHead);
     }
 }STR_PackTaskDescription;
 
@@ -103,8 +104,8 @@ typedef struct _STR_PackUserAskTask
     _STR_PackUserAskTask()
     {
         bzero(&head,sizeof(_STR_PackUserAskTask));
-        head.Flag = /*htons*/(FLAG_UserAskTask);
-        head.Len = /*htons*/(sizeof(_STR_PackUserAskTask)-sizeof(STR_PackHead));
+        head.Flag = FLAG_UserAskTask;
+        head.Len = sizeof(_STR_PackUserAskTask)-sizeof(STR_PackHead);
     }
 
 }STR_PackUserAskTask;
@@ -130,8 +131,8 @@ typedef struct _STR_PackAskResult
     _STR_PackAskResult()
     {
         bzero(&head,sizeof(_STR_PackAskResult));
-        head.Flag = /*htons*/(FLAG_AskResult);
-        head.Len = /*htons*/(sizeof(_STR_PackAskResult)-sizeof(STR_PackHead));
+        head.Flag = FLAG_AskResult;
+        head.Len = sizeof(_STR_PackAskResult)-sizeof(STR_PackHead);
     }
 }STR_PackAskResult;
 
@@ -232,14 +233,6 @@ typedef struct _STR_Position
     hf_float             Come_z;
 }STR_Position;
 
-//保存怪物死亡结构
-typedef struct _STR_MonsterDeath
-{
-    hf_uint32                MonsterID;      //怪物ID
-    hf_uint32                SpawnsPos;      //刷怪点
-    hf_uint32                SpawnsTime;     //刷新时间
-}STR_MonsterDeath;
-
 //怪物移动位置
 typedef struct _STR_MonsterMovePos
 {
@@ -259,11 +252,11 @@ typedef struct _STR_MonsterMovePos
 typedef struct _STR_MonsterAttackInfo
 {
     hf_uint32 MonsterID;        //怪物ID
-    hf_uint32 PhysicalAttack;   //物品攻击
+    hf_uint32 PhysicalAttack;   //物理攻击
     hf_uint32 MagicAttack;      //魔法攻击
     hf_uint32 PhysicalDefense;  //物理防御
     hf_uint32 MagicDefense;     //魔法防御
-    hf_uint32 Hp;               //血量
+    hf_uint32 HP;               //血量
     hf_uint8  Level;            //等级
 }STR_MonsterAttackInfo;
 
@@ -288,7 +281,8 @@ typedef struct _STR_RoleAttribute
     STR_PackHead        head;
     hf_uint32 RoleID;
     hf_uint32 HP;
-    _STR_RoleAttribute()
+    _STR_RoleAttribute(hf_uint32 _RoleID, hf_uint32 _HP)
+        :RoleID(_RoleID),HP(_HP)
     {
         bzero(&head,sizeof(_STR_RoleAttribute));
         head.Flag = /*htons*/(FLAG_RoleAttribute);
@@ -1043,11 +1037,111 @@ typedef struct _STR_TaskProcess
     hf_uint8   ExeModeID;         //执行方式
 }STR_TaskProcess;
 
+
+
+//typedef struct _STR_RoleInfo
+//{
+
+//}STR_RoleInfo;
+
 //角色信息
 typedef struct _STR_RoleInfo
 {
+    _STR_RoleInfo()
+    {
+
+    }
+
+    _STR_RoleInfo& operator=(_STR_RoleInfo& role)
+    {
+        MaxHP = role.MaxHP;
+        hf_uint32 hp = role.HP;
+        HP = hp;
+        MaxMagic = role.MaxMagic;
+        Magic = role.Magic;
+        PhysicalDefense = role.PhysicalDefense;
+        MagicDefense = role.MagicDefense;
+        PhysicalAttack = role.PhysicalAttack;
+        MagicAttack = role.MagicAttack;
+        Crit_Rate = role.Crit_Rate;
+        Dodge_Rate = role.Dodge_Rate;
+        Hit_Rate = role.Hit_Rate;
+        Resist_Rate = role.Resist_Rate;
+        Caster_Speed = role.Caster_Speed;
+        Move_Speed = role.Move_Speed;
+        Hurt_Speed = role.Hurt_Speed;
+        Small_Universe = role.Small_Universe;
+        maxSmall_Universe = role.maxSmall_Universe;
+        RecoveryLife_Percentage = role.RecoveryLife_Percentage;
+        RecoveryLife_value = role.RecoveryLife_value;
+        RecoveryMagic_Percentage = role.RecoveryMagic_Percentage;
+        RecoveryMagic_value = role.RecoveryMagic_value;
+        MagicHurt_Reduction = role.MagicHurt_Reduction;
+        PhysicalHurt_Reduction = role.PhysicalHurt_Reduction;
+        CritHurt = role.CritHurt;
+        CritHurt_Reduction = role.CritHurt_Reduction;
+        Magic_Pass = role.Magic_Pass;
+        Physical_Pass = role.Physical_Pass;
+        Rigorous = role.Rigorous;
+        Will = role.Will;
+        Wise = role.Wise;
+        Mentality = role.Mentality;
+        Physical_fitness = role.Physical_fitness;
+
+        return *this;
+    }
+
+    _STR_RoleInfo(_STR_RoleInfo& role)
+    {
+        MaxHP = role.MaxHP;
+        hf_uint32 hp = role.HP;
+        HP = hp;
+        MaxMagic = role.MaxMagic;
+        Magic = role.Magic;
+        PhysicalDefense = role.PhysicalDefense;
+        MagicDefense = role.MagicDefense;
+        PhysicalAttack = role.PhysicalAttack;
+        MagicAttack = role.MagicAttack;
+        Crit_Rate = role.Crit_Rate;
+        Dodge_Rate = role.Dodge_Rate;
+        Hit_Rate = role.Hit_Rate;
+        Resist_Rate = role.Resist_Rate;
+        Caster_Speed = role.Caster_Speed;
+        Move_Speed = role.Move_Speed;
+        Hurt_Speed = role.Hurt_Speed;
+        Small_Universe = role.Small_Universe;
+        maxSmall_Universe = role.maxSmall_Universe;
+        RecoveryLife_Percentage = role.RecoveryLife_Percentage;
+        RecoveryLife_value = role.RecoveryLife_value;
+        RecoveryMagic_Percentage = role.RecoveryMagic_Percentage;
+        RecoveryMagic_value = role.RecoveryMagic_value;
+        MagicHurt_Reduction = role.MagicHurt_Reduction;
+        PhysicalHurt_Reduction = role.PhysicalHurt_Reduction;
+        CritHurt = role.CritHurt;
+        CritHurt_Reduction = role.CritHurt_Reduction;
+        Magic_Pass = role.Magic_Pass;
+        Physical_Pass = role.Physical_Pass;
+        Rigorous = role.Rigorous;
+        Will = role.Will;
+        Wise = role.Wise;
+        Mentality = role.Mentality;
+        Physical_fitness = role.Physical_fitness;
+    }
+    hf_uint32 ReduceHp(hf_uint32 hp)
+    {
+        if(HP > hp)
+            HP -= hp;
+        else
+        {
+            HP = 0;
+//            struct timeval start;
+//            gettimeofday( &start, NULL);
+//            aimTime = (hf_double)start.tv_sec + MonsterDeathTime + (hf_double)start.tv_usec / 1000000;
+        }
+        return HP;
+    }
     hf_uint32 MaxHP;                 //最大生命值
-    hf_uint32 HP;                    //当前生命值
+    boost::atomic_uint32_t HP;       //当前生命值
     hf_uint32 MaxMagic;              //最大法力值
     hf_uint32 Magic;                 //当前法力值
     hf_uint32 PhysicalDefense;       //物理防御值
@@ -1061,8 +1155,8 @@ typedef struct _STR_RoleInfo
     hf_float  Hit_Rate;              //命中率 0.80
     hf_float  Resist_Rate;           //抵挡率 0.05
     hf_float  Caster_Speed;          //施法速度 1.00
-    hf_float  Move_Speed;            //移动速度 1.00
-    hf_float  Hurt_Speed;            //攻击速度 1.00
+    hf_float  Move_Speed;            //移动速度 1.00  每秒移动的距离
+    hf_float  Hurt_Speed;            //攻击速度 1.00  每秒攻击的次数
     hf_uint16 Small_Universe;        //当前小宇宙 在某个等级之后才会有值，假定60级之后会变为100，60级之前都为0
     hf_uint16 maxSmall_Universe;     //最大小宇宙 100
 
@@ -1106,6 +1200,7 @@ typedef struct _STR_PackRoleInfo
     STR_PackHead head;
     STR_RoleInfo RoleInfo;
 }STR_PackRoleInfo;
+
 
 //攻击产生的伤害
 typedef struct _STR_PackDamageData
@@ -1264,7 +1359,7 @@ typedef struct _STR_PackSkillInfo
     hf_uint32  SkillID;        //技能ID
     hf_uint32  UseGoodsID;     //消耗物品ID
     hf_uint32  UseMagic;       //消耗魔法值
-    hf_float   CoolTime;       //冷却时间
+    hf_float   CoolTime;       //冷却时间 冷却时间>施法时间+引导时间
     hf_float   CastingTime;    //施法时间
     hf_float   LeadTime;       //引导时间
     hf_uint32  PhysicalHurt;   //物理伤害
@@ -1337,8 +1432,32 @@ typedef struct _STR_PackSkillPosEffect
 }STR_PackSkillPosEffect;
 
 
+typedef struct _STR_PackRecvChat
+{
+    _STR_PackRecvChat()
+    {
+        bzero(&head,sizeof(STR_PackHead));
+        head.Flag =  FLAG_Chat;
+        head.Len = sizeof(_STR_PackRecvChat)-sizeof(STR_PackHead);
+    }
+    STR_PackHead head;
+    hf_char  chatMessage[256];
+}STR_PackRecvChat;
 
-
+typedef struct _STR_PackSendChat
+{
+    _STR_PackSendChat(hf_char* _chatMessage, char* _userName)
+    {
+        bzero(&head,sizeof(STR_PackHead));
+        head.Flag =  FLAG_Chat;
+        head.Len = sizeof(_STR_PackSendChat)-sizeof(STR_PackHead);
+        memcpy(userName, _userName, 32);
+        memcpy(&chatMessage, _chatMessage, 256);
+    }
+    STR_PackHead head;
+    hf_char  userName[32];
+    hf_char  chatMessage[256];
+}STR_PackSendChat;
 
 //下面一些结构体为实时更新用户数据而定义
 ///////////////////////////////////////////////////////////////////////////

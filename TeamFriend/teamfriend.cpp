@@ -25,7 +25,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
     STR_PackAddFriend t_addFriend;
     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
     t_addFriend.RoleID = (*smap)[conn].m_roleid;
-    memcpy(t_addFriend.Nick, &((*smap)[conn].m_nick[0]), 32);
+    memcpy(t_addFriend.Nick, ((*smap)[conn].m_RoleBaseInfo.Nick), 32);
 
     if(addFriend->RoleID >= 100000000) //按roleID添加好友（优先）
     {
@@ -68,7 +68,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
              {
                  hf_uint32 Requestroleid = (*smap)[conn].m_roleid;
                  hf_char   RequestNick[40] = { 0 };
-                 memcpy(RequestNick, &(*smap)[conn].m_nick[0], 32);
+                 memcpy(RequestNick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
                  sbd.Clear();
                  sbd << "insert into t_addFriend values(" << Requestroleid << ",'" << RequestNick << "'," << addroleid << ");";
                  Logger::GetLogger()->Debug(sbd.str());
@@ -183,7 +183,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
 
             //更新要添加的好友的在线好友列表
             t_friendInfo.RoleID = (*smap)[conn].m_roleid;
-            memcpy(t_friendInfo.Nick, &(*smap)[conn].m_nick[0], 32);
+            memcpy(t_friendInfo.Nick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
 
             friendList = (*smap)[it->second].m_friendList;
             (*friendList)[(*smap)[conn].m_roleid] = t_friendInfo;
@@ -191,7 +191,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
 
             //发送添加好友返回数据包
             addFriend->RoleID = (*smap)[conn].m_roleid;
-            memcpy(addFriend->Nick, &((*smap)[conn].m_nick[0]), 32);
+            memcpy(addFriend->Nick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
             it->second->Write_all(addFriend, sizeof(STR_PackAddFriend));
         }
     }
@@ -201,7 +201,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
         if(it != roleSock->end()) //在线
         {
             addFriend->RoleID = (*smap)[conn].m_roleid;
-            memcpy(addFriend->Nick, &((*smap)[conn].m_nick[0]), 32);
+            memcpy(addFriend->Nick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
             it->second->Write_all(addFriend, sizeof(STR_PackAddFriendReturn));
         }
     }

@@ -10,9 +10,9 @@
 
 GameAttack::GameAttack()
     :m_attackRole(new _umap_roleAttackAim)
-    ,m_attackMonster(new _umap_roleAttackAim)
-    ,m_skillInfo(new umap_skillInfo)
+    ,m_attackMonster(new _umap_roleAttackAim)    
     ,m_attackPoint(new _umap_roleAttackPoint)
+    ,m_skillInfo(new umap_skillInfo)
 {
 
 }
@@ -25,7 +25,7 @@ GameAttack::~GameAttack()
 //攻击点
 void GameAttack::AttackPoint(TCPConnection::Pointer conn, STR_PackUserAttackPoint* t_attack)
 {
-    Server* srv = Server::GetInstance();
+//    Server* srv = Server::GetInstance();
 
 
 //    srv->free(t_attack);
@@ -158,7 +158,7 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     }
 
     //查找怪物攻击属性
-    STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[t_attack->AimID];
+    STR_MonsterAttackInfo* t_monsterAttackInfo = &(*t_monsterAttack)[t_monsterBasicInfo->monster.MonsterTypeID];
     hf_uint8 t_level = t_monsterAttackInfo->Level;
     if(t_attack->SkillID == PhyAttackSkillID) //物理攻击
     {
@@ -201,25 +201,13 @@ hf_uint32 GameAttack::CalDamage(STR_PackSkillInfo* skillInfo, STR_RoleInfo* role
     }
 }
 
-
-//发送伤害给可视范围内的玩家
-void GameAttack::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
-{
-    _umap_roleSock* t_roleSock = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterBt->MonsterID];
-
-    for(_umap_roleSock::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
-    {
-        it->second->Write_all(monsterBt, sizeof(STR_PackMonsterAttrbt));
-    }
-}
-
 void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
-    _umap_roleSock* t_roleSock = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家    
-    for(_umap_roleSock::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
+    _umap_viewRole* t_roleSock = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家
+    for(_umap_viewRole::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
     {
-        umap_playerViewMonster   t_viewMonster = (*smap)[it->second].m_viewMonster;
+        umap_playerViewMonster   t_viewMonster = (*smap)[it->second.conn].m_viewMonster;
         _umap_playerViewMonster::iterator iter = t_viewMonster->find(monsterID);
         if(iter == t_viewMonster->end())
         {
@@ -233,15 +221,39 @@ void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 //技能处理函数
 void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster)
 {
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     //发送产生的伤害
+    cout << "wait skill" << damage->Damage << endl;
     conn->Write_all(damage, sizeof(STR_PackDamageData));
 
     STR_PackMonsterAttrbt t_monsterBt;
     t_monsterBt.MonsterID = monster->monster.MonsterID;
-    t_monsterBt.HP = monster->ReduceHp(damage->Damage);
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    t_monsterBt.HP = monster->ReduceHp(roleid, damage->Damage);
+
+    umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
+
+    STR_MonsterViewRole* t_viewRole = &((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
+
+    t_viewRole->HatredValue += t_monsterBt.HP;
+
+    if(monster->hatredRoleid != roleid)
+    {
+        if(monster->hatredRoleid != 0)
+        {
+            if(t_viewRole->HatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid].HatredValue)
+            {
+                monster->ChangeHatredRoleid(roleid);
+            }
+        }
+        else
+        {
+            monster->ChangeHatredRoleid(roleid);
+        }
+    }
 
     //发送怪物当前血量给可视范围内的玩家
-    SendMonsterHPToViewRole(&t_monsterBt);
+    Server::GetInstance()->GetMonster()->SendMonsterHPToViewRole(&t_monsterBt);
     if(t_monsterBt.HP == 0)
     {
         //怪物死亡，发送奖励经验，玩家经验，查找掉落物品
@@ -249,7 +261,7 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
         //从玩家可视范围内的怪物列表中删除该怪物
         RoleViewDeleteMonster(t_monsterBt.MonsterID);
         //删除该怪物可视范围内的玩家
-        umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
+
         monsterViewRole->erase(t_monsterBt.MonsterID);
     }
 }
@@ -421,6 +433,7 @@ void GameAttack::RoleSkillAttack()
                  if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
                  {
                      t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+                     cout << "wait Skill" << t_damageData.Damage << endl;
                      DamageDealWith(iter->second, &t_damageData, t_monsterInfo); //发送计算伤害
                  }
             }
@@ -436,7 +449,7 @@ void GameAttack::RoleSkillAttack()
                      hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
                      if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
                      {
-                         t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+                         t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);                         
                          DamageDealWith(iter->second, &t_damageData, t_monsterInfo); //发送计算伤害
                      }
                 }
@@ -659,6 +672,7 @@ void GameAttack::AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skil
             conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
             t_damageData.Damage = CalDamage(skillInfo, t_AttacketInfo, t_monsterAttackInfo, &t_damageData.TypeID);
 
+            cout << "damage:" << t_damageData.Damage << endl;
             STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
             conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
             DamageDealWith(conn, &t_damageData, t_monsterInfo); //发送计算伤害

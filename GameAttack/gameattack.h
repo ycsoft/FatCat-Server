@@ -5,6 +5,8 @@
 #include "NetWork/tcpconnection.h"
 #include "Game/cmdtypes.h"
 #include "Monster/monsterstruct.h"
+#include "Game/rolestruct.h"
+
 /**
  * @brief The GameAttack class
  * 主要完成玩家与玩家，玩家与怪物之间的攻击。
@@ -32,9 +34,6 @@ public:
     void SendPlayerSkill(TCPConnection::Pointer conn);
     //计算技能产生的伤害
     hf_uint32 CalDamage(STR_PackSkillInfo* skillInfo, STR_RoleInfo* roleInfo, STR_MonsterAttackInfo* monster, hf_uint8* type);
-
-    //发送伤害给可是范围内的玩家
-    void SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt);
 
     //伤害处理函数
     void DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster);

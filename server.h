@@ -20,6 +20,8 @@ class GameInterchange;
 class OperationGoods;
 class OperationPostgres;
 class CmdParse;
+class GameChat;
+
 
 using namespace boost::threadpool;
 
@@ -122,6 +124,11 @@ public:
         return m_cmdParse;
     }
 
+    GameChat* GetGameChat()
+    {
+        return m_gameChat;
+    }
+
 private:
     Server();
     static  Server                 *m_instance;
@@ -140,6 +147,7 @@ private:
     OperationGoods                  *m_operationGoods;
     OperationPostgres               *m_operationPostgres;
     CmdParse                        *m_cmdParse;
+    GameChat                        *m_gameChat;
 
 };
 
