@@ -88,7 +88,9 @@ typedef struct _STR_MonsterViewRole
 
 }STR_MonsterViewRole;
 
-typedef boost::unordered_map<hf_uint32, STR_MonsterViewRole> _umap_viewRole;
+//typedef boost::unordered_map<hf_uint32, STR_MonsterViewRole> _umap_viewRole;
+//角色ID，仇恨值
+typedef boost::unordered_map<hf_uint32, hf_uint32> _umap_viewRole;
 typedef boost::shared_ptr<_umap_viewRole> umap_viewRole;
 
 //<怪物ID,_umap_roleSock>

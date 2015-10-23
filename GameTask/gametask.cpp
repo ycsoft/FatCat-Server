@@ -675,13 +675,57 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
     {
         umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
         hf_char* buff = (hf_char*)srv->malloc();
-        hf_char* probuff = (hf_char*)srv->malloc();
+        hf_char* proBuff = (hf_char*)srv->malloc();
+        hf_char* descBuff = (hf_char*)srv->malloc();
+        hf_char* rewardBuff = (hf_char*)srv->malloc();
         hf_uint32 i = 0;
         hf_uint32 j = 0;
+        hf_uint32 rewardLen = sizeof(STR_PackHead);
+        STR_PackHead t_packHead;
         for(_umap_taskProcess::iterator it = playerAcceptTask->begin();it != playerAcceptTask->end(); it++)
         {
+            //任务概述
             (*m_taskProfile)[it->first].Status = 2;
-            memcpy(probuff + sizeof(STR_PackHead) + i*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
+            memcpy(proBuff + sizeof(STR_PackHead) + i*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
+
+            //任务描述
+            memset(descBuff, 0, CHUNK_SIZE);
+            memcpy(descBuff, &(*m_taskDesc)[it->first], sizeof(STR_PackTaskDescription));
+            conn->Write_all(descBuff,  sizeof(STR_PackTaskDescription));
+
+
+            TaskReward(conn, it->first);
+
+//            umap_taskReward::iterator taskReward_it = (*m_taskReward).find(it->first);  //其他奖励
+//            if(taskReward_it != (*m_taskReward).end())
+//            {
+//                memcpy(rewardBuff + rewardLen, &(*m_taskReward)[it->first], sizeof(STR_TaskReward));
+//                rewardLen += sizeof(STR_TaskReward);
+//            }
+
+//            hf_uint8 k = 0;
+//            umap_goodsReward::iterator goodReward_it = (*m_goodsReward).find(it->first);  //奖励物品
+
+//            if(goodReward_it != (*m_goodsReward).end())
+//            {
+
+//                for(vector<STR_GoodsReward>::iterator itt = goodReward_it->second.begin(); itt != goodReward_it->second.end(); itt++)
+//                {
+//                    memcpy(rewardBuff + rewardLen + k*sizeof(STR_GoodsReward), &itt->GoodsID, sizeof(STR_GoodsReward));
+//                    k++;
+//                }
+//                rewardLen += sizeof(STR_GoodsReward)*k;
+//            }
+//            t_packHead.Len = sizeof(STR_GoodsReward) + sizeof(STR_GoodsReward)*k;
+//            t_packHead.Flag = FLAG_TaskReward;
+//            memcpy(rewardBuff, &t_packHead, sizeof(STR_PackHead));
+
+//            if(rewardLen >= 900)
+//            {
+//                conn->Write_all(rewardBuff, rewardLen);
+//                rewardLen = 0;
+//            }
+
 
             for(vector<STR_TaskProcess>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
             {
@@ -705,12 +749,18 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
             i++;
         }
 
-        STR_PackHead t_packHead;
+
         //发送玩家已经接取的任务的任务概述
         t_packHead.Flag = FLAG_TaskProfile;
-        t_packHead.Len = sizeof(STR_TaskProfile) * i;
-        memcpy(probuff, &t_packHead, sizeof(STR_PackHead));
-        conn->Write_all(probuff, sizeof(STR_PackHead) + t_packHead.Len);
+        t_packHead.Len = sizeof(STR_TaskProfile)*i;
+        memcpy(proBuff, &t_packHead, sizeof(STR_PackHead));
+        conn->Write_all(proBuff, sizeof(STR_PackHead) + t_packHead.Len);
+
+
+//        if(rewardLen != 0)
+//        {
+//            conn->Write_all(rewardBuff, rewardLen);
+//        }
 
         t_packHead.Flag = FLAG_TaskProcess;
         t_packHead.Len = sizeof(STR_TaskProcess) * j;
@@ -718,7 +768,9 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
         conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
 
         srv->free(buff);
-        srv->free(probuff);
+        srv->free(proBuff);
+        srv->free(descBuff);
+        srv->free(rewardBuff);
     } 
 }
 

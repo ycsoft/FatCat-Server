@@ -60,8 +60,8 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
             _umap_viewRole* t_roleSock = &(*m_monsterViewRole)[monsterID];
             hf_uint32 roleid = (*smap)[conn].m_roleid;
 
-            STR_MonsterViewRole t_viewRole(conn);
-            (*t_roleSock)[roleid] = t_viewRole;
+//            STR_MonsterViewRole t_viewRole(conn);
+            (*t_roleSock)[roleid] = 0;
 
             memcpy(comebuff + sizeof(STR_PackHead) + sizeof(STR_MonsterBasicInfo)*pushcount, &it->second.monster, sizeof(STR_MonsterBasicInfo));
             pushcount++;
@@ -162,7 +162,7 @@ void Monster::CreateMonster()
         t_monsterInfo.monster.RankID = iter->second.RankID;
         t_monsterInfo.monster.Flag = 1;
 
-        t_MonsterAttackInfo.HP = iter->second.HP;
+//        t_MonsterAttackInfo.HP = iter->second.HP;
         t_MonsterAttackInfo.Level = iter->second.Level;
         t_MonsterAttackInfo.PhysicalAttack = iter->second.PhysicalAttack;
         t_MonsterAttackInfo.MagicAttack = iter->second.MagicAttack;
@@ -261,44 +261,84 @@ void Monster::Monsteractivity()
                         t_roleSock[role_it->second.m_roleid] = role_it->first;
                         (*(role_it->second.m_viewMonster))[it->first] = it->first;
 
-                        STR_MonsterViewRole t_viewRole(role_it->first);
-                        ((*monsterViewRole)[it->first])[role_it->second.m_roleid] = t_viewRole;
+//                        STR_MonsterViewRole t_viewRole(role_it->first);
+                        ((*monsterViewRole)[it->first])[role_it->second.m_roleid] = 0;
                     }
                  }
                 else
                 {
                     STR_MonsterBasicInfo* t_monster = &(it->second.monster);
+//                    cout << t_monster->MonsterID << "移动了" << endl;
                     if(it->second.hatredRoleid != 0)  //怪物有追击目标
                     {
-                        _umap_roleSock::iterator role_it = t_roleSock->find(it->second.hatredRoleid);
+                        cout << "hatredRoleid::" << it->second.hatredRoleid << endl;
                         t_monster->Current_x = t_monster->Target_x;
                         t_monster->Current_z = t_monster->Target_z;
-
-                        if(role_it != t_roleSock->end())
+                        _umap_roleSock::iterator role_it = t_roleSock->find(it->second.hatredRoleid);
+                        if(role_it == t_roleSock->end()) //确定新目标 玩家已经退出游戏,暂时让其自由活动
+                        {
+                            cout << "追击目标前" << it->second.hatredRoleid << endl;
+                            cout << "monsterID:" << t_monster->MonsterID << "monster_x:" << t_monster->Current_x << "monster_z:" << t_monster->Current_z << endl;
+                            (*monsterViewRole)[it->first].erase(it->second.hatredRoleid);
+//                            it->second.hatredRoleid = 0;
+                            it->second.ChangeHatredRoleid(0);
+                            cout << "更换追击目标后" << it->second.hatredRoleid << endl;
+                        }
+                        else
                         {
                             STR_PackPlayerPosition*  t_playerPos = &(*smap)[role_it->second].m_position;
+                            cout << "player_x:" << t_playerPos->Pos_x << ",player_z:" << t_playerPos->Pos_z << endl;
+                            cout << "monsterID:" << t_monster->MonsterID << "monster_x:" << t_monster->Current_x << "monster_z:" << t_monster->Current_z << endl;
                             hf_float dx = t_playerPos->Pos_x - t_monster->Current_x;
                             hf_float dz = t_playerPos->Pos_z - t_monster->Current_z;
                             hf_float dis = sqrt(dx*dx + dz*dz);
                             hf_float direct = CalculationDirect(dx, dz);
                             if(dis >= PursuitFarDistance*2) //距离较远
                             {
-                                t_monster->Target_x += PursuitFarDistance*cos(direct);
-                                t_monster->Target_z += PursuitFarDistance*sin(direct);
+                                t_monster->Target_x += PursuitFarDistance/dis*dx;
+                                t_monster->Target_z += PursuitFarDistance/dis*dz;
+//                                t_monster->Target_x += PursuitFarDistance*cos(direct);
+//                                t_monster->Target_z += PursuitFarDistance*sin(direct);
                             }
-                            else if(dis < PursuitFarDistance && dis > PursuitNearlyDistance)
+                            else if(dis < PursuitFarDistance*2 && dis > 2*PursuitNearlyDistance)
                             {
-                                t_monster->Target_x += PursuitNearlyDistance*cos(direct);
-                                t_monster->Target_z += PursuitNearlyDistance*sin(direct);
+                                t_monster->Target_x += PursuitNearlyDistance/dis*dx;
+                                t_monster->Target_z += PursuitNearlyDistance/dis*dz;
+//                                t_monster->Target_x += PursuitNearlyDistance*cos(direct);
+//                                t_monster->Target_z += PursuitNearlyDistance*sin(direct);
                             }
                             else //攻击玩家
                             {
                                 hf_uint32 roleid = (*smap)[role_it->second].m_roleid;
-                                hf_uint32 hp = (*m_monsterAttack)[t_monster->MonsterTypeID].HP;
-                                cout << "玩家血量减少" << hp << endl;
-                                STR_RoleAttribute t_roleAttr(roleid, hp);
-                                it->second.aimTime += MonsterAttackSpeed;
+                                hf_uint32 hp = (*m_monsterAttack)[t_monster->MonsterTypeID].PhysicalAttack;
+                                cout << "玩家血量减少:" << hp << endl;
+                                cout << "玩家血量：" << (*smap)[role_it->second].m_roleInfo.HP << endl;
+                                STR_PackDamageData damage;
+                                damage.AimID = roleid;
+                                damage.AttackID = t_monster->MonsterID;
+                                damage.Damage = hp;
+                                damage.TypeID = 1;
+                                damage.Flag = HIT;
 
+                                role_it->second->Write_all(&damage, sizeof(STR_PackDamageData));
+
+                                hf_uint32 playerHP = 0;
+                                if((*smap)[role_it->second].m_roleInfo.HP >= hp)
+                                {
+                                    (*smap)[role_it->second].m_roleInfo.HP -= hp;
+                                }
+                                else
+                                {
+                                    (*smap)[role_it->second].m_roleInfo.HP = 0;
+
+                                    (*monsterViewRole)[it->first].erase(it->second.hatredRoleid);
+                                    it->second.ChangeHatredRoleid(0);
+                                }
+                                playerHP = (*smap)[role_it->second].m_roleInfo.HP;
+                                cout << "roleID:" << roleid << ",HP" << playerHP << endl;
+                                STR_RoleAttribute t_roleAttr(roleid, playerHP);
+
+                                cout << t_roleAttr.RoleID << "," << t_roleAttr.HP << endl;
                                 role_it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
                                 umap_roleSock t_viewRole = (*smap)[role_it->second].m_viewRole;
                                 for(_umap_roleSock::iterator view_it = t_viewRole->begin(); view_it != t_viewRole->end(); view_it++)
@@ -306,10 +346,10 @@ void Monster::Monsteractivity()
                                     view_it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
                                 }
                             }
-                        }
-                        else  //确定新目标 玩家已经退出游戏
-                        {
+                            it->second.aimTime += MonsterAttackSpeed;
 
+                            cout << "方向：" << direct << ",距离：" << dis << endl;
+//                            cout << "x坐标:" << t_monster->Target_x << ",y坐标:" << t_monster->Target_z << endl;
                         }
                     }
                     else
@@ -380,22 +420,32 @@ void Monster::NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* m
 //将变化的怪物信息发送给怪物可视范围内的玩家
 void Monster::SendMonsterToViewRole(STR_MonsterBasicInfo* monster)
 {
-    _umap_viewRole* t_roleSock = &(*m_monsterViewRole)[monster->MonsterID];
+    _umap_viewRole* t_viewRole = &(*m_monsterViewRole)[monster->MonsterID];
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     STR_PackMonsterBasicInfo t_monster(monster);
-    for(_umap_viewRole::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
+    for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
     {
-        it->second.conn->Write_all(&t_monster, sizeof(STR_PackMonsterBasicInfo));
+        _umap_roleSock::iterator iter = t_roleSock->find(it->first);
+        if(iter != t_roleSock->end())
+        {
+            iter->second->Write_all(&t_monster, sizeof(STR_PackMonsterBasicInfo));
+        }
     }
 }
 
 //发送伤害给可视范围内的玩家
 void Monster::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
 {
-    _umap_viewRole* t_roleSock = &(*m_monsterViewRole)[monsterBt->MonsterID];
+    _umap_viewRole* t_viewRole = &(*m_monsterViewRole)[monsterBt->MonsterID];
 
-    for(_umap_viewRole::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
     {
-        it->second.conn->Write_all(monsterBt, sizeof(STR_PackMonsterAttrbt));
+        _umap_roleSock::iterator iter = t_roleSock->find(it->first);
+        if(iter != t_roleSock->end())
+        {
+            iter->second->Write_all(monsterBt, sizeof(STR_PackMonsterAttrbt));
+        }
     }
 }
 

@@ -204,17 +204,22 @@ hf_uint32 GameAttack::CalDamage(STR_PackSkillInfo* skillInfo, STR_RoleInfo* role
 void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 {
     SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
-    _umap_viewRole* t_roleSock = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家
-    for(_umap_viewRole::iterator it = t_roleSock->begin(); it != t_roleSock->end(); it++)
+    _umap_viewRole* t_viewRole = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
     {
-        umap_playerViewMonster   t_viewMonster = (*smap)[it->second.conn].m_viewMonster;
-        _umap_playerViewMonster::iterator iter = t_viewMonster->find(monsterID);
-        if(iter == t_viewMonster->end())
+        _umap_roleSock::iterator role_it = t_roleSock->find(it->first);
+        if(role_it != t_roleSock->end())
         {
-            Logger::GetLogger()->Error("怪物看到玩家，玩家没有看到怪");
-            continue;
+            umap_playerViewMonster   t_viewMonster = (*smap)[role_it->second].m_viewMonster;
+            _umap_playerViewMonster::iterator iter = t_viewMonster->find(monsterID);
+            if(iter == t_viewMonster->end())
+            {
+                Logger::GetLogger()->Error("怪物看到玩家，玩家没有看到怪");
+                continue;
+            }
+            t_viewMonster->erase(iter);
         }
-        t_viewMonster->erase(iter);
     }
 }
 
@@ -233,15 +238,17 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
 
     umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
 
-    STR_MonsterViewRole* t_viewRole = &((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
 
-    t_viewRole->HatredValue += t_monsterBt.HP;
+    hf_uint32* t_hatredValue = &((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
 
+    *t_hatredValue += damage->Damage;
+
+    cout << "攻击前：" << monster->hatredRoleid << endl;
     if(monster->hatredRoleid != roleid)
     {
         if(monster->hatredRoleid != 0)
         {
-            if(t_viewRole->HatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid].HatredValue)
+            if(*t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
             {
                 monster->ChangeHatredRoleid(roleid);
             }
@@ -252,17 +259,24 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
         }
     }
 
+    cout << "攻击后:" << monster->hatredRoleid << endl;
+
+    cout << "hatredRoleid" << monster->hatredRoleid << ",hatred:" << ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid] << endl;
     //发送怪物当前血量给可视范围内的玩家
     Server::GetInstance()->GetMonster()->SendMonsterHPToViewRole(&t_monsterBt);
     if(t_monsterBt.HP == 0)
     {
+        //怪物死亡，清除该怪物的仇恨值，仇恨对象
+        monster->hatredRoleid = 0;
+
         //怪物死亡，发送奖励经验，玩家经验，查找掉落物品
         MonsterDeath(conn, monster);
         //从玩家可视范围内的怪物列表中删除该怪物
         RoleViewDeleteMonster(t_monsterBt.MonsterID);
         //删除该怪物可视范围内的玩家
 
-        monsterViewRole->erase(t_monsterBt.MonsterID);
+        (*monsterViewRole)[t_monsterBt.MonsterID].clear();
+//        monsterViewRole->erase(t_monsterBt.MonsterID);
     }
 }
 
@@ -361,7 +375,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         t_PacklootGoods.Pos_y = monster->monster.Current_y;
         t_PacklootGoods.Pos_z = monster->monster.Current_z;
         t_PacklootGoods.MapID = monster->monster.MapID;
-        t_PacklootGoods.GoodsFlag = monster->monster.MonsterID;
+        t_PacklootGoods.GoodsFlag = monster->monster.MonsterID * 10;
 
         LootPositionTime t_lootPositionTime;
         time_t timep;

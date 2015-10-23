@@ -48,6 +48,7 @@ typedef struct _STR_TaskDlg
     hf_char    FinishDialogue[512]; //任务结束对话
 }STR_TaskDlg;
 
+
 //4.任务描述数据
 typedef struct _STR_PackTaskDescription
 {
@@ -256,7 +257,6 @@ typedef struct _STR_MonsterAttackInfo
     hf_uint32 MagicAttack;      //魔法攻击
     hf_uint32 PhysicalDefense;  //物理防御
     hf_uint32 MagicDefense;     //魔法防御
-    hf_uint32 HP;               //血量
     hf_uint8  Level;            //等级
 }STR_MonsterAttackInfo;
 
@@ -282,11 +282,12 @@ typedef struct _STR_RoleAttribute
     hf_uint32 RoleID;
     hf_uint32 HP;
     _STR_RoleAttribute(hf_uint32 _RoleID, hf_uint32 _HP)
-        :RoleID(_RoleID),HP(_HP)
     {
         bzero(&head,sizeof(_STR_RoleAttribute));
         head.Flag = /*htons*/(FLAG_RoleAttribute);
         head.Len = /*htons*/(sizeof(_STR_RoleAttribute)-sizeof(STR_PackHead));
+        RoleID = _RoleID;
+        HP = _HP;
     }
 }STR_RoleAttribute;
 
@@ -883,7 +884,11 @@ typedef struct _STR_PlayerLoginUserId
     hf_char password[32];
 }STR_PlayerLoginUserId;
 
-
+//玩家复活  test
+typedef struct _STR_PlayerRelive
+{
+    hf_uint16  mode;
+}STR_PlayerRelive;
 
 //表结构体
 //任务要求
@@ -1210,7 +1215,7 @@ typedef struct _STR_PackDamageData
     hf_uint32    AttackID;    //攻击者ID
     hf_uint32    Damage;      //伤害
     hf_uint8     TypeID;      //伤害类型
-    hf_uint8     Flag;        //附加标记
+    hf_uint8     Flag;        //附加标记 暴击，闪避等
     _STR_PackDamageData()
     {
         bzero(&head,sizeof(_STR_PackDamageData));

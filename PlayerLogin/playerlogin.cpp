@@ -56,7 +56,8 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     FriendOffline(conn);          //发送下线通知给好友
     SaveRoleNotPickGoods(conn);   //保存玩家未捡取的掉落物品
     SendOffLineToViewRole(conn);  //将下线消息通知给可视范围内的玩家
-    DeleteNickSock(conn);         //删除m_nickSock
+    DeleteNickSock(conn);         //删除m_nickSock 
+    DeleteRoleSock(roleid);       //删除m_roleSock
 
     ///////////////////////////////////////////////////
     SessionMgr::SessionMap::iterator it = smap->find(conn);
@@ -101,6 +102,16 @@ void PlayerLogin::DeleteNameSock(TCPConnection::Pointer conn)
         nameSock->erase(t_nameSock); //删除m_nameSock
     }
 }
+
+ void PlayerLogin::DeleteRoleSock(hf_uint32 roleid)
+ {
+     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+     _umap_roleSock::iterator role_it = t_roleSock->find(roleid);
+     if(role_it != t_roleSock->end())
+     {
+         t_roleSock->erase(roleid); //删除m_roleSock
+     }
+ }
 
 void PlayerLogin::RegisterUserID(TCPConnection::Pointer conn, STR_PlayerRegisterUserId *reg)
 {
@@ -1448,4 +1459,14 @@ void PlayerLogin::DeleteFromMonsterView(TCPConnection::Pointer conn)
     {
         (*monsterViewRole)[it->first].erase(roleid);
     }
+}
+
+//玩家复活
+void PlayerLogin::PlayerRelive(TCPConnection::Pointer conn, hf_uint16 mode)
+{
+    SessionMgr::SessionMap *smap = SessionMgr::Instance()->GetSession().get();
+    STR_RoleInfo* t_roleInfo = &(*smap)[conn].m_roleInfo;
+    mode = 0;
+    t_roleInfo->HP = t_roleInfo->MaxHP;
+    cout << "玩家 " << (*smap)[conn].m_roleid << " 复活," << t_roleInfo->HP << endl;
 }

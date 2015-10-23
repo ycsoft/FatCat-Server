@@ -89,6 +89,8 @@ public:
     void DeleteNameSock(TCPConnection::Pointer conn);
     //用户下线删除保存的对应的<nick, sock>
     void DeleteNickSock(TCPConnection::Pointer conn);
+    //用户下线删除保存的对应的<roleid,sock>
+    void DeleteRoleSock(hf_uint32 roleid);
     //将玩家任务进度写进数据库
     void SaveRoleTaskProcess(TCPConnection::Pointer conn);
     //将玩家背包里的物品写进数据库
@@ -116,6 +118,9 @@ public:
 
     //从怪物可视范围内删除该玩家
     void DeleteFromMonsterView(TCPConnection::Pointer conn);
+
+    //玩家复活
+    void PlayerRelive(TCPConnection::Pointer conn, hf_uint16 mode);
 
     STR_RoleJobAttribute* m_common;                //普通职业
     STR_RoleJobAttribute* m_sales;                 //销售

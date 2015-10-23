@@ -105,6 +105,13 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         break;
     }
 
+    case FLAG_PlayerRevive:          //玩家复活   test
+    {
+        STR_PlayerRelive* reg = (STR_PlayerRelive*)(buf + sizeof(STR_PackHead));
+        srv->RunTask(boost::bind(&PlayerLogin::PlayerRelive, t_playerLogin, conn, reg->mode));
+        break;
+    }
+
     case FLAG_PlayerOffline:  //玩家下线，给其他玩家发送下线通知
     {
         Logger::GetLogger()->Info("User Position recv");

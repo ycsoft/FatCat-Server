@@ -59,6 +59,7 @@
 #define FLAG_PickGoodsResult         207    //玩家捡取物品结果
 #define FLAG_LootGoodsOverTime       208    //掉落物品延时
 #define FLAG_RoleAttribute           209    //玩家属性信息
+#define FLAG_PlayerRevive            210    //玩家复活
 
 
 #define FLAG_MonsterCome      301   //怪物进入可视范围
