@@ -61,8 +61,10 @@ public:
     void CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack);//普通攻击怪物
 
 
+    //发送玩家血量给周围玩家
+    void SendRoleHpToViewRole(TCPConnection::Pointer conn, STR_RoleAttribute* roleAttr);
     //返回当前时间
-    static hf_double GetCurrentTime()
+    hf_double GetCurrentTime()
     {
         struct timeval start;
         gettimeofday( &start, NULL );

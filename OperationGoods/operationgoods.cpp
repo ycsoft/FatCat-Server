@@ -37,21 +37,21 @@ hf_uint32  OperationGoods::GetEquipmentID()
 //使用位置
 void OperationGoods::UsePos(TCPConnection::Pointer conn, hf_uint16 pos)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     (*smap)[conn].m_goodsPosition[pos] = POS_NONEMPTY;
 }
 
 //释放位置
 void OperationGoods::ReleasePos(TCPConnection::Pointer conn, hf_uint16 pos)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     (*smap)[conn].m_goodsPosition[pos] = POS_EMPTY;
 }
 
 //得到空位置总数
 hf_uint8 OperationGoods::GetEmptyPosCount(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_uint16 emptyPos = 0;
     for(hf_int32 j = 1; j <= BAGCAPACITY; j++)   //找空位置
     {
@@ -66,7 +66,7 @@ hf_uint8 OperationGoods::GetEmptyPosCount(TCPConnection::Pointer conn)
 //查找空位置
 hf_uint8 OperationGoods::GetEmptyPos(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     for(hf_int16 j = 1; j <= BAGCAPACITY;)   //找空位置
     {
         if((*smap)[conn].m_goodsPosition[j] == POS_EMPTY)
@@ -86,7 +86,7 @@ hf_uint8 OperationGoods::GetEmptyPos(TCPConnection::Pointer conn)
 //判断能否放下
 hf_uint8 OperationGoods::UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     for(hf_int32 j = 1; j <= BAGCAPACITY; j++)   //找空位置
     {
         if((*smap)[conn].m_goodsPosition[j] == POS_EMPTY)
@@ -102,9 +102,10 @@ hf_uint8 OperationGoods::UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count
 //捡物品
 void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR_PickGoods* PickGoods)
 {
+    printf("pick up 105 goods len = %d\n", len);
     STR_PickGoods* pickGoods = PickGoods;
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*(*smap)[conn].m_interchage).isInchange == true) //处于交易状态
     {
 //        Server::GetInstance()->free(pickGoods);
@@ -137,6 +138,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, hf_uint16 len, STR
     hf_char* equAttrBuff = (hf_char*)srv->malloc();      //新捡的装备属性
     vector<STR_LootGoods>::iterator vec;
 
+    printf("pick up 140 goods 捡取物品数量：%d\n", count);
     hf_uint8 num = 0;
     hf_uint8 equCount = 0;
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
@@ -396,7 +398,7 @@ void OperationGoods::QueryEquAttr()
 //丢弃物品
 void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGoods* removeGoods)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
     if(removeGoods->GoodsID >= EquipMentID)
     {
@@ -464,7 +466,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
 //        Server::GetInstance()->free(moveGoods);
         return;
     }
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*smap)[conn].m_goodsPosition[moveGoods->CurrentPos] == POS_LOCKED || (*smap)[conn].m_goodsPosition[moveGoods->TargetPos] == POS_LOCKED)  //当前位置或者目标位置商品处于锁定状态，不可以移动
     {
 //        Server::GetInstance()->free(moveGoods);
@@ -586,7 +588,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
 //交换物品
 void OperationGoods::ExchangeBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods* moveGoods)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleGoods  playerBagGoods = (*smap)[conn].m_playerGoods;
 
     vector<STR_Goods>::iterator curPos;
@@ -681,7 +683,7 @@ void OperationGoods::ExchangeBagGoods(TCPConnection::Pointer conn, STR_MoveBagGo
 //购买物品
 void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGoods)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*(*smap)[conn].m_interchage).isInchange == true)
     {
 //        Server::GetInstance()->free(buyGoods);
@@ -725,7 +727,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
 //出售物品
 void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellGoods)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*(*smap)[conn].m_interchage).isInchange == true)
     {
 //        Server::GetInstance()->free(sellGoods);
@@ -809,7 +811,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
 //得到玩家背包中某种/某类物品的数量
 hf_uint32  OperationGoods::GetThisGoodsCount(TCPConnection::Pointer conn, hf_uint32 goodsID)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleGoods playerGoods = (*smap)[conn].m_playerGoods;
     if(EquTypeMinValue <= goodsID && goodsID <= EquTypeMaxValue)
     {
@@ -865,7 +867,7 @@ void OperationGoods::SetEquAttr(STR_EquipmentAttr* equAttr, hf_uint32 typeID)
 //购买装备
 void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buyGoods, STR_PlayerMoney* money, hf_uint32 price)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     STR_PackOtherResult t_result;
     t_result.Flag = FLAG_BuyGoods;
 
@@ -927,7 +929,7 @@ void OperationGoods::BuyEquipment(TCPConnection::Pointer conn, STR_BuyGoods* buy
 //购买其他物品
 void OperationGoods::BuyOtherGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGoods, STR_PlayerMoney* money, hf_uint32 price)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_uint16 emptyPosCount = OperationGoods::GetEmptyPosCount(conn);
     hf_uint16 size = buyGoods->Count/GOODSMAXCOUNT + (buyGoods->Count % GOODSMAXCOUNT ? 1 : 0);
     if(size > emptyPosCount)
@@ -1062,7 +1064,7 @@ void OperationGoods::SetEquIDInitialValue()
 //整理背包
 void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
     umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
 
@@ -1200,7 +1202,7 @@ void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
 //换装
 void OperationGoods::WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, hf_uint8 pos)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
     _umap_roleEqu::iterator it = playerEqu->find(equid);
     if(it == playerEqu->end())
@@ -1395,7 +1397,7 @@ void OperationGoods::WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, h
 
 void OperationGoods::TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleEqu playerEqu = (*smap)[conn].m_playerEqu;
     _umap_roleEqu::iterator it = playerEqu->find(equid);
     if(it == playerEqu->end())

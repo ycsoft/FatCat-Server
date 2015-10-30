@@ -40,7 +40,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     OperationGoods* t_operationGoods = srv->GetOperationGoods();
     GameChat* t_gameChat = srv->GetGameChat();
 
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     SessionMgr::SessionMap::iterator it = smap->find(conn);
     if(it == smap->end()) //未登录用户名，只能登录或注册用户
     {
@@ -126,6 +126,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     {
         STR_PackPlayerPosition* reg = (STR_PackPlayerPosition*)srv->malloc();
         memcpy(reg, buf, len + sizeof(STR_PackHead));
+//        printf("玩家方向：%f\n",reg->Direct);
         srv->RunTask(boost::bind(UserPosition::PlayerMove, conn, reg));
         break;
     }
@@ -141,6 +142,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     case FLAG_UserAskTask: //玩家请求接受任务数据
     {
         hf_uint32 taskID = ((STR_PackUserAskTask*)buf)->TaskID;
+//        hf_uint32 roleid = (*smap)[conn].m_roleid;
         Server::GetInstance()->GetCmdParse()->PushAskTask(conn, taskID);
 
 //        srv->RunTask(boost::bind(&GameTask::AskTask, t_task, conn, taskID));
@@ -149,6 +151,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     case FLAG_QuitTask:   //玩家请求放弃任务
     {
         hf_uint32 taskID = ((STR_PackQuitTask*)buf)->TaskID;
+//        hf_uint32 roleid = (*smap)[conn].m_roleid;
         Server::GetInstance()->GetCmdParse()->PushQuitTask(conn, taskID);
 
 //        srv->RunTask(boost::bind(&GameTask::QuitTask, t_task, conn, taskID));
@@ -246,6 +249,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     case FLAG_PickGoods:      //捡物品
     {
+        printf("FLAG pick up goods\n");
         Server::GetInstance()->GetCmdParse()->PushPickGoods(conn, len, (STR_PickGoods*)(buf + sizeof(STR_PackHead)));
 
 //        STR_PickGoods* t_pick =(STR_PickGoods*)srv->malloc();

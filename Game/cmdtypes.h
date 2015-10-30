@@ -82,9 +82,6 @@ typedef boost::unordered_map<hf_uint32, TCPConnection::Pointer> _umap_roleSock;
 typedef boost::shared_ptr<_umap_roleSock> umap_roleSock;
 
 
-//typedef boost::unordered_map<hf_uint32, STR_MonsterViewRole> _umap_viewRole;
-//typedef boost::shared_ptr<_umap_viewRole> umap_viewRole;
-
 ////<怪物ID,_umap_roleSock>
 //typedef boost::unordered_map<hf_uint32, _umap_roleSock> _umap_monsterViewRole;
 //typedef boost::shared_ptr<_umap_monsterViewRole> umap_monsterViewRole;

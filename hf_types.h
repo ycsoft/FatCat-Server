@@ -8,6 +8,8 @@
 #ifndef HF_TYPES_H_
 #define HF_TYPES_H_
 
+#include <sys/time.h>
+#include <stddef.h>
 
 #define  CHUNK_SIZE            1024        //内存池块大小
 #define  CHUNK_COUNT           4096        //内存池块数
@@ -27,15 +29,17 @@
 #define  MonsterHatredView     1000         //怪物仇恨范围 60
 #define  MonsterPursuitDis     1000         //怪物追击玩家与起始追击点的距离
 
-#define  PlayerAttackView      1000          //玩家普通攻击范围
-#define  MonsterAttackView     10          //怪物普通攻击范围
+#define  PlayerAttackView      150          //玩家普通攻击范围
+#define  MonsterAttackView     20          //怪物普通攻击范围
 
 #define  MonsterMoveDistance   5           //怪物移动一次的距离
 #define  PlayerMoveDistance    5           //玩家移动一次的距离  单位分米
 #define  RefreshDistance       20          //玩家刷新数据的距离
 
 #define  PursuitFarDistance    50          //怪物追击玩家，距离较远一次移动的距离  单位分米
-#define  PursuitNearlyDistance 5           //怪物追击玩家，距离较近一次移动的距离
+#define  PursuitNearlyDistance 10           //怪物追击玩家，距离较近一次移动的距离
+
+#define  MonsterStopTime       5           //每次怪物运动到一个点后停留的时间
 
 #define  MonsterAttackSpeed    1           //怪物攻速 每隔多久攻击一次
 //位置的状态，0 空闲，1使用，2锁定
@@ -93,11 +97,11 @@
 #define  OPPOSITE_DIRECT        2      //方向相反
 #define  HIT                    3      //命中
 #define  NOT_HIT                4      //未命中
-#define  RESIST                 5      //抵挡
-#define  NOT_RESIST             6      //未抵挡
+#define  Dodge                  5      //闪避
+#define  RESIST                 6      //抵挡
 #define  CRIT                   7      //暴击
-#define  NOT_CRIT               8      //未暴击
-#define  Dodge                  9      //闪避  怪物返回中
+
+#define  BackOut                8      //返回  怪物返回中
 
 #define  SKILL_SUCCESS          3      //技能使用成功
 #define  SKILL_ERROR            4      //技能使用错误
@@ -124,7 +128,7 @@
 
 #define   RoleCritRate                    0.02   //暴击率
 #define   RoleDodgeRate                   0.05   //闪避率
-#define   RoleHitRate                     0.80   //命中率
+#define   RoleHitRate                     0.99   //命中率
 #define   RoleResistRate                  0.05   //抵挡率
 #define   CasterSpeed                     1.00   //施法速度
 #define   MoveSpeed                       1.00   //移动速度
@@ -149,6 +153,20 @@
 #define  BodyPos_Ring                     8    //戒指8
 #define  BodyPos_Phone                    9    //手机9
 #define  BodyPos_Weapon                   10   //武器10
+
+#define  Action_Idle        0       //空闲（idle）
+#define  Action_Walk        1       //行走（walk）
+#define  Action_Hurt        2       //被攻击（hurt）
+#define  Action_Attack      3       //发出攻击（attack）
+#define  Action_Death       4       //死亡（death）
+#define  Action_Rub         5       //跑步（run）
+#define  Action_Talk        6       //交谈（talk）
+#define  Action_Picked      7       //弯腰捡（pickd）
+#define  Action_Pickup      8       //捡起来（picku）
+#define  Action_Pickint     9       //采集（picking）
+#define  Action_Ride        10      //骑乘（Ride）通用骑乘动作
+#define  Action_RideMotor   11      //骑摩托(RideMotor )
+#define  Action_RideBike    12      //骑自行车（RideBike）
 
 
 namespace hf_types{

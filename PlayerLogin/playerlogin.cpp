@@ -14,14 +14,17 @@ PlayerLogin::PlayerLogin()
 
 PlayerLogin::~PlayerLogin()
 {
-
+    delete m_common;
+    delete m_sales;
+    delete m_technology;
+    delete m_administration;
 }
 
 //保存玩家角色退出数据，并发送下线通知给其他玩家
 void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
 {
     Server *srv = Server::GetInstance();
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_int32 roleid = ((*smap)[conn].m_roleid);
     if(roleid < 100000000) //没登录角色
     {
@@ -81,7 +84,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
 //用户下线删除保存的对应的<nick, sock>
 void PlayerLogin::DeleteNickSock(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
     SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
     SessionMgr::_umap_nickSock::iterator t_nickSock = nickSock->find((*smap)[conn].m_RoleBaseInfo.Nick);
@@ -93,7 +96,7 @@ void PlayerLogin::DeleteNickSock(TCPConnection::Pointer conn)
 
 void PlayerLogin::DeleteNameSock(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
     SessionMgr::umap_nickSock nameSock = SessionMgr::Instance()->GetNameSock();
     SessionMgr::_umap_nickSock::iterator t_nameSock = nameSock->find(&(*smap)[conn].m_usrid[0]);
@@ -170,7 +173,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
 
     hf_char nickbuff[33] = { 0 };
     memcpy(nickbuff, reg->Nick, sizeof(reg->Nick));
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_char *pname =  & ( (*smap)[conn].m_usrid[0]);
     sbd<< "insert into t_PlayerRoleList(username,nick,sex,figure,figurecolor,face,eye,hair,haircolor,modeid,skirtid) values('" <<pname<<"','"<< nickbuff << "'," << reg->Sex<<","<<reg->Figure<<","<<reg->FigureColor<<","<< reg->Face << "," << reg->Eye << "," << reg->Hair <<"," << reg->HairColor << "," << reg->ModeID << "," << reg->SkirtID <<");";
 
@@ -248,7 +251,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
 //删除角色 此函数只能在登录用户，未登录角色的前提下调用
 void PlayerLogin::DeleteRole(TCPConnection::Pointer conn, hf_uint32 roleid)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     StringBuilder       sbd;
     hf_char* NameBuff = &(*smap)[conn].m_usrid[0];
     time_t timep;
@@ -337,7 +340,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
     STR_PackResult t_packResult;
     t_packResult.Flag = FLAG_PlayerLoginRole;
 
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
     hf_char *pname =  & ( (*smap)[conn].m_usrid[0]);
     StringBuilder sbd;
@@ -362,6 +365,10 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
 
         SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
         (*nickSock)[t_roleBaseInfo->Nick] = conn;
+
+//        umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
+//        (*roleSock)[roleid] = conn;
+
 
 
         sbd.Clear();
@@ -417,6 +424,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         srv->GetGameTask()->SendPlayerTaskProcess(conn);   //玩家任务进度
         srv->GetGameTask()->SendPlayerViewTask(conn);      //玩家可接任务
         srv->GetTeamFriend()->SendAskAddFriend(conn);      //离线的添加好友请求
+        printf("登录数据发送完成\n");
     }
 }
 
@@ -508,7 +516,7 @@ void PlayerLogin::SendFriendList(TCPConnection::Pointer conn, hf_uint32 RoleID)
 {
     StringBuilder sbd;
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     sbd << "select friendroleid,nick from t_friendlist,t_playerrolelist where t_friendlist.roleid = " << RoleID << " and t_friendlist.roleid = t_playerrolelist.roleid and ifdelete = 0;";
     Logger::GetLogger()->Debug(sbd.str());
@@ -547,7 +555,7 @@ void PlayerLogin::SendRoleMoney(TCPConnection::Pointer conn, hf_uint32 RoleID)
     StringBuilder sbd;
     STR_PackHead t_packHead;
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     sbd << "select count,typeid from t_playermoney where roleid = " << RoleID << ";";
     Logger::GetLogger()->Debug(sbd.str());
     umap_roleMoney  t_playerMoney = (*smap)[conn].m_playerMoney;
@@ -579,7 +587,7 @@ void PlayerLogin::SendRoleGoods(TCPConnection::Pointer conn, hf_uint32 RoleID)
     StringBuilder sbd;
     STR_PackHead t_packHead;
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     sbd << "select goodsid,typeid,count,position from t_playergoods where roleid = " << RoleID << ";";
     Logger::GetLogger()->Debug(sbd.str());
 
@@ -618,7 +626,7 @@ void PlayerLogin::SendRoleGoods(TCPConnection::Pointer conn, hf_uint32 RoleID)
 //发送角色背包里装备的属性
 void PlayerLogin::SendRoleEquAttr(TCPConnection::Pointer conn, hf_uint32 RoleID)
 {      
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleEqu  playerEqu = (*smap)[conn].m_playerEqu;
     if(playerEqu->size() == 0)
     {
@@ -656,7 +664,7 @@ void PlayerLogin::SendRoleNotPickGoods(TCPConnection::Pointer conn, hf_uint32 Ro
     STR_PackHead t_packHead;
     t_packHead.Flag = FLAG_LootGoods;
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     sbd << "select continuetime,lootid,pos_x,pos_y,pos_z,mapid from t_notpickgoodspos where roleid = " << RoleID << ";";
     Logger::GetLogger()->Debug(sbd.str());
 
@@ -712,7 +720,7 @@ void PlayerLogin::SendRoleNotPickGoods(TCPConnection::Pointer conn, hf_uint32 Ro
 //将玩家背包里的物品写进数据库
 void PlayerLogin::SaveRoleBagGoods(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleGoods t_roleGoods = (*smap)[conn].m_playerGoods;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
@@ -765,7 +773,7 @@ void PlayerLogin::SaveRoleBagGoods(TCPConnection::Pointer conn)
 //将玩家装备属性写进数据库
 void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleEqu roleEqu = (*smap)[conn].m_playerEqu;
     StringBuilder sbd;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
@@ -809,7 +817,7 @@ void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
 //将玩家金钱写进数据库
 void PlayerLogin::SaveRoleMoney(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleMoney t_roleMoney = (*smap)[conn].m_playerMoney;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
@@ -854,7 +862,7 @@ void PlayerLogin::SaveRoleMoney(TCPConnection::Pointer conn)
 //将玩家任务进度写进数据库
 void PlayerLogin::SaveRoleTaskProcess(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
@@ -906,7 +914,7 @@ void PlayerLogin::SaveRoleTaskProcess(TCPConnection::Pointer conn)
 //将离开可视范围的消息发送给可视范围内的玩家
 void PlayerLogin::SendOffLineToViewRole(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
     STR_PackRoleLeave RoleLeave;
@@ -930,7 +938,7 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
 {
     time_t timep;
     time(&timep);
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_lootPosition      t_lootPosition = (*smap)[conn].m_lootPosition;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
@@ -1020,7 +1028,7 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
 //玩家角色属性
 void PlayerLogin::SaveRoleInfo(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     STR_RoleInfo      t_roleinfo = (*smap)[conn].m_roleInfo;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
     StringBuilder sbd;
@@ -1182,7 +1190,7 @@ void PlayerLogin::DeletePlayerTask(hf_uint32 roleid, hf_uint32 taskid)
 //刷新可视范围内的玩家
 void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleSock viewRole = (*smap)[conn].m_viewRole;
     STR_PackPlayerPosition* pos = &(*smap)[conn].m_position;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
@@ -1285,7 +1293,7 @@ hf_uint8 PlayerLogin::caculateDistanceWithRole(STR_PackPlayerPosition* pos1, STR
 //好友下线
 void PlayerLogin::FriendOffline(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
 
     umap_friendList friendList = ((*smap)[conn]).m_friendList;
@@ -1379,7 +1387,9 @@ void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquip
         roleInfo->Small_Universe = 0;
     }
     roleInfo->HP = t_roleAttr.Hp;
+    roleInfo->MaxHP = roleInfo->HP;
     roleInfo->Magic = t_roleAttr.Magic;
+    roleInfo->MaxMagic = roleInfo->Magic;
     roleInfo->PhysicalDefense = t_roleAttr.PhysicalDefense;
     roleInfo->MagicDefense = t_roleAttr.MagicDefense;
     roleInfo->PhysicalAttack = t_roleAttr.PhysicalAttack;
@@ -1451,7 +1461,7 @@ void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquip
 //从怪物可视范围内删除该玩家
 void PlayerLogin::DeleteFromMonsterView(TCPConnection::Pointer conn)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_uint32 roleid = (*smap)[conn].m_roleid;
     umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
     umap_playerViewMonster  viewMonster = (*smap)[conn].m_viewMonster;
@@ -1464,9 +1474,19 @@ void PlayerLogin::DeleteFromMonsterView(TCPConnection::Pointer conn)
 //玩家复活
 void PlayerLogin::PlayerRelive(TCPConnection::Pointer conn, hf_uint16 mode)
 {
-    SessionMgr::SessionMap *smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     STR_RoleInfo* t_roleInfo = &(*smap)[conn].m_roleInfo;
     mode = 0;
     t_roleInfo->HP = t_roleInfo->MaxHP;
     cout << "玩家 " << (*smap)[conn].m_roleid << " 复活," << t_roleInfo->HP << endl;
+
+
+    STR_RoleAttribute t_roleAttr((*smap)[conn].m_roleid, t_roleInfo->HP);
+    conn->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+
+    umap_roleSock t_viewRole = (*smap)[conn].m_viewRole;
+    for(_umap_roleSock::iterator view_it = t_viewRole->begin(); view_it != t_viewRole->end(); view_it++)
+    {
+        view_it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+    }
 }

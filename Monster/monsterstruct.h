@@ -45,6 +45,23 @@ public:
         m_mtx.unlock();
     }
 
+    void ChangeAimTimeAndPos(hf_double timep)
+    {
+        m_mtx.lock();
+        aimTime = timep;
+
+        hf_float dx = monster.Target_x - monster.Current_x;
+        hf_float dz = monster.Target_z - monster.Current_z;
+        hf_float dis = sqrt(dx*dx + dz*dz);
+        hf_double userTime = dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
+
+        monster.Current_x = monster.Target_x - (aimTime - timep)/userTime * dx;
+        monster.Current_z = monster.Target_x - (aimTime - timep)/userTime * dx;
+        monster.Target_x = monster.Current_x;
+        monster.Target_z = monster.Current_z;
+        m_mtx.unlock();
+    }
+
     _STR_MonsterInfo& operator=(_STR_MonsterInfo& mon)
     {
         if(this == &mon)
@@ -70,25 +87,7 @@ public:
 
 }STR_MonsterInfo;
 
-typedef struct _STR_MonsterViewRole
-{
-    _STR_MonsterViewRole(TCPConnection::Pointer _conn)
-    {
-        conn = _conn;
-        HatredValue = 0;
-    }
 
-    _STR_MonsterViewRole()
-    {
-
-    }
-
-    TCPConnection::Pointer conn;
-    hf_uint32              HatredValue;
-
-}STR_MonsterViewRole;
-
-//typedef boost::unordered_map<hf_uint32, STR_MonsterViewRole> _umap_viewRole;
 //角色ID，仇恨值
 typedef boost::unordered_map<hf_uint32, hf_uint32> _umap_viewRole;
 typedef boost::shared_ptr<_umap_viewRole> umap_viewRole;

@@ -2,6 +2,7 @@
 #define CMDPARSE_H
 
 #include <queue>
+#include <boost/lockfree/queue.hpp>
 
 #include "NetWork/tcpconnection.h"
 #include "Game/postgresqlstruct.h"
@@ -12,164 +13,229 @@ using namespace std;
 
 typedef struct _Queue_AskTask
 {
-    _Queue_AskTask(TCPConnection::Pointer _conn, hf_uint32 _taskID)
-        :conn(_conn),taskID(_taskID)
+    _Queue_AskTask(hf_uint32 _roleid, hf_uint32 _taskID)
+        :roleid(_roleid),taskID(_taskID)
     {
 
     }
-    TCPConnection::Pointer conn;
+    _Queue_AskTask()
+    {
+
+    }
+
+    hf_uint32  roleid;
     hf_uint32  taskID;
 }Queue_AskTask;
 
 
 typedef struct _Queue_QuitTask
 {
-    _Queue_QuitTask(TCPConnection::Pointer _conn, hf_uint32 _taskID)
-        :conn(_conn),taskID(_taskID)
+    _Queue_QuitTask(hf_uint32 _roleid, hf_uint32 _taskID)
+        :roleid(_roleid),taskID(_taskID)
     {
 
     }
-    TCPConnection::Pointer conn;
+    _Queue_QuitTask()
+    {
+
+    }
+
+    hf_uint32 roleid;
     hf_uint32  taskID;
 }Queue_QuitTask;
 
 typedef struct _Queue_AskFinishTask
 {
-    _Queue_AskFinishTask(TCPConnection::Pointer _conn, STR_FinishTask* _finishTask)
-        :conn(_conn)
+    _Queue_AskFinishTask(hf_uint32 _roleid, STR_FinishTask* _finishTask)
+        :roleid(_roleid)
     {
         finishTask.TaskID = _finishTask->TaskID;
         finishTask.SelectGoodsID = _finishTask->SelectGoodsID;
     }
-    TCPConnection::Pointer conn;
+    _Queue_AskFinishTask()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_FinishTask finishTask;
 }Queue_AskFinishTask;
 
 typedef struct _Queue_AskTaskData
 {
-    _Queue_AskTaskData(TCPConnection::Pointer _conn, hf_uint32 _taskID, hf_uint16 _flag)
-        :conn(_conn),taskID(_taskID),flag(_flag)
+    _Queue_AskTaskData(hf_uint32 _roleid, hf_uint32 _taskID, hf_uint16 _flag)
+        :roleid(_roleid),taskID(_taskID),flag(_flag)
+    {
+
+    }
+    _Queue_AskTaskData()
     {
 
     }
 
-    TCPConnection::Pointer conn;
+    hf_uint32 roleid;
     hf_uint32 taskID;
     hf_uint16 flag;
 }Queue_AskTaskData;
 
 typedef struct _Queue_AddFriend
 {
-    _Queue_AddFriend(TCPConnection::Pointer _conn, STR_PackAddFriend* _addFriend)
-        :conn(_conn)
+    _Queue_AddFriend(hf_uint32 _roleid, STR_PackAddFriend* _addFriend)
+        :roleid(_roleid)
     {
         memcpy(&addFriend, _addFriend, sizeof(STR_PackAddFriend));
     }
+    _Queue_AddFriend()
+    {
 
-    TCPConnection::Pointer conn;
+    }
+
+    hf_uint32 roleid;
     STR_PackAddFriend addFriend;
 }Queue_AddFriend;
 
 typedef struct _Queue_DeleteFriend
 {
-    _Queue_DeleteFriend(TCPConnection::Pointer _conn, hf_uint32 _roleid)
-        :conn(_conn), roleid(_roleid)
+    _Queue_DeleteFriend(hf_uint32 _roleid, hf_uint32 _deleteRoleid)
+        :roleid(_roleid), deleteRoleid(_deleteRoleid)
+    {
+
+    }
+    _Queue_DeleteFriend()
     {
 
     }
 
-    TCPConnection::Pointer conn;
     hf_uint32 roleid;
+    hf_uint32 deleteRoleid;
 }Queue_DeleteFriend;
 
 typedef struct _Queue_AddFriendReturn
 {
-    _Queue_AddFriendReturn(TCPConnection::Pointer _conn, STR_PackAddFriendReturn* _addFriendReturn)
-        :conn(_conn)
+    _Queue_AddFriendReturn(hf_uint32 _roleid, STR_PackAddFriendReturn* _addFriendReturn)
+        :roleid(_roleid)
     {
         memcpy(&addFriendReturn, _addFriendReturn, sizeof(STR_PackAddFriendReturn));
     }
+    _Queue_AddFriendReturn()
+    {
 
-    TCPConnection::Pointer conn;
+    }
+
+    hf_uint32 roleid;
     STR_PackAddFriendReturn addFriendReturn;
 }Queue_AddFriendReturn;
 
 typedef struct _Queue_PickGoods
 {
-    _Queue_PickGoods(TCPConnection::Pointer _conn, hf_uint16 _len, STR_PickGoods* _pickGoods)
-        :conn(_conn), len(_len)
+    _Queue_PickGoods(hf_uint32 _roleid, hf_uint16 _len, STR_PickGoods* _pickGoods)
+        :roleid(_roleid), len(_len)
     {
         memcpy(pickGoods, _pickGoods, len);
     }
-    TCPConnection::Pointer conn;
+    _Queue_PickGoods()
+    {
+
+    }
+
+    hf_uint32 roleid;
     hf_uint16 len;
     STR_PickGoods pickGoods[5];
 }Queue_PickGoods;
 
 typedef struct _Queue_RemoveGoods
 {
-    _Queue_RemoveGoods(TCPConnection::Pointer _conn, STR_RemoveBagGoods* _removeGoods)
-        :conn(_conn)
+    _Queue_RemoveGoods(hf_uint32 _roleid, STR_RemoveBagGoods* _removeGoods)
+        :roleid(_roleid)
     {
         memcpy(&removeGoods, _removeGoods, sizeof(STR_RemoveBagGoods));
     }
+    _Queue_RemoveGoods()
+    {
 
-    TCPConnection::Pointer conn;
+    }
+
+    hf_uint32 roleid;
     STR_RemoveBagGoods removeGoods;
 }Queue_RemoveGoods;
 
 typedef struct _Queue_MoveGoods
 {
-    _Queue_MoveGoods(TCPConnection::Pointer _conn, STR_MoveBagGoods* _moveGoods)
-        :conn(_conn)
+    _Queue_MoveGoods(hf_uint32 _roleid, STR_MoveBagGoods* _moveGoods)
+        :roleid(_roleid)
     {
         memcpy(&moveGoods, _moveGoods, sizeof(STR_MoveBagGoods));
     }
-    TCPConnection::Pointer conn;
+    _Queue_MoveGoods()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_MoveBagGoods moveGoods;
 }Queue_MoveGoods;
 
 typedef struct _Queue_BuyGoods
 {
-    _Queue_BuyGoods(TCPConnection::Pointer _conn, STR_BuyGoods* _buyGoods)
-        :conn(_conn)
+    _Queue_BuyGoods(hf_uint32 _roleid, STR_BuyGoods* _buyGoods)
+        :roleid(_roleid)
     {
         memcpy(&buyGoods, _buyGoods, sizeof(STR_BuyGoods));
     }
-    TCPConnection::Pointer conn;
+    _Queue_BuyGoods()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_BuyGoods buyGoods;
 }Queue_BuyGoods;
 
 typedef struct _Queue_SellGoods
 {
-    _Queue_SellGoods(TCPConnection::Pointer _conn, STR_SellGoods* _sellGoods)
-        :conn(_conn)
+    _Queue_SellGoods(hf_uint32 _roleid, STR_SellGoods* _sellGoods)
+        :roleid(_roleid)
     {
         memcpy(&sellGoods, _sellGoods, sizeof(STR_SellGoods));
     }
-    TCPConnection::Pointer conn;
+    _Queue_SellGoods()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_SellGoods sellGoods;
 }Queue_SellGoods;
 
 typedef struct _Queue_WearBodyEqu
 {
-    _Queue_WearBodyEqu(TCPConnection::Pointer _conn, STR_WearEqu* _wearEqu)
-        :conn(_conn)
+    _Queue_WearBodyEqu(hf_uint32 _roleid, STR_WearEqu* _wearEqu)
+        :roleid(_roleid)
     {
         memcpy(&wearEqu, _wearEqu, sizeof(STR_WearEqu));
     }
-    TCPConnection::Pointer conn;
+    _Queue_WearBodyEqu()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_WearEqu wearEqu;
 }Queue_WearBodyEqu;
 
 typedef struct _Queue_TakeOffBodyEqu
 {
-    _Queue_TakeOffBodyEqu(TCPConnection::Pointer _conn, hf_uint32 _equid)
-        :conn(_conn),equid(_equid)
+    _Queue_TakeOffBodyEqu(hf_uint32 _roleid, hf_uint32 _equid)
+        :roleid(_roleid),equid(_equid)
     {
 
     }
-    TCPConnection::Pointer conn;
+    _Queue_TakeOffBodyEqu()
+    {
+
+    }
+
+    hf_uint32 roleid;
     hf_uint32 equid;
 }Queue_TakeOffBodyEqu;
 
@@ -177,35 +243,50 @@ typedef struct _Queue_TakeOffBodyEqu
 
 typedef struct _Queue_PlayerMove
 {
-    _Queue_PlayerMove(TCPConnection::Pointer _conn, STR_PlayerMove* _playerMove)
-        :conn(_conn)
+    _Queue_PlayerMove(hf_uint32 _roleid, STR_PlayerMove* _playerMove)
+        :roleid(_roleid)
     {
         memcpy(&playerMove, _playerMove, sizeof(STR_PlayerMove));
     }
 
-    TCPConnection::Pointer conn;
+    _Queue_PlayerMove()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_PlayerMove playerMove;
 }Queue_PlayerMove;
 
 typedef struct _Queue_AttackAim
 {
-    _Queue_AttackAim(TCPConnection::Pointer _conn, STR_PackUserAttackAim* _attackAim)
-        :conn(_conn)
+    _Queue_AttackAim(hf_uint32 _roleid, STR_PackUserAttackAim* _attackAim)
+        :roleid(_roleid)
     {
         memcpy(&attackAim, _attackAim, sizeof(STR_PackUserAttackAim));
     }
-    TCPConnection::Pointer conn;
+    _Queue_AttackAim()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_PackUserAttackAim attackAim;
 }Queue_AttackAim;
 
 typedef struct _Queue_AttackPoint
 {
-    _Queue_AttackPoint(TCPConnection::Pointer _conn, STR_PackUserAttackPoint* _attackPoint)
-        :conn(_conn)
+    _Queue_AttackPoint(hf_uint32 _roleid, STR_PackUserAttackPoint* _attackPoint)
+        :roleid(_roleid)
     {
         memcpy(&attackPoint, _attackPoint, sizeof(STR_PackUserAttackPoint));
     }
-    TCPConnection::Pointer conn;
+    _Queue_AttackPoint()
+    {
+
+    }
+
+    hf_uint32 roleid;
     STR_PackUserAttackPoint attackPoint;
 }Queue_AttackPoint;
 
@@ -214,6 +295,7 @@ class CmdParse
 {
 public:
     CmdParse();
+    ~CmdParse();
 
     //Task
     void PushAskTask(TCPConnection::Pointer conn, hf_uint32 taskID);   //请求任务
@@ -276,23 +358,23 @@ public:
 
 
 private:
-    queue<Queue_AskTask>           *m_AskTask;
-    queue<Queue_QuitTask>          *m_QuitTask;
-    queue<Queue_AskFinishTask>     *m_AskFinishTask;
-    queue<Queue_AskTaskData>       *m_AskTaskData;
-    queue<Queue_AddFriend>         *m_AddFriend;
-    queue<Queue_DeleteFriend>      *m_DeleteFriend;
-    queue<Queue_AddFriendReturn>   *m_AddFriendReturn;
-    queue<Queue_PickGoods>         *m_PickGoods;
-    queue<Queue_RemoveGoods>       *m_RemoveGoods;
-    queue<Queue_MoveGoods>         *m_MoveGoods;
-    queue<Queue_BuyGoods>          *m_BuyGoods;
-    queue<Queue_SellGoods>         *m_SellGoods;
-    queue<Queue_WearBodyEqu>       *m_WearBodyEqu;
-    queue<Queue_TakeOffBodyEqu>    *m_TakeOffBodyEqu;
-    queue<Queue_PlayerMove>        *m_PlayerMove;
-    queue<Queue_AttackAim>         *m_AttackAim;
-    queue<Queue_AttackPoint>       *m_AttackPoint;
+    boost::lockfree::queue<Queue_AskTask>           *m_AskTask;
+    boost::lockfree::queue<Queue_QuitTask>          *m_QuitTask;
+    boost::lockfree::queue<Queue_AskFinishTask>     *m_AskFinishTask;
+    boost::lockfree::queue<Queue_AskTaskData>       *m_AskTaskData;
+    boost::lockfree::queue<Queue_AddFriend>         *m_AddFriend;
+    boost::lockfree::queue<Queue_DeleteFriend>      *m_DeleteFriend;
+    boost::lockfree::queue<Queue_AddFriendReturn>   *m_AddFriendReturn;
+    boost::lockfree::queue<Queue_PickGoods>         *m_PickGoods;
+    boost::lockfree::queue<Queue_RemoveGoods>       *m_RemoveGoods;
+    boost::lockfree::queue<Queue_MoveGoods>         *m_MoveGoods;
+    boost::lockfree::queue<Queue_BuyGoods>          *m_BuyGoods;
+    boost::lockfree::queue<Queue_SellGoods>         *m_SellGoods;
+    boost::lockfree::queue<Queue_WearBodyEqu>       *m_WearBodyEqu;
+    boost::lockfree::queue<Queue_TakeOffBodyEqu>    *m_TakeOffBodyEqu;
+    boost::lockfree::queue<Queue_PlayerMove>        *m_PlayerMove;
+    boost::lockfree::queue<Queue_AttackAim>         *m_AttackAim;
+    boost::lockfree::queue<Queue_AttackPoint>       *m_AttackPoint;
 };
 
 

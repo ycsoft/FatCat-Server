@@ -44,7 +44,7 @@ void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t
 //            srv->free(t_attack);
             return;
         }
-        hf_double timep = GameAttack::GetCurrentTime();
+        hf_double timep = GetCurrentTime();
 
         STR_PackSkillResult t_skillResult;
         t_skillResult.SkillID = t_attack->SkillID;
@@ -100,6 +100,77 @@ void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t
 
 void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack)
 {
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    STR_PackDamageData t_damageData;
+
+    umap_roleSock t_viewRole = (*smap)[conn].m_viewRole;
+    _umap_roleSock::iterator it = t_viewRole->find(t_attack->AimID);
+    if(it == t_viewRole->end()) //不在可视范围
+    {
+        return;
+    }
+
+    t_damageData.AimID = t_attack->AimID;
+    t_damageData.AttackID = (*smap)[conn].m_roleid;
+    t_damageData.TypeID = t_attack->SkillID;
+
+
+    STR_PackPlayerPosition* t_AttacketPos = &(*smap)[conn].m_position;
+    STR_PackPlayerPosition* t_AimPos = &(*smap)[it->second].m_position;
+
+    hf_float dx = t_AimPos->Pos_x - t_AttacketPos->Pos_x;
+    hf_float dy = t_AimPos->Pos_y - t_AttacketPos->Pos_y;
+    hf_float dz = t_AimPos->Pos_z - t_AttacketPos->Pos_z;
+    //判断是否在攻击范围内
+    if(dx*dx + dy*dy + dz*dz > PlayerAttackView*PlayerAttackView)
+    {
+        t_damageData.Flag = NOT_ATTACKVIEW;  //不在攻击范围
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
+
+
+    //判断方向是否可攻击
+    if(dx*cos(t_AttacketPos->Direct) + dz*sin(t_AttacketPos->Direct) < 0)
+    {
+        t_damageData.Flag = OPPOSITE_DIRECT;
+        printf("方向相反，攻击不上\n");
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
+
+    STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
+    STR_RoleInfo* t_AimInfo = &(*smap)[it->second].m_roleInfo;
+
+    hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
+
+    if(t_probHit*100 < rand()%100) //未命中
+    {
+        t_damageData.Flag = NOT_HIT;
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
+    if(t_AimInfo->Dodge_Rate*100 >= rand()%100) //闪避
+    {
+        t_damageData.Flag = Dodge;
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        return;
+    }
+    if(t_AttacketInfo->Crit_Rate*100 < rand()%100)//未暴击
+    {
+
+    }
+    else //未暴击
+    {
+
+    }
+    if(t_AimInfo->Resist_Rate*100 >= rand()%100) //抵挡
+    {
+
+    }
+
+
 
 }
 
@@ -140,9 +211,11 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
 
 
 //    //判断方向是否可攻击
-    if((dx*cos((t_AttacketPosition->Direct)*PI/180) + dz*sin((t_AttacketPosition->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)
+
+    if(dx*cos(t_AttacketPosition->Direct) + dz*sin(t_AttacketPosition->Direct) < 0)
     {
         t_damageData.Flag = OPPOSITE_DIRECT;
+        printf("方向相反，攻击不上\n");
         conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
@@ -176,9 +249,20 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     }
     else //未暴击
     {
-        t_damageData.Flag = NOT_CRIT;
+        t_damageData.Flag = HIT;
     }
     DamageDealWith(conn, &t_damageData, t_monsterBasicInfo);
+}
+
+//发送玩家血量给周围玩家
+void GameAttack::SendRoleHpToViewRole(TCPConnection::Pointer conn, STR_RoleAttribute* roleAttr)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_roleSock t_viewRole = (*smap)[conn].m_viewRole;
+    for(_umap_roleSock::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
+    {
+        it->second->Write_all(&roleAttr, sizeof(STR_RoleAttribute));
+    }
 }
 
 //计算伤害
@@ -203,7 +287,7 @@ hf_uint32 GameAttack::CalDamage(STR_PackSkillInfo* skillInfo, STR_RoleInfo* role
 
 void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     _umap_viewRole* t_viewRole = &(*(Server::GetInstance()->GetMonster()->GetMonsterViewRole()))[monsterID];  //得到能看到这个怪物的玩家
     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
@@ -251,11 +335,23 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
             if(*t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
             {
                 monster->ChangeHatredRoleid(roleid);
+                double timep = GetCurrentTime();
+                if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
+                {
+                    monster->ChangeAimTimeAndPos(timep);
+                    Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
+                }
             }
         }
         else
         {
             monster->ChangeHatredRoleid(roleid);
+            double timep = GetCurrentTime();
+            if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
+            {
+                monster->ChangeAimTimeAndPos(timep);
+                Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
+            }
         }
     }
 
@@ -334,7 +430,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
             t_lootGoods.LootGoodsID = Money_1;
             vector<STR_LootGoods> t_vec;
             t_vec.push_back(t_lootGoods);
-            (*lootGoods)[monster->monster.MonsterID] = t_vec;
+            (*lootGoods)[monster->monster.MonsterID*10] = t_vec;   //掉落者ID *10
             memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_LootGoodsPos) + i* sizeof(STR_LootGoods), &t_lootGoods, sizeof(STR_LootGoods));
             i++;
         }
@@ -361,7 +457,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
                 {
                     vector<STR_LootGoods> t_vec;
                     t_vec.push_back(t_lootGoods);
-                    (*lootGoods)[monster->monster.MonsterID] = t_vec;
+                    (*lootGoods)[monster->monster.MonsterID*10] = t_vec;
                 }
             }
         }                
@@ -396,7 +492,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
 //角色技能伤害
 void GameAttack::RoleSkillAttack()
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
     umap_monsterInfo u_monsterInfo = Server::GetInstance()->GetMonster()->GetMonsterBasic();
@@ -405,7 +501,7 @@ void GameAttack::RoleSkillAttack()
     //遍历m_attackMonster,m_attackRole,m_attackPoint 根据时间判断，计算伤害发送给玩家
     while(1)
     {
-        hf_double timep = GameAttack::GetCurrentTime();
+        hf_double timep = GetCurrentTime();
         for(_umap_roleAttackAim::iterator it = m_attackMonster->begin(); it != m_attackMonster->end();)
         {
             if(timep < (it->second).HurtTime) //时间没到
@@ -665,7 +761,7 @@ void GameAttack::AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skil
             conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
             return;
         }
-        if((dx*cos((t_pos->Direct)*PI/180) + dz*sin((t_pos->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)  //不在攻击角度
+        if(dx*cos(t_pos->Direct) + dz*sin(t_pos->Direct) < 0)  //不在攻击角度
         {
             t_skillResult.result = OPPOSITE_DIRECT;
             conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
@@ -730,7 +826,7 @@ void GameAttack::AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo
             conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
             return;
         }
-        if((dx*cos((t_pos->Direct)*PI/180) + dz*sin((t_pos->Direct)*PI/180))/sqrt(dx*dx + dz*dz) < 0)  //不在攻击角度
+        if(dx*cos(t_pos->Direct) + dz*sin(t_pos->Direct) < 0)  //不在攻击角度
         {
             t_skillResult.result = OPPOSITE_DIRECT;
             conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
@@ -787,7 +883,7 @@ void GameAttack::AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo
 //清除超过时间的掉落物品
 void GameAttack::DeleteOverTimeGoods()
 {
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     time_t timep;
     LootGoodsOverTime t_loot;
     while(1)

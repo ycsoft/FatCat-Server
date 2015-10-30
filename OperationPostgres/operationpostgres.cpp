@@ -14,7 +14,12 @@ OperationPostgres::OperationPostgres():
 
 OperationPostgres::~OperationPostgres()
 {
-
+    delete m_UpdateMoney;
+    delete m_UpdateLevel;
+    delete m_UpdateExp;
+    delete m_UpdateGoods;
+    delete m_UpdateEquAttr;
+    delete m_UpdateTask;
 }
 
 //该函数负责实时将玩家数据写入数据库

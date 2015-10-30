@@ -82,7 +82,7 @@ public:
     void Monsteractivity();
 
     //怪物复活
-    void MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);
+    void MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns, hf_double currentTime);
 
     //怪物新的移动点
     void NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);

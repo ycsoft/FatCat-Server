@@ -157,18 +157,19 @@ void GameTask::QuitTask(TCPConnection::Pointer conn, hf_uint32 taskid)
     {
         return;
     }
-    umap_taskGoods t_taskGoods = (*smap)[conn].m_taskGoods;
+
+    umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
     for(vector<STR_TaskProcess>::iterator process_it = it->second.begin(); process_it != it->second.end(); process_it++)
     {
         if(process_it->ExeModeID == EXE_collect_goods)
         {
             //从物品任务中删除该任务
-            DeleteGoodsTask(t_taskGoods, process_it->AimID, taskid);
+            DeleteGoodsTask(taskGoods, process_it->AimID, taskid);
         }
 
         Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
     }
-    playerAcceptTask->erase(it);
+    playerAcceptTask->erase(taskid);
 }
 
 //请求完成任务
@@ -524,13 +525,12 @@ void GameTask::DeleteGoodsTask(umap_taskGoods taskGoods, hf_uint32 GoodsID, hf_u
     _umap_taskGoods::iterator taskGoods_it = taskGoods->find(GoodsID);
     if(taskGoods_it != taskGoods->end())
     {
-        for(vector<hf_uint32>::iterator iter = taskGoods_it->second.begin(); iter != taskGoods_it->second.end(); )
+        for(vector<hf_uint32>::iterator iter = taskGoods_it->second.begin(); iter != taskGoods_it->second.end(); iter++)
         {
             if(*iter == taskID)
             {
-                vector<hf_uint32>::iterator _iter = iter;
-                iter++;
-                taskGoods_it->second.erase(_iter);
+                taskGoods_it->second.erase(iter);
+                break;
             }
         }
         if(taskGoods_it->second.size() == 0)
@@ -612,13 +612,16 @@ void GameTask::TaskAim(TCPConnection::Pointer conn, hf_uint32 taskid)
     if(it != m_taskAim->end())
     {
         hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
+        hf_uint32 i = 0;
         for(vector<STR_TaskAim>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
         {
-            memcpy(buff + sizeof(STR_PackHead), &(*iter), sizeof(STR_TaskAim));
+            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_TaskAim), &(*iter), sizeof(STR_TaskAim));
+            i++;
         }
         STR_PackHead t_packHead;
         t_packHead.Flag = FLAG_TaskAim;
-        t_packHead.Len = it->second.size();
+        t_packHead.Len = sizeof(STR_TaskAim)*i;
+        memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
         Server::GetInstance()->free(buff);
     }

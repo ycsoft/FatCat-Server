@@ -59,7 +59,7 @@ public:
     //用户位置移动
     static void PlayerMove(TCPConnection::Pointer conn, STR_PackPlayerPosition* pos)
     {
-        SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         memcpy(&((*smap)[conn].m_position), pos, sizeof(STR_PackPlayerPosition));
         conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
         //给可视范围内的玩家发送位置
@@ -84,7 +84,7 @@ public:
     //用户位置移动
     static void PlayerPositionMove(TCPConnection::Pointer conn, STR_PlayerMove* Move)
     {
-        SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
         STR_PackPlayerPosition* pos = &((*smap)[conn].m_position);
         pos->Direct = Move->Direct;
@@ -102,26 +102,26 @@ public:
         }
         case 1:   //向前移动
         {
-            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct)*PI/180);
-            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos(pos->Direct);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin(pos->Direct);
             break;
         }
         case 2: //向后移动
         {
-            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct + 180)*PI/180);
-            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct + 180)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos(pos->Direct + PI);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin(pos->Direct + PI);
             break;
         }
         case 3://向左移动
         {
-            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct + 90)*PI/180);
-            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct + 90)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos(pos->Direct + PI/2);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin(pos->Direct + PI/2);
             break;
         }
         case 4://向右移动
         {
-            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos((pos->Direct + 270)*PI/180);
-            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin((pos->Direct + 270)*PI/180);
+            pos->Pos_x = pos->Pos_x + PlayerMoveDistance * move_speed/100 * cos(pos->Direct + PI*3/2);
+            pos->Pos_z = pos->Pos_z + PlayerMoveDistance * move_speed/100 * sin(pos->Direct + PI*3/2);
             break;
         }
         default:
@@ -156,12 +156,13 @@ public:
     //
     static void BroadCastUserPosition( TCPConnection::Pointer conn, STR_PackPlayerPosition *pos)
     {
-        SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         STR_PackOtherPlayerPosition OtherPos((*smap)[conn].m_roleid, pos);
 
         umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
+            cout << "发送玩家位置给周围玩家" << endl;
             it->second->Write_all(&OtherPos, sizeof(STR_PackOtherPlayerPosition));
         }
     }
