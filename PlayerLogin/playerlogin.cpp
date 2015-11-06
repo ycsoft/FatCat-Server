@@ -59,8 +59,11 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     FriendOffline(conn);          //发送下线通知给好友
     SaveRoleNotPickGoods(conn);   //保存玩家未捡取的掉落物品
     SendOffLineToViewRole(conn);  //将下线消息通知给可视范围内的玩家
-    DeleteNickSock(conn);         //删除m_nickSock 
-    DeleteRoleSock(roleid);       //删除m_roleSock
+
+    SessionMgr::Instance()->NickSockErase((*smap)[conn].m_RoleBaseInfo.Nick);
+    SessionMgr::Instance()->RoleSockErase(roleid);
+//    DeleteNickSock(conn);         //删除m_nickSock
+//    DeleteRoleSock(roleid);       //删除m_roleSock
 
     ///////////////////////////////////////////////////
     SessionMgr::SessionMap::iterator it = smap->find(conn);
@@ -82,39 +85,39 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
 }
 
 //用户下线删除保存的对应的<nick, sock>
-void PlayerLogin::DeleteNickSock(TCPConnection::Pointer conn)
-{
-    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+//void PlayerLogin::DeleteNickSock(TCPConnection::Pointer conn)
+//{
+//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
-    SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
-    SessionMgr::_umap_nickSock::iterator t_nickSock = nickSock->find((*smap)[conn].m_RoleBaseInfo.Nick);
-    if(t_nickSock != nickSock->end())
-    {
-        nickSock->erase(t_nickSock); //删除m_nickSock
-    }
-}
+//    SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
+//    SessionMgr::_umap_nickSock::iterator t_nickSock = nickSock->find((*smap)[conn].m_RoleBaseInfo.Nick);
+//    if(t_nickSock != nickSock->end())
+//    {
+//        nickSock->erase(t_nickSock); //删除m_nickSock
+//    }
+//}
 
-void PlayerLogin::DeleteNameSock(TCPConnection::Pointer conn)
-{
-    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+//void PlayerLogin::DeleteNameSock(TCPConnection::Pointer conn)
+//{
+//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
-    SessionMgr::umap_nickSock nameSock = SessionMgr::Instance()->GetNameSock();
-    SessionMgr::_umap_nickSock::iterator t_nameSock = nameSock->find(&(*smap)[conn].m_usrid[0]);
-    if(t_nameSock != nameSock->end())
-    {
-        nameSock->erase(t_nameSock); //删除m_nameSock
-    }
-}
+//    SessionMgr::umap_nickSock nameSock = SessionMgr::Instance()->GetNameSock();
+//    SessionMgr::_umap_nickSock::iterator t_nameSock = nameSock->find(&(*smap)[conn].m_usrid[0]);
+//    if(t_nameSock != nameSock->end())
+//    {
+//        nameSock->erase(t_nameSock); //删除m_nameSock
+//    }
+//}
 
- void PlayerLogin::DeleteRoleSock(hf_uint32 roleid)
- {
-     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
-     _umap_roleSock::iterator role_it = t_roleSock->find(roleid);
-     if(role_it != t_roleSock->end())
-     {
-         t_roleSock->erase(roleid); //删除m_roleSock
-     }
- }
+// void PlayerLogin::DeleteRoleSock(hf_uint32 roleid)
+// {
+//     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//     _umap_roleSock::iterator role_it = t_roleSock->find(roleid);
+//     if(role_it != t_roleSock->end())
+//     {
+//         t_roleSock->erase(roleid); //删除m_roleSock
+//     }
+// }
 
 void PlayerLogin::RegisterUserID(TCPConnection::Pointer conn, STR_PlayerRegisterUserId *reg)
 {
@@ -314,7 +317,7 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
             conn->Write_all(&t_PackResult, sizeof(STR_PackResult));
 
             SessionMgr::Instance()->SaveSession(conn, reg->userName);
-            (*nameSock)[reg->userName] = conn;
+            SessionMgr::Instance()->NameSockAdd(reg->userName, conn);
             //发送角色列表
             SendRoleList(conn, reg->userName);
         }
@@ -361,14 +364,10 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         conn->Write_all(&t_packResult, sizeof(STR_PackResult));
         Logger::GetLogger()->Debug("Login Role Success");
 
-        SessionMgr::Instance()->SaveSession(conn, roleid);
+        (*smap)[conn].m_roleid = roleid;
 
-        SessionMgr::umap_nickSock nickSock = SessionMgr::Instance()->GetNickSock();
-        (*nickSock)[t_roleBaseInfo->Nick] = conn;
-
-//        umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
-//        (*roleSock)[roleid] = conn;
-
+        SessionMgr::Instance()->RoleSockAdd(roleid, conn);
+        SessionMgr::Instance()->NickSockAdd(t_roleBaseInfo->Nick, conn);
 
 
         sbd.Clear();
@@ -438,8 +437,10 @@ void PlayerLogin::PlayerOffline(TCPConnection::Pointer conn, STR_PackPlayerOffli
 
     if(reg->type == 1)  //断开链接
     {
-        DeleteNameSock(conn);
-        SessionMgr::Instance()->RemoveSession(conn);
+//        DeleteNameSock(conn);
+        SessionMgr::Instance()->NameSockErase(&(*smap)[conn].m_usrid[0]);
+        SessionMgr::Instance()->SessionsErase(conn);
+//        SessionMgr::Instance()->RemoveSession(conn);
     }
     else if(reg->type  == 2) //返回角色列表
     {

@@ -31,7 +31,7 @@ public:
             monster.HP = 0;
             struct timeval start;
             gettimeofday( &start, NULL);
-            aimTime = (hf_double)start.tv_sec + MonsterDeathTime + (hf_double)start.tv_usec / 1000000;
+            aimTime = (hf_double)start.tv_sec + MonsterDeathTime + (hf_double)(start.tv_usec/1000) / 1000000;
         }
 
         m_mtx.unlock();
@@ -45,20 +45,37 @@ public:
         m_mtx.unlock();
     }
 
-    void ChangeAimTimeAndPos(hf_double timep)
+//    void ChangeActID(hf_uint8 actID)
+//    {
+//        m_mtx.lock();
+//        monster.ActID = actID;
+//        m_mtx.unlock();
+//    }
+
+    void ChangeAimTimeAndPos(hf_uint32 _hatredRoleid, hf_double timep)
     {
         m_mtx.lock();
-        aimTime = timep;
-
+        hatredRoleid = _hatredRoleid;
+        cout << "修改前怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
+        cout << "修改前怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
+        cout << "移动速度" << monster.MoveRate << endl;
         hf_float dx = monster.Target_x - monster.Current_x;
         hf_float dz = monster.Target_z - monster.Current_z;
         hf_float dis = sqrt(dx*dx + dz*dz);
         hf_double userTime = dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
 
+        printf("怪物受到攻击时的时间timep:%lf\n", timep);
+        printf("怪物目标时间aimTime:%lf\n",aimTime);
+        cout << "要用的时间" << userTime << endl;
+
         monster.Current_x = monster.Target_x - (aimTime - timep)/userTime * dx;
-        monster.Current_z = monster.Target_x - (aimTime - timep)/userTime * dx;
+        monster.Current_z = monster.Target_z - (aimTime - timep)/userTime * dz;
         monster.Target_x = monster.Current_x;
         monster.Target_z = monster.Current_z;
+
+        cout << "修改后怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
+        cout << "修改后怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
+        aimTime = 0;
         m_mtx.unlock();
     }
 

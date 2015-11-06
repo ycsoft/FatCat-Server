@@ -60,16 +60,20 @@ void CmdParse::PopAskTask()
 {
     GameTask* gameTask = Server::GetInstance()->GetGameTask();
     umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    Queue_AskTask t_task;
     while(1)
-    {
-        Queue_AskTask t_task;
-        while(m_AskTask->pop(t_task))
+    {       
+        if(m_AskTask->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
             if(it != t_roleSock->end())
             {
                 gameTask->AskTask(it->second, t_task.taskID);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
 
 //        for(hf_uint32 i = 0; i < m_AskTask->size(); i++)
@@ -99,13 +103,17 @@ void CmdParse::PopQuitTask()
     while(1)
     {
         Queue_QuitTask t_task;
-        while(m_QuitTask->pop(t_task))
+        if(m_QuitTask->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
             if(it != t_roleSock->end())
             {
                 gameTask->QuitTask(it->second, t_task.taskID);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -126,13 +134,17 @@ void CmdParse::PopAskFinishTask()
     Queue_AskFinishTask t_task;
     while(1)
     {
-        while(m_AskFinishTask->pop(t_task))
+        if(m_AskFinishTask->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
             if(it != t_roleSock->end())
             {
                 gameTask->AskFinishTask(it->second, &t_task.finishTask);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -153,7 +165,7 @@ void CmdParse::PopAskTaskData()
     Queue_AskTaskData t_task;
     while(1)
     {
-        while(m_AskTaskData->pop(t_task))
+        if(m_AskTaskData->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
             if(it != t_roleSock->end())
@@ -190,6 +202,10 @@ void CmdParse::PopAskTaskData()
                 }
             }
         }
+        else
+        {
+            usleep(10000);
+        }
     }
 }
 
@@ -209,13 +225,17 @@ void CmdParse::PopAddFriend()
     Queue_AddFriend t_friend;
     while(1)
     {
-        while(m_AddFriend->pop(t_friend))
+        if(m_AddFriend->pop(t_friend))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_friend.roleid);
             if(it != t_roleSock->end())
             {
                teamFriend->addFriend(it->second, &t_friend.addFriend);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -236,13 +256,17 @@ void CmdParse::PopDeleteFriend()
     Queue_DeleteFriend t_friend;
     while(1)
     {
-        while(m_DeleteFriend->pop(t_friend))
+        if(m_DeleteFriend->pop(t_friend))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_friend.roleid);
             if(it != t_roleSock->end())
             {
                teamFriend->deleteFriend(it->second, t_friend.roleid);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -263,13 +287,17 @@ void CmdParse::PopAddFriendReturn()
     Queue_AddFriendReturn t_friend;
     while(1)
     {
-        while(m_AddFriendReturn->pop(t_friend))
+        if(m_AddFriendReturn->pop(t_friend))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_friend.roleid);
             if(it != t_roleSock->end())
             {
                teamFriend->ReciveAddFriend(it->second, &t_friend.addFriendReturn);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -291,13 +319,17 @@ void CmdParse::PopPickGoods()
     Queue_PickGoods t_goods;
     while(1)
     {
-        while(m_PickGoods->pop(t_goods))
+        if(m_PickGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
                optGoods->PickUpGoods(it->second, t_goods.len, t_goods.pickGoods);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -318,13 +350,17 @@ void CmdParse::PopRemoveGoods()
     Queue_RemoveGoods t_goods;
     while(1)
     {       
-        while(m_RemoveGoods->pop(t_goods))
+        if(m_RemoveGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
                optGoods->RemoveBagGoods(it->second, &t_goods.removeGoods);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -345,13 +381,17 @@ void CmdParse::PopMoveGoods()
     Queue_MoveGoods t_goods;
     while(1)
     {
-        while(m_MoveGoods->pop(t_goods))
+        if(m_MoveGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
                optGoods->MoveBagGoods(it->second, &t_goods.moveGoods);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -372,13 +412,17 @@ void CmdParse::PopBuyGoods()
     Queue_BuyGoods t_goods;
     while(1)
     {
-        while(m_BuyGoods->pop(t_goods))
+        if(m_BuyGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
                optGoods->BuyGoods(it->second, &t_goods.buyGoods);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -399,13 +443,17 @@ void CmdParse::PopSellGoods()
     Queue_SellGoods t_goods;
     while(1)
     {
-        while(m_SellGoods->pop(t_goods))
+        if(m_SellGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
                 optGoods->SellGoods(it->second, &t_goods.sellGoods);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -427,13 +475,17 @@ void CmdParse::PopWearBodyEqu()
     Queue_WearBodyEqu t_bodyEqu;
     while(1)
     {
-        while(m_WearBodyEqu->pop(t_bodyEqu))
+        if(m_WearBodyEqu->pop(t_bodyEqu))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_bodyEqu.roleid);
             if(it != t_roleSock->end())
             {
                 optGoods->WearBodyEqu(it->second, t_bodyEqu.wearEqu.equid, t_bodyEqu.wearEqu.pos);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -455,13 +507,17 @@ void CmdParse::PopTakeOffBodyEqu()
     Queue_TakeOffBodyEqu t_bodyEqu;
     while(1)
     {
-        while(m_TakeOffBodyEqu->pop(t_bodyEqu))
+        if(m_TakeOffBodyEqu->pop(t_bodyEqu))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_bodyEqu.roleid);
             if(it != t_roleSock->end())
             {
                 optGoods->TakeOffBodyEqu(it->second, t_bodyEqu.equid);
             }
+        }
+        else
+        {
+            usleep(10000);
         }
     }
 }
@@ -482,13 +538,17 @@ void CmdParse::PopPlayerMove()
     Queue_PlayerMove t_move;
     while(1)
     {
-        while(m_PlayerMove->pop(t_move))
+        if(m_PlayerMove->pop(t_move))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_move.roleid);
             if(it != t_roleSock->end())
             {
                 UserPosition::PlayerPositionMove(it->second, &t_move.playerMove);
             }
+        }
+        else
+        {
+            usleep(1000);
         }
     }
 }
@@ -510,13 +570,17 @@ void CmdParse::PopAttackAim()
     Queue_AttackAim t_attack;
     while(1)
     {
-        while(m_AttackAim->pop(t_attack))
+        if(m_AttackAim->pop(t_attack))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_attack.roleid);
             if(it != t_roleSock->end())
             {
                 gameAttack->AttackAim(it->second, &t_attack.attackAim);
             }
+        }
+        else
+        {
+            usleep(1000);
         }
     }
 }
@@ -537,13 +601,17 @@ void CmdParse::PopAttackPoint()
     Queue_AttackPoint t_attack;
     while(1)
     {
-        while(m_AttackPoint->pop(t_attack))
+        if(m_AttackPoint->pop(t_attack))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_attack.roleid);
             if(it != t_roleSock->end())
             {
                 gameAttack->AttackPoint(it->second, &t_attack.attackPoint);
             }
+        }
+        else
+        {
+            usleep(1000);
         }
     }
 }

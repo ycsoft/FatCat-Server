@@ -23,7 +23,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
     Server* srv = Server::GetInstance();
 
     STR_PackAddFriend t_addFriend;
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     t_addFriend.RoleID = (*smap)[conn].m_roleid;
     memcpy(t_addFriend.Nick, ((*smap)[conn].m_RoleBaseInfo.Nick), 32);
 
@@ -93,7 +93,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
 
 void TeamFriend::deleteFriend(TCPConnection::Pointer conn, hf_uint32  roleid)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_friendList friendList = (*smap)[conn].m_friendList;
 
     umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
@@ -145,7 +145,7 @@ void TeamFriend::deleteFriend(TCPConnection::Pointer conn, hf_uint32  roleid)
 void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendReturn* addFriend)
 {
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
     if(addFriend->value == 1) //同意添加
     {
@@ -211,7 +211,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
 //玩家上线，发送离线的添加好友请求
  void TeamFriend::SendAskAddFriend(TCPConnection::Pointer conn)
  {
-     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+     SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
      hf_uint32 roleid = (*smap)[conn].m_roleid;
      StringBuilder sbd;
      sbd << "select requestroleid,requestnick from t_addFriend where addroleid = " << roleid << ";";

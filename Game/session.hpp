@@ -6,6 +6,7 @@
 #include <boost/array.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/asio.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <cstdio>
 
@@ -132,6 +133,7 @@ public:
     hf_char                 m_goodsPosition[BAGCAPACITY];   //保存玩家物品位置
     STR_PlayerStartPos      m_StartPos;          //保存玩家刷新数据起始点
     umap_taskGoods          m_taskGoods;         //保存玩家任务物品
+    hf_double               m_commonAttackTime;  //下一次普通攻击的时间
 
 };
 
@@ -162,12 +164,12 @@ public:
      void    SaveSession(TCPConnection::Pointer sock,char *name)
      {
          Session s;
-
          sprintf(&(s.m_usrid[0]),name);
          s.m_roleid = 0;
-        SessionMgr::SessionMap *ssmap = m_sessions.get();
+//        SessionMgr::SessionMap *ssmap = m_sessions.get();
 
-         (*ssmap)[sock] = s;
+        SessionsAdd(sock, s);
+//         (*ssmap)[sock] = s;
      }
 
      void SaveSession(TCPConnection::Pointer sock, STR_PackPlayerPosition* playerPosition)
@@ -176,12 +178,12 @@ public:
           memcpy(&(*ssmap)[sock].m_position, playerPosition, sizeof(STR_PackPlayerPosition));
      }
 
-     void SaveSession(TCPConnection::Pointer sock, hf_int32 roleid)
+     void SaveSession(TCPConnection::Pointer conn, hf_int32 roleid)
      {
         SessionMgr::SessionMap *ssmap = m_sessions.get();
-         (*ssmap)[sock].m_roleid = roleid;
+         (*ssmap)[conn].m_roleid = roleid;
 
-        (*m_roleSock)[roleid] = sock;
+        (*m_roleSock)[roleid] = conn;
      }
 
      void SaveSession(TCPConnection::Pointer sock, STR_RoleInfo* roleInfo)
@@ -246,7 +248,100 @@ public:
         return m_nameSock;
     }
 
+    void SessionsAdd(TCPConnection::Pointer conn, Session s)
+    {
+        m_sessionsMtx.lock();
+        cout << conn->socket().native_handle() << endl;
+        cout << "m_sessions add start:" << m_sessions->size() << endl;
+        SessionMap::iterator it = m_sessions->find(conn);
+        if(it == m_sessions->end())
+            (*m_sessions)[conn] = s;
+        else
+            Logger::GetLogger()->Error("sessionsAdd error");
+        cout << "m_sessions add end:" << m_sessions->size() << endl << endl << endl;
+        m_sessionsMtx.unlock();
+    }
 
+    void SessionsErase(TCPConnection::Pointer conn)
+    {
+        m_sessionsMtx.lock();
+        cout << "m_sessions delete start:" << m_sessions->size() << endl;
+        SessionMap::iterator it = m_sessions->find(conn);
+        if(it != m_sessions->end())
+            m_sessions->erase(it);
+        else
+            Logger::GetLogger()->Error("sessionsErase error");
+        cout << "m_sessions delete start:" << m_sessions->size() << endl;
+        m_sessionsMtx.unlock();
+    }
+
+    void RoleSockAdd(hf_uint32 roleid, TCPConnection::Pointer conn)
+    {
+        m_roleMtx.lock();
+        cout << "addstart" << m_roleSock->size() << endl;
+        _umap_roleSock::iterator it = m_roleSock->find(roleid);
+        if(it == m_roleSock->end())
+            (*m_roleSock)[roleid] = conn;
+        else
+            Logger::GetLogger()->Error("roleSockAdd error");
+        cout << "add end" << m_roleSock->size() << endl;
+        m_roleMtx.unlock();
+    }
+
+    void RoleSockErase(hf_uint32 roleid)
+    {
+        m_roleMtx.lock();
+        _umap_roleSock::iterator it = m_roleSock->find(roleid);
+        if(it != m_roleSock->end())
+            m_roleSock->erase(roleid);
+        else
+            Logger::GetLogger()->Error("roleSockErase error");
+        m_roleMtx.unlock();
+    }
+
+    void NickSockAdd(hf_char* nick, TCPConnection::Pointer conn)
+    {
+        m_nickMtx.lock();
+        _umap_nickSock::iterator it = m_nickSock->find(nick);
+        if(it == m_nickSock->end())
+            (*m_nickSock)[nick] = conn;
+        else
+            Logger::GetLogger()->Error("nickSockAdd error");
+        m_nickMtx.unlock();
+    }
+
+    void NickSockErase(hf_char* nick)
+    {
+        m_nickMtx.lock();
+        _umap_nickSock::iterator it = m_nickSock->find(nick);
+        if(it != m_nickSock->end())
+            m_nickSock->erase(nick);
+        else
+            Logger::GetLogger()->Error("nickSockErase error");
+        m_nickMtx.unlock();
+    }
+
+    void NameSockAdd(hf_char* name, TCPConnection::Pointer conn)
+    {
+        m_nameMtx.lock();
+        _umap_nickSock::iterator it = m_nameSock->find(name);
+        if(it == m_nameSock->end())
+            (*m_nameSock)[name] = conn;
+        else
+            Logger::GetLogger()->Error("nameSockAdd error");        
+        m_nameMtx.unlock();
+    }
+
+    void NameSockErase(hf_char* name)
+    {
+        m_nameMtx.lock();
+        _umap_nickSock::iterator it = m_nameSock->find(name);
+        if(it != m_nameSock->end())
+            m_nameSock->erase(name);
+        else
+            Logger::GetLogger()->Error("nameSockErase error");
+        m_nameMtx.unlock();
+    }
 
 
 private:
@@ -254,6 +349,11 @@ private:
     umap_roleSock               m_roleSock;
     umap_nickSock               m_nickSock;
     umap_nickSock               m_nameSock;
+
+    boost::mutex                m_sessionsMtx;
+    boost::mutex                m_roleMtx;
+    boost::mutex                m_nickMtx;
+    boost::mutex                m_nameMtx;
 
 };
 

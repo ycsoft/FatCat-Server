@@ -49,7 +49,7 @@ GameTask::~GameTask()
 void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
 {
     //判断任务条件,暂时只判断等级
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     STR_RoleBasicInfo* t_RoleBaseInfo = &(*smap)[conn].m_RoleBaseInfo;
 
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
@@ -150,7 +150,7 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
 void GameTask::QuitTask(TCPConnection::Pointer conn, hf_uint32 taskid)
 {
      //将任务添加到该角色的任务列表里，退出时将未完成的任务写进数据库。
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
     _umap_taskProcess::iterator it = playerAcceptTask->find(taskid);
     if(it == playerAcceptTask->end())
@@ -175,7 +175,7 @@ void GameTask::QuitTask(TCPConnection::Pointer conn, hf_uint32 taskid)
 //请求完成任务
 void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
     _umap_taskProcess::iterator it = playerAcceptTask->find(finishTask->TaskID);
     if(it == playerAcceptTask->end()) //没接取当前任务
@@ -220,7 +220,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
 
 bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_goodsReward::iterator goodsReward_it = m_goodsReward->find(finishTask->TaskID);
     if(goodsReward_it == m_goodsReward->end()) //没有物品奖励
     {
@@ -348,7 +348,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
 
 void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_taskReward::iterator taskReward_it = m_taskReward->find(finishTask->TaskID);
     if(taskReward_it != m_taskReward->end())  //任务奖励
     {
@@ -395,7 +395,7 @@ void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask*
 //完成收集物品任务
 void GameTask::FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProcess* taskProcess)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     OperationPostgres* t_post = Server::GetInstance()->GetOperationPostgres();
     hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
 
@@ -661,7 +661,7 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
 {
     Server* srv = Server::GetInstance();
      //根据任务条件和玩家信息判断玩家可接取的任务
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_taskProcess playerAcceptTask = ((*smap)[conn]).m_playerAcceptTask;
     //查询任务进度
     StringBuilder builder;
@@ -781,7 +781,7 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
 void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
 {
     //根据任务条件和玩家信息判断玩家可接取的任务
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     STR_RoleBasicInfo* t_RoleBaseInfo = &(*smap)[conn].m_RoleBaseInfo; //得到玩家信息
     umap_taskProcess playerAcceptTask = ((*smap)[conn]).m_playerAcceptTask;
 
@@ -830,7 +830,7 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
 //查找此任务是否为任务进度里收集物品，如果是，更新任务进度
 void GameTask::UpdateCollectGoodsTaskProcess(TCPConnection::Pointer conn, hf_uint32 goodstype)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();    
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_taskGoods taskGoods = (*smap)[conn].m_taskGoods;
     _umap_taskGoods::iterator it = taskGoods->find(goodstype);
     if(it == taskGoods->end())

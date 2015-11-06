@@ -29,14 +29,14 @@
 #define  MonsterHatredView     1000         //怪物仇恨范围 60
 #define  MonsterPursuitDis     1000         //怪物追击玩家与起始追击点的距离
 
-#define  PlayerAttackView      150          //玩家普通攻击范围
+#define  PlayerAttackView      1000          //玩家普通攻击范围
 #define  MonsterAttackView     20          //怪物普通攻击范围
 
 #define  MonsterMoveDistance   5           //怪物移动一次的距离
 #define  PlayerMoveDistance    5           //玩家移动一次的距离  单位分米
 #define  RefreshDistance       20          //玩家刷新数据的距离
 
-#define  PursuitFarDistance    50          //怪物追击玩家，距离较远一次移动的距离  单位分米
+#define  PursuitFarDistance    20          //怪物追击玩家，距离较远一次移动的距离  单位分米
 #define  PursuitNearlyDistance 10           //怪物追击玩家，距离较近一次移动的距离
 
 #define  MonsterStopTime       5           //每次怪物运动到一个点后停留的时间
@@ -80,8 +80,8 @@
 #define  PICK_GOODNOTEXIST      4           //捡取的物品不存在
 
 #define  PUBLIC_COOLTIME        1           //公共冷却时间
-#define  GOODS_CONTINUETIME     180           //掉落物品持续时间
-#define  MonsterDeathTime       200          //怪物死亡时间
+#define  GOODS_CONTINUETIME     20           //掉落物品持续时间
+#define  MonsterDeathTime       30          //怪物死亡时间
 
 #define  RESULT_SUCCESS         1     //成功
 #define  RESULT_PRE_TASK        2     //未接取条件任务

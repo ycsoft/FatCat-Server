@@ -1210,6 +1210,19 @@ typedef struct _STR_PackRoleInfo
 //攻击产生的伤害
 typedef struct _STR_PackDamageData
 {
+    _STR_PackDamageData(hf_uint32 _AimID, hf_uint32 _AttackID, hf_uint32 _Damage, hf_uint8 _TypeID, hf_uint8 _Flag)
+    {
+        bzero(&head,sizeof(_STR_PackDamageData));
+        head.Flag = FLAG_DamageData;
+        head.Len = sizeof(_STR_PackDamageData)-sizeof(STR_PackHead);
+
+        AimID = _AimID;
+        AttackID = _AttackID;
+        Damage = _Damage;
+        TypeID = _TypeID;
+        Flag = _Flag;
+    }
+
     STR_PackHead head;
     hf_uint32    AimID;       //目标ID
     hf_uint32    AttackID;    //攻击者ID

@@ -59,6 +59,7 @@ public:
     //用户位置移动
     static void PlayerMove(TCPConnection::Pointer conn, STR_PackPlayerPosition* pos)
     {
+//        cout << "player move " << pos->Pos_x << "," << pos->Pos_y << "," << pos->Pos_z << endl;
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         memcpy(&((*smap)[conn].m_position), pos, sizeof(STR_PackPlayerPosition));
         conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
@@ -162,7 +163,7 @@ public:
         umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
-            cout << "发送玩家位置给周围玩家" << endl;
+//            cout << "发送玩家位置给周围玩家" << endl;
             it->second->Write_all(&OtherPos, sizeof(STR_PackOtherPlayerPosition));
         }
     }

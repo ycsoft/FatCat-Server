@@ -129,7 +129,12 @@ void Server::InitDB()
    srv->RunTask(boost::bind(&GameAttack::DeleteOverTimeGoods, t_attack));
 
    //操作数据库更新用户数据
-   srv->RunTask(boost::bind(&OperationPostgres::UpdatePlayerData, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateMoney, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateLevel, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateExp, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateGoods, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateEquAttr, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateTask, t_opePost));
 
 }
 

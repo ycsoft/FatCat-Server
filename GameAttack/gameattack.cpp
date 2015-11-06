@@ -98,11 +98,17 @@ void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t
 //    srv->free(t_attack);
 }
 
+//普通攻击角色
 void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     STR_PackDamageData t_damageData;
 
+    hf_double timep = GetCurrentTime();
+    if((*smap)[conn].m_commonAttackTime > timep) //普通攻击间隔时间过短
+    {
+        return;
+    }
     umap_roleSock t_viewRole = (*smap)[conn].m_viewRole;
     _umap_roleSock::iterator it = t_viewRole->find(t_attack->AimID);
     if(it == t_viewRole->end()) //不在可视范围
@@ -139,11 +145,12 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
         return;
     }
 
+
     STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
     STR_RoleInfo* t_AimInfo = &(*smap)[it->second].m_roleInfo;
 
+    (*smap)[conn].m_commonAttackTime = timep + HurtSpeed;
     hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
-
     if(t_probHit*100 < rand()%100) //未命中
     {
         t_damageData.Flag = NOT_HIT;
@@ -157,19 +164,51 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
         it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
+
+    hf_uint8 t_level = (*smap)[it->second].m_RoleBaseInfo.Level;
+    if(t_attack->SkillID == PhyAttackSkillID) //物理攻击
+    {
+        t_damageData.Damage = t_AttacketInfo->PhysicalAttack* GetDamage_reduction(t_level)/t_AimInfo->PhysicalDefense;
+    }
+    else if(t_attack->SkillID == MagicAttackSkillID)//魔法攻击
+    {
+       t_damageData.Damage = t_AttacketInfo->MagicAttack* GetDamage_reduction(t_level)/t_AimInfo->MagicDefense;
+    }
+
     if(t_AttacketInfo->Crit_Rate*100 < rand()%100)//未暴击
     {
-
+        t_damageData.Flag = CRIT;
+        t_damageData.Damage *= 1.5;
     }
     else //未暴击
     {
-
+        t_damageData.Flag = HIT;
     }
+
     if(t_AimInfo->Resist_Rate*100 >= rand()%100) //抵挡
     {
-
+        t_damageData.Flag = RESIST;
     }
 
+    //发送产生的伤害
+//    cout << "wait skill" << damage->Damage << endl;
+    conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+    it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+    //减血量
+    if(t_AimInfo->HP > t_damageData.Damage)
+    {
+        t_AimInfo->HP -= t_damageData.Damage;
+    }
+    else
+    {
+        t_AimInfo->HP = 0;
+    }
+    //给被攻击者可视范围内的玩家发送血量信息
+
+    hf_uint32 roleid = (*smap)[it->second].m_roleid;
+    STR_RoleAttribute t_roleAttr(roleid, t_AimInfo->HP);
+    it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+    Server::GetInstance()->GetGameAttack()->SendRoleHpToViewRole(it->second, &t_roleAttr);
 
 
 }
@@ -180,6 +219,12 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
 //    Server *srv = Server::GetInstance();
     umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+
+    hf_double timep = GetCurrentTime();
+    if((*smap)[conn].m_commonAttackTime > timep) //普通攻击间隔时间过短
+    {
+        return;
+    }
 
     STR_PackDamageData t_damageData;
     umap_playerViewMonster t_viewMonster = (*smap)[conn].m_viewMonster;
@@ -219,6 +264,8 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
         conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
+
+    (*smap)[conn].m_commonAttackTime = timep + HurtSpeed;
 
     STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
     hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
@@ -325,33 +372,38 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
 
     hf_uint32* t_hatredValue = &((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
 
+    printf("roleid:%d,hatredvalue:%d\n", roleid, *t_hatredValue);
     *t_hatredValue += damage->Damage;
 
-    cout << "攻击前：" << monster->hatredRoleid << endl;
+    cout << "攻击前：" << monster->hatredRoleid  << "monsterID:" << monster->monster.MonsterID << endl;
     if(monster->hatredRoleid != roleid)
     {
         if(monster->hatredRoleid != 0)
         {
             if(*t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
             {
-                monster->ChangeHatredRoleid(roleid);
+//                monster->ChangeHatredRoleid(roleid);
                 double timep = GetCurrentTime();
-                if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
-                {
-                    monster->ChangeAimTimeAndPos(timep);
+//                printf("怪物受到攻击时的时间timep:%lf\n", timep);
+//                printf("怪物目标时间aimTime:%lf\n",monster->aimTime);
+//                if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
+//                {
+                    monster->ChangeAimTimeAndPos(roleid, timep);
                     Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
-                }
+//                }
             }
         }
         else
         {
-            monster->ChangeHatredRoleid(roleid);
+//            monster->ChangeHatredRoleid(roleid);
             double timep = GetCurrentTime();
-            if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
-            {
-                monster->ChangeAimTimeAndPos(timep);
+//            if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
+//            {
+//                printf("怪物没有目标，怪物受到攻击时的时间timep:%lf\n", timep);
+//                printf("怪物没有目标，怪物目标时间aimTime:%lf\n",monster->aimTime);
+                monster->ChangeAimTimeAndPos(roleid, timep);
                 Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
-            }
+//            }
         }
     }
 
@@ -501,6 +553,10 @@ void GameAttack::RoleSkillAttack()
     //遍历m_attackMonster,m_attackRole,m_attackPoint 根据时间判断，计算伤害发送给玩家
     while(1)
     {
+        if(m_attackMonster->size() == 0)
+        {
+            usleep(1000);
+        }
         hf_double timep = GetCurrentTime();
         for(_umap_roleAttackAim::iterator it = m_attackMonster->begin(); it != m_attackMonster->end();)
         {

@@ -86,11 +86,11 @@ public:
 
     //玩家下线
     //用户下线删除保存的对应的<name，sock>
-    void DeleteNameSock(TCPConnection::Pointer conn);
-    //用户下线删除保存的对应的<nick, sock>
-    void DeleteNickSock(TCPConnection::Pointer conn);
-    //用户下线删除保存的对应的<roleid,sock>
-    void DeleteRoleSock(hf_uint32 roleid);
+//    void DeleteNameSock(TCPConnection::Pointer conn);
+//    //用户下线删除保存的对应的<nick, sock>
+//    void DeleteNickSock(TCPConnection::Pointer conn);
+//    //用户下线删除保存的对应的<roleid,sock>
+//    void DeleteRoleSock(hf_uint32 roleid);
     //将玩家任务进度写进数据库
     void SaveRoleTaskProcess(TCPConnection::Pointer conn);
     //将玩家背包里的物品写进数据库

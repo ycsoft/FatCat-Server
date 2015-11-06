@@ -1,6 +1,6 @@
 #include "getdefinevalue.h"
 
-//得到伤害减免系数
+//得到伤害减免系数  level 为被攻击者的等级
 hf_int32 GetDamage_reduction(hf_uint8 level)
 {
     switch(level)

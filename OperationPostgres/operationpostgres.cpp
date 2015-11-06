@@ -23,31 +23,69 @@ OperationPostgres::~OperationPostgres()
 }
 
 //该函数负责实时将玩家数据写入数据库
-void OperationPostgres::UpdatePlayerData()
+//void OperationPostgres::UpdatePlayerData()
+//{
+//    while(1)
+//    {
+
+//    }
+//}
+
+void OperationPostgres::PopUpdateMoney()
 {
+    UpdateMoney t_updateMoney;
     while(1)
     {
-
-        UpdateMoney t_updateMoney;
-        while(m_UpdateMoney->pop(t_updateMoney))
+        if(m_UpdateMoney->pop(t_updateMoney))
         {
             PlayerLogin::UpdatePlayerMoney(&t_updateMoney);
         }
+        else
+        {
+           usleep(1000);
+        }
+    }
+}
 
-        UpdateLevel t_updateLevel;
-        while(m_UpdateLevel->pop(t_updateLevel))
+void OperationPostgres::PopUpdateLevel()
+{
+    UpdateLevel t_updateLevel;
+    while(1)
+    {
+        if(m_UpdateLevel->pop(t_updateLevel))
         {
             PlayerLogin::UpdatePlayerLevel(&t_updateLevel);
         }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
 
-        UpdateExp t_updateExp;
-        while(m_UpdateExp->pop(t_updateExp))
+void OperationPostgres::PopUpdateExp()
+{
+    UpdateExp t_updateExp;
+    while(1)
+    {
+        if(m_UpdateExp->pop(t_updateExp))
         {
             PlayerLogin::UpdatePlayerExp(&t_updateExp);
         }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
 
-        UpdateGoods t_updateGoods;
-        while(m_UpdateGoods->pop(t_updateGoods))
+
+void OperationPostgres::PopUpdateGoods()
+{
+    UpdateGoods t_updateGoods;
+    while(1)
+    {
+        if(m_UpdateGoods->pop(t_updateGoods))
         {
             cout << t_updateGoods.Goods.GoodsID << endl;
             if(t_updateGoods.Operate == PostUpdate)
@@ -63,9 +101,19 @@ void OperationPostgres::UpdatePlayerData()
                 PlayerLogin::DeletePlayerGoods(t_updateGoods.RoleID, t_updateGoods.Goods.Position);
             }
         }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
 
-        UpdateEquAttr t_updateEquAttr;
-        while(m_UpdateEquAttr->pop(t_updateEquAttr))
+void OperationPostgres::PopUpdateEquAttr()
+{
+    UpdateEquAttr t_updateEquAttr;
+    while(1)
+    {
+        if(m_UpdateEquAttr->pop(t_updateEquAttr))
         {
             if(t_updateEquAttr.Operate == PostUpdate)
             {
@@ -80,9 +128,19 @@ void OperationPostgres::UpdatePlayerData()
                 PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.RoleID, t_updateEquAttr.EquAttr.EquID);
             }
         }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
 
-        UpdateTask t_updateTask;
-        while(m_UpdateTask->pop(t_updateTask))
+void OperationPostgres::PopUpdateTask()
+{
+    UpdateTask t_updateTask;
+    while(1)
+    {
+        if(m_UpdateTask->pop(t_updateTask))
         {
             if(t_updateTask.Operate == PostUpdate)
             {
@@ -96,6 +154,10 @@ void OperationPostgres::UpdatePlayerData()
             {
                 PlayerLogin::DeletePlayerTask(t_updateTask.RoleID, t_updateTask.TaskProcess.TaskID);
             }
+        }
+        else
+        {
+            usleep(1000);
         }
     }
 }

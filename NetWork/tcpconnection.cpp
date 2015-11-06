@@ -118,8 +118,12 @@ void TCPConnection::CallBack_Read_Head(const boost::system::error_code &ec,size_
     {
         Logger::GetLogger()->Debug("Client head Disconnected");
         Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
-        SessionMgr::Instance()->RemoveSession(shared_from_this());
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+        SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
+        SessionMgr::Instance()->SessionsErase(shared_from_this());
+
+//        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
+//        SessionMgr::Instance()->RemoveSession(shared_from_this());
 
         m_read_lock.unlock();
     }
@@ -144,8 +148,12 @@ void TCPConnection::CallBack_Read_Body(const boost::system::error_code &ec, size
         Logger::GetLogger()->Debug("Client body Disconnected");
 //        int fd = m_socket.native_handle();
         Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
-        SessionMgr::Instance()->RemoveSession(shared_from_this());
+
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+        SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
+        SessionMgr::Instance()->SessionsErase(shared_from_this());
+//        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
+//        SessionMgr::Instance()->RemoveSession(shared_from_this());
         m_read_lock.unlock();
     }
 }
