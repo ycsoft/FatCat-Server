@@ -26,8 +26,8 @@
 #define  GOODSMAXCOUNT         99          //每个格子物品最大数量
 
 #define  PlayerView            1000        //玩家可视范围 80
-#define  MonsterHatredView     1000         //怪物仇恨范围 60
-#define  MonsterPursuitDis     1000         //怪物追击玩家与起始追击点的距离
+#define  MonsterHatredView     1000        //怪物仇恨范围 60
+#define  MonsterPursuitDis     60          //怪物追击玩家与起始追击点的距离
 
 #define  PlayerAttackView      1000          //玩家普通攻击范围
 #define  MonsterAttackView     20          //怪物普通攻击范围

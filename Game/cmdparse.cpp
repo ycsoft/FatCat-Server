@@ -59,10 +59,11 @@ void CmdParse::PushAskTask(TCPConnection::Pointer conn, hf_uint32 taskID)
 void CmdParse::PopAskTask()
 {
     GameTask* gameTask = Server::GetInstance()->GetGameTask();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AskTask t_task;
     while(1)
     {       
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AskTask->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
@@ -99,9 +100,10 @@ void CmdParse::PushQuitTask(TCPConnection::Pointer conn, hf_uint32 taskID)
 void CmdParse::PopQuitTask()
 {
     GameTask* gameTask = Server::GetInstance()->GetGameTask();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         Queue_QuitTask t_task;
         if(m_QuitTask->pop(t_task))
         {
@@ -130,10 +132,11 @@ void CmdParse::PushAskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* fi
 void CmdParse::PopAskFinishTask()
 {
     GameTask* gameTask = Server::GetInstance()->GetGameTask();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AskFinishTask t_task;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AskFinishTask->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
@@ -161,10 +164,11 @@ void CmdParse::PushAskTaskData(TCPConnection::Pointer conn, hf_uint32 taskID, hf
 void CmdParse::PopAskTaskData()
 {
     GameTask* gameTask = Server::GetInstance()->GetGameTask();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AskTaskData t_task;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AskTaskData->pop(t_task))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
@@ -221,10 +225,11 @@ void CmdParse::PushAddFriend(TCPConnection::Pointer conn, STR_PackAddFriend* add
 void CmdParse::PopAddFriend()
 {
     TeamFriend* teamFriend = Server::GetInstance()->GetTeamFriend();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AddFriend t_friend;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AddFriend->pop(t_friend))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_friend.roleid);
@@ -252,10 +257,11 @@ void CmdParse::PushDeleteFriend(TCPConnection::Pointer conn, hf_uint32 deleteRol
 void CmdParse::PopDeleteFriend()
 {
     TeamFriend* teamFriend = Server::GetInstance()->GetTeamFriend();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_DeleteFriend t_friend;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_DeleteFriend->pop(t_friend))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_friend.roleid);
@@ -283,10 +289,11 @@ void CmdParse::PushAddFriendReturn(TCPConnection::Pointer conn, STR_PackAddFrien
 void CmdParse::PopAddFriendReturn()
 {
     TeamFriend* teamFriend = Server::GetInstance()->GetTeamFriend();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AddFriendReturn t_friend;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AddFriendReturn->pop(t_friend))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_friend.roleid);
@@ -315,10 +322,11 @@ void CmdParse::PushPickGoods(TCPConnection::Pointer conn, hf_uint16 len, STR_Pic
 void CmdParse::PopPickGoods()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_PickGoods t_goods;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_PickGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
@@ -346,10 +354,11 @@ void CmdParse::PushRemoveGoods(TCPConnection::Pointer conn, STR_RemoveBagGoods* 
 void CmdParse::PopRemoveGoods()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_RemoveGoods t_goods;
     while(1)
     {       
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_RemoveGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
@@ -377,10 +386,11 @@ void CmdParse::PushMoveGoods(TCPConnection::Pointer conn, STR_MoveBagGoods* move
 void CmdParse::PopMoveGoods()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_MoveGoods t_goods;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_MoveGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
@@ -408,10 +418,11 @@ void CmdParse::PushBuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGoods)
 void CmdParse::PopBuyGoods()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_BuyGoods t_goods;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_BuyGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
@@ -439,10 +450,11 @@ void CmdParse::PushSellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellGoo
 void CmdParse::PopSellGoods()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_SellGoods t_goods;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_SellGoods->pop(t_goods))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
@@ -471,10 +483,11 @@ void CmdParse::PushWearBodyEqu(TCPConnection::Pointer conn, STR_WearEqu* wearEqu
 void CmdParse::PopWearBodyEqu()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_WearBodyEqu t_bodyEqu;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_WearBodyEqu->pop(t_bodyEqu))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_bodyEqu.roleid);
@@ -503,10 +516,11 @@ void CmdParse::PushTakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid)
 void CmdParse::PopTakeOffBodyEqu()
 {
     OperationGoods* optGoods = Server::GetInstance()->GetOperationGoods();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_TakeOffBodyEqu t_bodyEqu;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_TakeOffBodyEqu->pop(t_bodyEqu))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_bodyEqu.roleid);
@@ -534,10 +548,11 @@ void CmdParse::PushPlayerMove(TCPConnection::Pointer conn, STR_PlayerMove* playe
 
 void CmdParse::PopPlayerMove()
 {
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_PlayerMove t_move;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_PlayerMove->pop(t_move))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_move.roleid);
@@ -566,10 +581,11 @@ void CmdParse::PushAttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim*
 void CmdParse::PopAttackAim()
 {
     GameAttack* gameAttack = Server::GetInstance()->GetGameAttack();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AttackAim t_attack;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AttackAim->pop(t_attack))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_attack.roleid);
@@ -597,10 +613,11 @@ void CmdParse::PushAttackPoint(TCPConnection::Pointer conn, STR_PackUserAttackPo
 void CmdParse::PopAttackPoint()
 {
     GameAttack* gameAttack = Server::GetInstance()->GetGameAttack();
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     Queue_AttackPoint t_attack;
     while(1)
     {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         if(m_AttackPoint->pop(t_attack))
         {
             _umap_roleSock::iterator it = t_roleSock->find(t_attack.roleid);

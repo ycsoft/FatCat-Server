@@ -10,13 +10,22 @@ typedef struct _STR_MonsterInfo
 private:
     boost::mutex    m_mtx;
 public:
-    void lockMonster()
+
+
+    _STR_MonsterInfo& operator=(_STR_MonsterInfo& mon)
     {
-       m_mtx.lock();
-    }
-    void unlockMonster()
-    {
-        m_mtx.unlock();
+        if(this == &mon)
+        {
+            return *this;
+        }
+        monster = mon.monster;
+        pos = mon.pos;
+        pursuitPos = mon.pursuitPos;
+        spawnsPos = mon.spawnsPos;
+        aimTime = mon.aimTime;
+        hatredRoleid = mon.hatredRoleid;
+        monsterStatus = mon.monsterStatus;
+        return *this;
     }
 
     hf_uint32 ReduceHp(hf_uint32 _roleid, hf_uint32 hp)
@@ -31,7 +40,7 @@ public:
             monster.HP = 0;
             struct timeval start;
             gettimeofday( &start, NULL);
-            aimTime = (hf_double)start.tv_sec + MonsterDeathTime + (hf_double)(start.tv_usec/1000) / 1000000;
+            aimTime = (hf_double)start.tv_sec + (hf_double)(hf_int32)(start.tv_usec/1000)/1000;
         }
 
         m_mtx.unlock();
@@ -59,6 +68,7 @@ public:
         cout << "修改前怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
         cout << "修改前怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
         cout << "移动速度" << monster.MoveRate << endl;
+
         hf_float dx = monster.Target_x - monster.Current_x;
         hf_float dz = monster.Target_z - monster.Current_z;
         hf_float dis = sqrt(dx*dx + dz*dz);
@@ -70,6 +80,9 @@ public:
 
         monster.Current_x = monster.Target_x - (aimTime - timep)/userTime * dx;
         monster.Current_z = monster.Target_z - (aimTime - timep)/userTime * dz;
+        pursuitPos.Come_x = monster.Current_x;
+        pursuitPos.Come_z = monster.Current_z;
+
         monster.Target_x = monster.Current_x;
         monster.Target_z = monster.Current_z;
 
@@ -79,20 +92,25 @@ public:
         m_mtx.unlock();
     }
 
-    _STR_MonsterInfo& operator=(_STR_MonsterInfo& mon)
+    void MoveToStartPos(hf_double timep, hf_float dis)
     {
-        if(this == &mon)
-        {
-            return *this;
-        }
-        monster = mon.monster;
-        pos = mon.pos;
-        pursuitPos = mon.pursuitPos;
-        spawnsPos = mon.spawnsPos;
-        aimTime = mon.aimTime;
-        hatredRoleid = mon.hatredRoleid;
-        return *this;
+        m_mtx.lock();
+        hatredRoleid = 0;
+        pursuitPos.Come_x = 0;
+        pursuitPos.Come_y = 0;
+        pursuitPos.Come_z = 0;
+        aimTime = timep + dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
+        monsterStatus = true;
+        m_mtx.unlock();
     }
+
+    void ChangeMonsterStatus()
+    {
+        m_mtx.lock();
+        monsterStatus = !monsterStatus;
+        m_mtx.unlock();
+    }
+
 
     STR_MonsterBasicInfo monster;   //怪物基本信息
     STR_Position    pos;            //怪物刷出坐标点,怪物自由活动用
@@ -101,6 +119,7 @@ public:
     hf_uint32       spawnsPos;      //怪物刷怪点
     hf_uint32       roleid;         //第一个攻击此怪物的玩家
     hf_uint32       hatredRoleid;   //仇恨值最大的玩家
+    bool            monsterStatus;  //怪物是否处于返回起始追击点，true表示返回之中
 
 }STR_MonsterInfo;
 

@@ -96,12 +96,15 @@ public:
     //计算方向
     hf_float CalculationDirect(hf_float dx, hf_float dz);
 
+    //计算怪物与追击点之间的距离
+    hf_float CalculationPursuitDistance(STR_MonsterInfo* monsterInfo);
+
     //返回当前时间
     hf_double GetCurrentTime()
     {
         struct timeval start;
         gettimeofday( &start, NULL );
-        return (hf_double)start.tv_sec + (hf_double)(start.tv_usec/1000) / 1000000;
+        return (hf_double)start.tv_sec + (hf_double)(hf_int32)(start.tv_usec/1000)/1000;
     }
 
     umap_monsterInfo GetMonsterBasic()

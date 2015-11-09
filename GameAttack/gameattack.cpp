@@ -270,6 +270,8 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
     hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
 
+    if(t_monsterBasicInfo->monsterStatus)
+        t_probHit = 0;
     if(t_probHit*100 < rand()%100) //未命中
     {
         t_damageData.Flag = NOT_HIT;

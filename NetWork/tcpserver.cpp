@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define  SRV_PORT_DEFAULT  7002
+#define  SRV_PORT_DEFAULT  7001
 
 TCPServer::TCPServer( boost::asio::io_service & io  )
     :m_acceptor(io,tcp::endpoint(tcp::v4(),SRV_PORT_DEFAULT))
