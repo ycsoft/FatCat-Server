@@ -410,6 +410,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         Logger::GetLogger()->Debug("Send Position data.....");
         UserPosition::Position_push(conn, roleid);
 
+        SendRoleExperence(conn);            //发送角色经验
         SendFriendList(conn, roleid);       //发送好友列表
         SendRoleMoney(conn, roleid);        //发送玩家金币
         SendRoleGoods(conn, roleid);        //发送玩家背包物品
@@ -1277,6 +1278,24 @@ void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
 
     srv->free(comebuff);
     srv->free(leavebuff);
+}
+
+
+//发送角色经验，属性
+void PlayerLogin::SendRoleExperence(TCPConnection::Pointer conn)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    STR_PackRoleExperience* exp = &(*smap)[conn].m_roleExp;
+    StringBuilder sbd;
+    sbd << "select level,experience from t_playerrolelist where roleid = " << roleid << ";";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->GetRoleExperience(exp, sbd.str()) != 1)
+    {
+        Logger::GetLogger()->Error("select role experience error");
+        return;
+    }
+    conn->Write_all(exp, sizeof(STR_PackRoleExperience));
 }
 
 //判断两个玩家能否看到

@@ -68,7 +68,7 @@ public:
     {
         struct timeval start;
         gettimeofday( &start, NULL );
-        return (hf_double)start.tv_sec + (hf_double)(hf_int32)(start.tv_usec/1000)/1000;
+        return (hf_double)start.tv_sec + (hf_double)start.tv_usec/1000000;
     }
 
 

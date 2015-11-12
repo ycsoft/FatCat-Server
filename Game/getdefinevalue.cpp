@@ -46,6 +46,16 @@ hf_uint32 GetRewardExperience(hf_uint8 level)
 {
     switch(level)
     {
+    case 1:
+        return 20;
+    case 2:
+        return 20;
+    case 3:
+        return 20;
+    case 4:
+        return 20;
+
+
     case 15:
         return REWARD_EXP15;
     case 16:

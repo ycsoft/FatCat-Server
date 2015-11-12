@@ -61,8 +61,13 @@ public:
             m_monsterLoot = NULL;
         }
     }
+
+    hf_uint8 JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime);
+
+    hf_float caculateDistanceWithRole(STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster);
+
     //计算玩家与怪物之间的距离
-    hf_float    caculateDistanceWithMonster( STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster);
+    hf_float    caculateDistanceWithMonster( STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_MonsterBasicInfo *monsterBasicInfo);
 
     //从数据库中查询生成怪物所需要的信息
      void QueryMonstersAll();
@@ -104,7 +109,7 @@ public:
     {
         struct timeval start;
         gettimeofday( &start, NULL );
-        return (hf_double)start.tv_sec + (hf_double)(hf_int32)(start.tv_usec/1000)/1000;
+        return (hf_double)start.tv_sec + (hf_double)start.tv_usec/1000000;
     }
 
     umap_monsterInfo GetMonsterBasic()

@@ -130,7 +130,7 @@ public:
      hf_int32 GetRoleInfo(STR_RoleInfo* roleinfo, const hf_char* str);
 
      //查询玩家接取任务条件,查询角色经验
-     hf_int32 GetRoleExperience(RoleNick* nick, STR_PackRoleExperience* RoleExp, STR_RoleBasicInfo* RoleBaseInfo, const hf_char* str);
+     hf_int32 GetRoleExperience(STR_PackRoleExperience* RoleExp, const hf_char* str);
 
      //查询好友列表
      hf_int32 GetFriendList(umap_friendList t_friendList, const hf_char* str);

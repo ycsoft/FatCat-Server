@@ -40,7 +40,7 @@ public:
             monster.HP = 0;
             struct timeval start;
             gettimeofday( &start, NULL);
-            aimTime = (hf_double)start.tv_sec + (hf_double)(hf_int32)(start.tv_usec/1000)/1000;
+            aimTime = (hf_double)start.tv_sec + (hf_double)start.tv_usec/1000000;
         }
 
         m_mtx.unlock();
@@ -50,6 +50,26 @@ public:
     void ChangeHatredRoleid(hf_uint32 _hatredRoleid)
     {
         m_mtx.lock();
+        if(_hatredRoleid == 0)
+        {
+            if(monster.ActID == Action_Run)
+            {
+                monster.ActID = Action_Walk;
+                monster.MoveRate /= 2;
+            }
+            else
+            {
+                monster.ActID = Action_Walk;
+            }
+        }
+        else
+        {
+            if(monster.ActID != Action_Run)
+            {
+                monster.ActID = Action_Run;
+                monster.MoveRate *= 2;
+            }
+        }
         hatredRoleid = _hatredRoleid;
         m_mtx.unlock();
     }
@@ -85,6 +105,11 @@ public:
 
         monster.Target_x = monster.Current_x;
         monster.Target_z = monster.Current_z;
+        if(monster.ActID != Action_Run)
+        {
+            monster.ActID = Action_Run;
+            monster.MoveRate *= 2;
+        }
 
         cout << "修改后怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
         cout << "修改后怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
@@ -96,6 +121,10 @@ public:
     {
         m_mtx.lock();
         hatredRoleid = 0;
+        monster.Target_x = pursuitPos.Come_x;
+        monster.Target_y = pursuitPos.Come_y;
+        monster.Target_z = pursuitPos.Come_z;
+
         pursuitPos.Come_x = 0;
         pursuitPos.Come_y = 0;
         pursuitPos.Come_z = 0;
@@ -108,6 +137,77 @@ public:
     {
         m_mtx.lock();
         monsterStatus = !monsterStatus;
+        if(monster.ActID == Action_Run)
+        {
+            monster.MoveRate /= 2;
+            monster.ActID = Action_Walk;
+        }
+        else
+        {
+            monster.ActID = Action_Walk;
+        }
+        m_mtx.unlock();
+    }
+    void ChangeMonsterAimTime(hf_double _aimTime)
+    {
+        m_mtx.lock();
+        aimTime = _aimTime;
+        m_mtx.unlock();
+    }
+
+    hf_float CalculationDirect(hf_float dx, hf_float dz)
+    {
+        if(dx == 0)
+        {
+            if(dz > 0)
+                return PI;
+            else
+                return PI*3/2;
+        }
+        if(dz > 0)
+        {
+            if(dx > 0)
+                return atan2(dz, dx);          //1
+            else
+                return atan2(dz, dx) + PI;     //2
+        }
+        else
+        {
+            if(dx > 0)
+                return atan2(dz, dx) + 2*PI;   //4
+            else
+                return atan2(dz, dx) + PI;     //3
+        }
+    }
+
+    void ChangeMonsterPos(hf_double currentTime, hf_float dis, hf_float dx, hf_float dz)
+    {
+        m_mtx.lock();
+        monster.Current_x = monster.Target_x;
+        monster.Current_z = monster.Target_z;
+
+        monster.Direct = CalculationDirect(dx, dz);
+        monster.ActID = Action_Run;
+
+        if(dis >= PursuitFarDistance*4) //距离较远
+        {
+            monster.Target_x += 2*PursuitFarDistance/dis*dx;
+            monster.Target_z += 2*PursuitFarDistance/dis*dz;
+
+            aimTime = currentTime + (2*PursuitFarDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance))/2;
+        }
+        else if(dis < PursuitFarDistance*4 && dis > PursuitFarDistance*2)
+        {
+            monster.Target_x += PursuitFarDistance/dis*dx;
+            monster.Target_z += PursuitFarDistance/dis*dz;
+            aimTime = currentTime + (PursuitFarDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance))/2;
+        }
+        else if(dis < PursuitFarDistance*2 && dis > MonsterAttackView)
+        {
+            monster.Target_x += PursuitNearlyDistance/dis*dx;
+            monster.Target_z += PursuitNearlyDistance/dis*dz;
+            aimTime = currentTime + (PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance))/2;
+        }
         m_mtx.unlock();
     }
 

@@ -656,7 +656,7 @@ hf_int32 DiskDBManager::GetRoleInfo(STR_RoleInfo* roleinfo, const hf_char* str)
 }
 
 //查询玩家经验
-hf_int32 DiskDBManager::GetRoleExperience(RoleNick* nick, STR_PackRoleExperience* RoleExp, STR_RoleBasicInfo* RoleBaseInfo, const hf_char* str)
+hf_int32 DiskDBManager::GetRoleExperience(STR_PackRoleExperience* RoleExp, const hf_char* str)
 {
     mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
@@ -671,23 +671,9 @@ hf_int32 DiskDBManager::GetRoleExperience(RoleNick* nick, STR_PackRoleExperience
         hf_int32 t_row = PQntuples(t_PGresult);
         if(t_row == 1)
         {
-            memcpy(nick->nick, PQgetvalue(t_PGresult, 0, 1), PQgetlength(t_PGresult, 0, 1));
-
-            RoleExp->Level = atoi(PQgetvalue(t_PGresult, 0, 4));
-            RoleExp->CurrentExp = atoi(PQgetvalue(t_PGresult, 0, 12));
-            RoleExp->UpgradeExp = GetUpgradeExprience(RoleExp->Level);
-
-            memcpy(RoleBaseInfo->Nick, PQgetvalue(t_PGresult, 0, 1), PQgetlength(t_PGresult, 0, 1));
-            RoleBaseInfo->RoleID = atoi(PQgetvalue(t_PGresult, 0, 2));
-            RoleBaseInfo->Profession = atoi(PQgetvalue(t_PGresult, 0, 3));
-            RoleBaseInfo->Level = atoi(PQgetvalue(t_PGresult, 0, 4));
-            RoleBaseInfo->Sex = atoi(PQgetvalue(t_PGresult, 0, 5));
-            RoleBaseInfo->Figure = atoi(PQgetvalue(t_PGresult, 0, 6));
-            RoleBaseInfo->FigureColor = atoi(PQgetvalue(t_PGresult, 0, 7));
-            RoleBaseInfo->Face = atoi(PQgetvalue(t_PGresult, 0, 8));
-            RoleBaseInfo->Eye = atoi(PQgetvalue(t_PGresult, 0, 9));
-            RoleBaseInfo->Hair = atoi(PQgetvalue(t_PGresult, 0, 10));
-            RoleBaseInfo->HairColor = atoi(PQgetvalue(t_PGresult, 0, 11));
+            RoleExp->Level = atoi(PQgetvalue(t_PGresult, 0, 0));
+            RoleExp->CurrentExp = atoi(PQgetvalue(t_PGresult, 0, 1));
+            RoleExp->UpgradeExp = GetUpgradeExprience(RoleExp->Level);           
         }
         return t_row;
     }

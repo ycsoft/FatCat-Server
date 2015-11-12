@@ -220,8 +220,8 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
-    hf_double timep = GetCurrentTime();
-    if((*smap)[conn].m_commonAttackTime > timep) //普通攻击间隔时间过短
+    hf_double currentTime = GetCurrentTime();
+    if((*smap)[conn].m_commonAttackTime > currentTime) //普通攻击间隔时间过短
     {
         return;
     }
@@ -243,21 +243,16 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     STR_MonsterInfo* t_monsterBasicInfo = &(*u_monsterInfo)[it->first];
     STR_PackPlayerPosition* t_AttacketPosition = &((*smap)[conn].m_position);
 
-    hf_float dx = t_monsterBasicInfo->monster.Current_x - t_AttacketPosition->Pos_x;
-    hf_float dy = t_monsterBasicInfo->monster.Current_y - t_AttacketPosition->Pos_y;
-    hf_float dz = t_monsterBasicInfo->monster.Current_z - t_AttacketPosition->Pos_z;
+    hf_uint8 res = Server::GetInstance()->GetMonster()->JudgeDisAndDirect(t_AttacketPosition, t_monsterBasicInfo, currentTime);
     //判断是否在攻击范围内
-    if(dx*dx + dy*dy + dz*dz > PlayerAttackView*PlayerAttackView)
+    if(res == 1)
     {
         t_damageData.Flag = NOT_ATTACKVIEW;  //不在攻击范围
         conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
 
-
-//    //判断方向是否可攻击
-
-    if(dx*cos(t_AttacketPosition->Direct) + dz*sin(t_AttacketPosition->Direct) < 0)
+    else if(res == 2) //判断方向是否可攻击
     {
         t_damageData.Flag = OPPOSITE_DIRECT;
         printf("方向相反，攻击不上\n");
@@ -265,7 +260,7 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
         return;
     }
 
-    (*smap)[conn].m_commonAttackTime = timep + HurtSpeed;
+    (*smap)[conn].m_commonAttackTime = currentTime + HurtSpeed;
 
     STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
     hf_float t_probHit = t_AttacketInfo->Hit_Rate*1;
@@ -440,8 +435,8 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
     srv->GetGameTask()->UpdateAttackMonsterTaskProcess(conn, monster->monster.MonsterTypeID);
 
     //前15级怪物死亡不掉经验
-     if(monster->monster.Level >= 15)
-     {
+//     if(monster->monster.Level >= 15)
+//     {
         STR_PackRewardExperience t_RewardExp;
         t_RewardExp.ID = monster->monster.MonsterID;
         t_RewardExp.Experience = GetRewardExperience(monster->monster.Level);
@@ -465,7 +460,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         }
         Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp->UpgradeExp);
         conn->Write_all(t_RoleExp, sizeof(STR_PackRoleExperience));
-      }
+//      }
 
     umap_monsterLoot* t_monsterLoot = Server::GetInstance()->GetMonster()->GetMonsterLoot();
     umap_monsterLoot::iterator iter = t_monsterLoot->find(monster->monster.MonsterTypeID);

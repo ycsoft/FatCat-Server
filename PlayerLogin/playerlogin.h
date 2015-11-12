@@ -73,7 +73,7 @@ public:
     void SendViewRole(TCPConnection::Pointer conn);
 
     //发送角色经验，属性
-
+    void SendRoleExperence(TCPConnection::Pointer conn);
     //发送角色背包里的物品
     void SendRoleGoods(TCPConnection::Pointer conn, hf_uint32 RoleID);
     //发送角色背包里装备的属性

@@ -27,9 +27,9 @@
 
 #define  PlayerView            1000        //玩家可视范围 80
 #define  MonsterHatredView     1000        //怪物仇恨范围 60
-#define  MonsterPursuitDis     60          //怪物追击玩家与起始追击点的距离
+#define  MonsterPursuitDis     600         //怪物追击玩家与起始追击点的距离
 
-#define  PlayerAttackView      1000          //玩家普通攻击范围
+#define  PlayerAttackView      1000        //玩家普通攻击范围
 #define  MonsterAttackView     20          //怪物普通攻击范围
 
 #define  MonsterMoveDistance   5           //怪物移动一次的距离
@@ -159,7 +159,7 @@
 #define  Action_Hurt        2       //被攻击（hurt）
 #define  Action_Attack      3       //发出攻击（attack）
 #define  Action_Death       4       //死亡（death）
-#define  Action_Rub         5       //跑步（run）
+#define  Action_Run         5       //跑步（run）
 #define  Action_Talk        6       //交谈（talk）
 #define  Action_Picked      7       //弯腰捡（pickd）
 #define  Action_Pickup      8       //捡起来（picku）
