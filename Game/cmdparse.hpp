@@ -127,6 +127,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         STR_PackPlayerPosition* reg = (STR_PackPlayerPosition*)srv->malloc();
         memcpy(reg, buf, len + sizeof(STR_PackHead));
 //        printf("玩家方向：%f\n",reg->Direct);
+
         srv->RunTask(boost::bind(UserPosition::PlayerMove, conn, reg));
         break;
     }
