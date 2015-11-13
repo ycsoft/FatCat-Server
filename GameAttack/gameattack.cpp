@@ -145,7 +145,6 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
         return;
     }
 
-
     STR_RoleInfo* t_AttacketInfo = &((*smap)[conn].m_roleInfo);
     STR_RoleInfo* t_AimInfo = &(*smap)[it->second].m_roleInfo;
 
@@ -191,7 +190,6 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
     }
 
     //发送产生的伤害
-//    cout << "wait skill" << damage->Damage << endl;
     conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
     it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
     //减血量
@@ -216,7 +214,6 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
 //普通攻击怪物
 void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack)
 {
-//    Server *srv = Server::GetInstance();
     umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
 
@@ -243,7 +240,8 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     STR_MonsterInfo* t_monsterBasicInfo = &(*u_monsterInfo)[it->first];
     STR_PackPlayerPosition* t_AttacketPosition = &((*smap)[conn].m_position);
 
-    hf_uint8 res = Server::GetInstance()->GetMonster()->JudgeDisAndDirect(t_AttacketPosition, t_monsterBasicInfo, currentTime);
+    STR_PosDis t_posDis;
+    hf_uint8 res = Server::GetInstance()->GetMonster()->JudgeDisAndDirect(t_AttacketPosition, t_monsterBasicInfo, currentTime, &t_posDis);
     //判断是否在攻击范围内
     if(res == 1)
     {
@@ -295,7 +293,7 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     {
         t_damageData.Flag = HIT;
     }
-    DamageDealWith(conn, &t_damageData, t_monsterBasicInfo);
+    DamageDealWith(conn, &t_damageData, t_monsterBasicInfo, &t_posDis);
 }
 
 //发送玩家血量给周围玩家
@@ -352,7 +350,7 @@ void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
 }
 
 //技能处理函数
-void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster)
+void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster, STR_PosDis* posDis)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     //发送产生的伤害
@@ -379,28 +377,30 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
         {
             if(*t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
             {
-//                monster->ChangeHatredRoleid(roleid);
                 double timep = GetCurrentTime();
-//                printf("怪物受到攻击时的时间timep:%lf\n", timep);
-//                printf("怪物目标时间aimTime:%lf\n",monster->aimTime);
-//                if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
-//                {
-                    monster->ChangeAimTimeAndPos(roleid, timep);
+                if(monster->aimTime - timep > 0.002) //时间大于0.002秒时，重新确定时间和位置点
+                {
+                    monster->ChangeAimTimeAndPos(roleid, timep, posDis);
                     Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
-//                }
+                }
+                else
+                {
+                    monster->ChangeHatredRoleid(roleid);
+                }
             }
         }
         else
         {
-//            monster->ChangeHatredRoleid(roleid);
             double timep = GetCurrentTime();
-//            if(monster->aimTime - timep > 0.5) //时间大于0.5秒时，重新确定时间和位置点
-//            {
-//                printf("怪物没有目标，怪物受到攻击时的时间timep:%lf\n", timep);
-//                printf("怪物没有目标，怪物目标时间aimTime:%lf\n",monster->aimTime);
-                monster->ChangeAimTimeAndPos(roleid, timep);
+            if(monster->aimTime - timep > 0.002)
+            {
+                monster->ChangeAimTimeAndPos(roleid, timep, posDis);
                 Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
-//            }
+            }
+            else
+            {
+                monster->ChangeHatredRoleid(roleid);
+            }
         }
     }
 
@@ -413,13 +413,11 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
     {
         //怪物死亡，清除该怪物的仇恨值，仇恨对象
         monster->hatredRoleid = 0;
-
         //怪物死亡，发送奖励经验，玩家经验，查找掉落物品
         MonsterDeath(conn, monster);
         //从玩家可视范围内的怪物列表中删除该怪物
         RoleViewDeleteMonster(t_monsterBt.MonsterID);
         //删除该怪物可视范围内的玩家
-
         (*monsterViewRole)[t_monsterBt.MonsterID].clear();
 //        monsterViewRole->erase(t_monsterBt.MonsterID);
     }
@@ -593,11 +591,13 @@ void GameAttack::RoleSkillAttack()
                  hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
                  hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
                  hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
-                 if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                 hf_float dis = sqrt(dx*dx + dy*dy + dz*dz);
+                 if( dis >= t_skillInfo->NearlyDistance && dis <= t_skillInfo->FarDistance)
                  {
                      t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
                      cout << "wait Skill" << t_damageData.Damage << endl;
-                     DamageDealWith(iter->second, &t_damageData, t_monsterInfo); //发送计算伤害
+                     STR_PosDis t_posDis(dis, 0 - dx, 0 - dz);
+                     DamageDealWith(iter->second, &t_damageData, t_monsterInfo, &t_posDis); //发送计算伤害
                  }
             }
             else if(t_skillInfo->SkillRangeID == 2) //自己为圆心
@@ -610,10 +610,12 @@ void GameAttack::RoleSkillAttack()
                      hf_float dx = t_monsterInfo->monster.Current_x - t_pos->Pos_x;
                      hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
                      hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
-                     if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                     hf_float dis = sqrt(dx*dx + dy*dy + dz*dz);
+                     if( dis >= t_skillInfo->NearlyDistance && dis <= t_skillInfo->FarDistance)
                      {
-                         t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);                         
-                         DamageDealWith(iter->second, &t_damageData, t_monsterInfo); //发送计算伤害
+                         t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
+                         STR_PosDis posDis(dis, 0 - dx, 0 - dz);
+                         DamageDealWith(iter->second, &t_damageData, t_monsterInfo, &posDis); //发送计算伤害
                      }
                 }
             }
@@ -644,10 +646,12 @@ void GameAttack::RoleSkillAttack()
                     hf_float dx = t_monsterInfo->monster.Current_x - t_monster->monster.Current_x;
                     hf_float dy = t_monsterInfo->monster.Current_y - t_monster->monster.Current_x;
                     hf_float dz = t_monsterInfo->monster.Current_z - t_monster->monster.Current_x;
-                    if( (dx*dx + dy*dy + dz*dz) >= t_skillInfo->NearlyDistance * t_skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= t_skillInfo->FarDistance * t_skillInfo->FarDistance)
+                    hf_float dis = sqrt(dx*dx + dy*dy + dz*dz);
+                    if( dis >= t_skillInfo->NearlyDistance && dis <= t_skillInfo->FarDistance)
                     {
                       t_damageData.Damage = CalDamage(t_skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
-                      DamageDealWith(iter->second, &t_damageData, t_monster); //发送计算伤害
+                      STR_PosDis posDis(dis, 0 - dx, 0 - dz);
+                      DamageDealWith(iter->second, &t_damageData, t_monster, &posDis); //发送计算伤害
                     }
                 }
             }
@@ -807,8 +811,8 @@ void GameAttack::AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skil
         hf_float dy = t_monsterInfo->monster.Current_y - t_pos->Pos_y;
         hf_float dz = t_monsterInfo->monster.Current_z - t_pos->Pos_z;
 
-        if( (dx*dx + dy*dy + dz*dz) < skillInfo->NearlyDistance * skillInfo->NearlyDistance ||
-                (dx*dx + dy*dy + dz*dz) > skillInfo->FarDistance * skillInfo->FarDistance)    //不在攻击范围
+        hf_float dis = sqrt(dx*dx + dy*dy + dz*dz);
+        if( dis < skillInfo->NearlyDistance || dis > skillInfo->FarDistance)    //不在攻击范围
         {
             t_skillResult.result = NOT_ATTACKVIEW;
             conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));
@@ -838,7 +842,8 @@ void GameAttack::AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skil
             cout << "damage:" << t_damageData.Damage << endl;
             STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
             conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
-            DamageDealWith(conn, &t_damageData, t_monsterInfo); //发送计算伤害
+            STR_PosDis posDis(dis, 0 - dx, 0 - dz);
+            DamageDealWith(conn, &t_damageData, t_monsterInfo, &posDis); //发送计算伤害
         }
         else   //延时类技能
         {
@@ -891,7 +896,6 @@ void GameAttack::AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo
         t_skillResult.result = SKILL_SUCCESS;
         conn->Write_all(&t_skillResult, sizeof(STR_PackSkillResult));  //发送施法结果
 
-
 //        //取攻击者角色的属性信息
         STR_RoleInfo* t_roleInfo = &((*smap)[conn].m_roleInfo);
         umap_monsterAttackInfo* t_monsterAttack = Server::GetInstance()->GetMonster()->GetMonsterAttack();
@@ -923,10 +927,12 @@ void GameAttack::AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo
             hf_float dx = t_monsterInfo->monster.Current_x - t_monster->monster.Current_x;
             hf_float dy = t_monsterInfo->monster.Current_y - t_monster->monster.Current_x;
             hf_float dz = t_monsterInfo->monster.Current_z - t_monster->monster.Current_x;
-            if( (dx*dx + dy*dy + dz*dz) >= skillInfo->NearlyDistance * skillInfo->NearlyDistance &&(dx*dx + dy*dy + dz*dz) <= skillInfo->FarDistance * skillInfo->FarDistance)
+            hf_float dis = sqrt(dx*dx + dy*dy + dz*dz);
+            if(dis >= skillInfo->NearlyDistance && dis <= skillInfo->FarDistance)
             {
               t_damageData.Damage = CalDamage(skillInfo, t_roleInfo, t_monsterAttackInfo, &t_damageData.TypeID);
-              DamageDealWith(conn, &t_damageData, t_monster); //发送计算伤害
+              STR_PosDis posDis(dis, 0 - dx, 0 - dz);
+              DamageDealWith(conn, &t_damageData, t_monster, &posDis); //发送计算伤害
             }
         }
     }

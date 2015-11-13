@@ -36,7 +36,7 @@ public:
     hf_uint32 CalDamage(STR_PackSkillInfo* skillInfo, STR_RoleInfo* roleInfo, STR_MonsterAttackInfo* monster, hf_uint8* type);
 
     //伤害处理函数
-    void DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster);
+    void DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster, STR_PosDis* posDis);
 
     //怪物死亡处理函数
     void MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* monster);

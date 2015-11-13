@@ -653,6 +653,26 @@ typedef struct _STR_PackOtherPlayerPosition
     STR_OtherPlayerPosition OtherPos;
 }STR_PackOtherPlayerPosition;
 
+
+typedef struct _STR_PosDis
+{
+    _STR_PosDis(hf_float _dis, hf_float _dx, hf_float _dz)
+        :dis(_dis), dx(_dx), dz(_dz)
+    {
+
+    }
+    _STR_PosDis()
+    {
+
+    }
+
+    hf_float dis;
+    hf_float dx;
+    hf_float dz;
+    hf_float Current_x;
+    hf_float Current_z;
+}STR_PosDis;
+
 //玩家刷新数据起始点
 typedef struct _STR_PlayerStartPos
 {

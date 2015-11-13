@@ -7,7 +7,7 @@
 #include "server.h"
 #include "GameAttack/gameattack.h"
 
-hf_uint8 Monster::JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime)
+hf_uint8 Monster::JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_PosDis* t_posDis)
 {
     STR_MonsterBasicInfo t_monster;
     memcpy(&t_monster, &monster->monster, sizeof(STR_MonsterBasicInfo));
@@ -27,6 +27,17 @@ hf_uint8 Monster::JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInf
         return 1;
     if(dx*cos(usr->Direct) + dz*sin(usr->Direct) < 0)
         return 2;
+    else
+    {
+        t_posDis->dis = dis;
+        t_posDis->dx = 0 - dx;
+        t_posDis->dz = 0 - dz;
+        t_posDis->Current_x = t_monster.Current_x;
+        t_posDis->Current_z = t_monster.Current_z;
+
+        printf("怪物与玩家之间的距离：%f,%f,%f,%f,%f\n", t_posDis->dis, t_posDis->dx, t_posDis->dz, t_posDis->Current_x, t_posDis->Current_z);
+        return 0;
+    }
 }
 
 hf_float Monster::caculateDistanceWithRole( STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster)

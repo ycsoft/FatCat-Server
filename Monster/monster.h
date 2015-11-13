@@ -62,7 +62,7 @@ public:
         }
     }
 
-    hf_uint8 JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime);
+    hf_uint8 JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_PosDis* t_posDis);
 
     hf_float caculateDistanceWithRole(STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster);
 
