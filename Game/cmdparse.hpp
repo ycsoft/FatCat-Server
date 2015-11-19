@@ -61,6 +61,12 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         {
             if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
                 return;
+            hf_uint32 hp = (*smap)[conn].m_roleInfo.HP;
+            if(hp == 0)
+            {
+                if(flag != FLAG_PlayerRevive)
+                    return;
+            }
         }
     }
 
@@ -250,8 +256,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     case FLAG_PickGoods:      //捡物品
     {
-        printf("FLAG pick up goods\n");
-        Server::GetInstance()->GetCmdParse()->PushPickGoods(conn, len, (STR_PickGoods*)(buf + sizeof(STR_PackHead)));
+        Server::GetInstance()->GetCmdParse()->PushPickGoods(conn, (STR_PickGoods*)(buf + sizeof(STR_PackHead)));
 
 //        STR_PickGoods* t_pick =(STR_PickGoods*)srv->malloc();
 //        memcpy(t_pick, buf+sizeof(STR_PackHead), len);

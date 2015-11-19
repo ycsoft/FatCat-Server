@@ -310,6 +310,7 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
                 it->second->Write_all(&t_packHead, sizeof(STR_PackHead));
 
                 SavePlayerOfflineData(it->second);
+                SessionMgr::Instance()->NameSockErase(reg->userName);
                 SessionMgr::Instance()->RemoveSession(it->second);
             }
 
@@ -1295,6 +1296,7 @@ void PlayerLogin::SendRoleExperence(TCPConnection::Pointer conn)
         Logger::GetLogger()->Error("select role experience error");
         return;
     }
+    printf("发送给玩家的经验值：%d,%d,%d\n", exp->CurrentExp, exp->UpgradeExp, exp->Level);
     conn->Write_all(exp, sizeof(STR_PackRoleExperience));
 }
 

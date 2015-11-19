@@ -1,9 +1,6 @@
 #ifndef PACKHEADFLAG_H
 #define PACKHEADFLAG_H
 
-#define PhyAttackSkillID    1
-#define MagicAttackSkillID  2
-#define PhyMagAttackSkillID 3
 
 //登录分为登录用户帐号和角色
 #define FLAG_PlayerLoginUserId       100     //玩家登录用户名Flag

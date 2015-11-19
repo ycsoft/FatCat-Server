@@ -128,10 +128,10 @@ typedef struct _Queue_AddFriendReturn
 
 typedef struct _Queue_PickGoods
 {
-    _Queue_PickGoods(hf_uint32 _roleid, hf_uint16 _len, STR_PickGoods* _pickGoods)
-        :roleid(_roleid), len(_len)
+    _Queue_PickGoods(hf_uint32 _roleid, STR_PickGoods* _pickGoods)
+        :roleid(_roleid)
     {
-        memcpy(pickGoods, _pickGoods, len);
+        memcpy(&pickGoods, _pickGoods, sizeof(STR_PickGoods));
     }
     _Queue_PickGoods()
     {
@@ -139,8 +139,7 @@ typedef struct _Queue_PickGoods
     }
 
     hf_uint32 roleid;
-    hf_uint16 len;
-    STR_PickGoods pickGoods[5];
+    STR_PickGoods pickGoods;
 }Queue_PickGoods;
 
 typedef struct _Queue_RemoveGoods
@@ -322,7 +321,7 @@ public:
     void PopAddFriendReturn();
 
     //goods
-    void PushPickGoods(TCPConnection::Pointer conn, hf_uint16 len, STR_PickGoods* pickGoods); //拾取物品
+    void PushPickGoods(TCPConnection::Pointer conn, STR_PickGoods* pickGoods); //拾取物品
     void PopPickGoods();
 
     void PushRemoveGoods(TCPConnection::Pointer conn, STR_RemoveBagGoods* removeGoods);  //丢弃物品

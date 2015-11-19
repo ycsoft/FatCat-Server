@@ -440,6 +440,32 @@ typedef struct _STR_PickGoodsResult
     hf_uint8   Result;
 }STR_PickGoodsResult;
 
+typedef struct _STR_PackPickGoodsResult
+{
+    _STR_PackPickGoodsResult()
+    {
+        bzero(&head,sizeof(_STR_PackPickGoodsResult));
+        head.Len = sizeof(_STR_PackPickGoodsResult) - sizeof(STR_PackHead);
+        head.Flag = FLAG_PickGoodsResult;
+    }
+    _STR_PackPickGoodsResult(hf_uint32 _LootGoodsID, hf_uint32 _GoodsFlag, hf_uint16 _Count, hf_uint8 _Result)
+    {
+        bzero(&head,sizeof(_STR_PackPickGoodsResult));
+        head.Len = sizeof(_STR_PackPickGoodsResult) - sizeof(STR_PackHead);
+        head.Flag = FLAG_PickGoodsResult;
+        LootGoodsID = _LootGoodsID;
+        GoodsFlag  = _GoodsFlag;
+        Count = _Count;
+        Result = _Result;
+    }
+
+    STR_PackHead head;
+    hf_uint32  LootGoodsID;
+    hf_uint32  GoodsFlag;
+    hf_uint16  Count;
+    hf_uint8   Result;
+}STR_PackPickGoodsResult;
+
 //装备属性 <表结构>
 typedef struct _STR_EquipmentAttr
 {
@@ -479,6 +505,25 @@ typedef struct _STR_EquipmentAttr
     hf_uint8  StrengthenLevel;          //强化等级
     hf_uint8  Durability;               //耐久度
 }STR_EquipmentAttr;
+
+typedef struct _STR_PackEquipmentAttr
+{
+    _STR_PackEquipmentAttr()
+    {
+        bzero(&head,sizeof(_STR_PackEquipmentAttr));
+        head.Len = sizeof(_STR_PackEquipmentAttr) - sizeof(STR_PackHead);
+        head.Flag = FLAG_EquGoodsAttr;
+    }
+    _STR_PackEquipmentAttr(STR_EquipmentAttr* _equAttr)
+    {
+        bzero(&head,sizeof(_STR_PackEquipmentAttr));
+        head.Len = sizeof(_STR_PackEquipmentAttr) - sizeof(STR_PackHead);
+        head.Flag = FLAG_EquGoodsAttr;
+        memcpy(&equAttr, _equAttr, sizeof(STR_EquipmentAttr));
+    }
+    STR_PackHead head;
+    STR_EquipmentAttr equAttr;
+}STR_PackEquipmentAttr;
 
 //生成时
 typedef struct _STR_PackCreateEqu
@@ -1243,18 +1288,19 @@ typedef struct _STR_PackDamageData
         Flag = _Flag;
     }
 
-    STR_PackHead head;
-    hf_uint32    AimID;       //目标ID
-    hf_uint32    AttackID;    //攻击者ID
-    hf_uint32    Damage;      //伤害
-    hf_uint8     TypeID;      //伤害类型
-    hf_uint8     Flag;        //附加标记 暴击，闪避等
     _STR_PackDamageData()
     {
         bzero(&head,sizeof(_STR_PackDamageData));
         head.Flag = FLAG_DamageData;
         head.Len = sizeof(_STR_PackDamageData)-sizeof(STR_PackHead);
     }
+
+    STR_PackHead head;
+    hf_uint32    AimID;       //目标ID
+    hf_uint32    AttackID;    //攻击者ID
+    hf_uint32    Damage;      //伤害
+    hf_uint8     TypeID;      //伤害类型
+    hf_uint8     Flag;        //附加标记 暴击，闪避等
 } STR_PackDamageData;
 
 //玩家经验

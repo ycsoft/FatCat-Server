@@ -90,7 +90,9 @@ public:
     void MonsterSpawns(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns, hf_double currentTime);
 
     //怪物新的移动点
-    void NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns);
+//    void NewMovePosition(STR_MonsterSpawns* monsterSpawns, STR_Position* pos);
+
+//    void NewMovePosition(STR_MonsterInfo* monsterInfo, STR_MonsterSpawns* monsterSpawns, hf_double currentTime);
 
     //将变化的怪物信息发送给怪物可视范围内的玩家
     void SendMonsterToViewRole(STR_MonsterBasicInfo* monster);

@@ -1,4 +1,4 @@
-#ifndef MONSTERSTRUCT_H
+﻿#ifndef MONSTERSTRUCT_H
 #define MONSTERSTRUCT_H
 
 #include "Game/postgresqlstruct.h"
@@ -117,33 +117,29 @@ public:
 
         monster.Direct = CalculationDirect(posDis->dx, posDis->dz);
 
-        if(posDis->dis >= PursuitFarDistance*4) //距离较远
-        {
-            monster.Target_x = monster.Current_x + 2*PursuitFarDistance/posDis->dis*posDis->dx;
-            monster.Target_z = monster.Current_z + 2*PursuitFarDistance/posDis->dis*posDis->dz;
 
-            aimTime = currentTime + 2*PursuitFarDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
-        }
-        else if(posDis->dis < PursuitFarDistance*4 && posDis->dis > PursuitFarDistance*2)
-        {
-            monster.Target_x = monster.Current_x + PursuitFarDistance/posDis->dis*posDis->dx;
-            monster.Target_z = monster.Current_z + PursuitFarDistance/posDis->dis*posDis->dz;
-            aimTime = currentTime + PursuitFarDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
-        }
-        else if(posDis->dis < PursuitFarDistance*2 && posDis->dis > MonsterAttackView)
+        if(posDis->dis > MonsterAttackView)
         {
             monster.Target_x = monster.Current_x + PursuitNearlyDistance/posDis->dis*posDis->dx;
             monster.Target_z = monster.Current_z + PursuitNearlyDistance/posDis->dis*posDis->dz;
+            startTime = currentTime;//test
             aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
         }
+        else
+        {
+            monster.Target_x = monster.Current_x;
+            monster.Target_z = monster.Current_z;
+            startTime = currentTime;//test
+            aimTime = currentTime;
+        }
 
-        cout << "修改后怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
-        cout << "修改后怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
-        cout << "移动速度" << monster.MoveRate << endl;
+//        cout << "修改后怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
+//        cout << "修改后怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
+//        cout << "移动速度" << monster.MoveRate << endl;
         m_mtx.unlock();
     }
 
-    void MoveToStartPos(hf_double timep, hf_float dis)
+    void MoveToStartPos(hf_double currentTime, hf_float dis)
     {
         m_mtx.lock();
         hatredRoleid = 0;
@@ -151,10 +147,8 @@ public:
         monster.Target_y = pursuitPos.Come_y;
         monster.Target_z = pursuitPos.Come_z;
 
-//        pursuitPos.Come_x = 0;
-//        pursuitPos.Come_y = 0;
-//        pursuitPos.Come_z = 0;
-        aimTime = timep + dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
+        startTime = currentTime;//test
+        aimTime = currentTime + dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
         monsterStatus = true;
         m_mtx.unlock();
     }
@@ -163,6 +157,8 @@ public:
     {
         m_mtx.lock();
         monsterStatus = !monsterStatus;
+        monster.HP = monster.MaxHP;
+        cout << "怪物回到起始追击点，血量加满:" << monster.HP << endl;
         if(monster.ActID == Action_Run)
         {
             monster.MoveRate /= 2;
@@ -174,6 +170,79 @@ public:
         }
         m_mtx.unlock();
     }
+    void NewMovePosition(STR_MonsterSpawns* monsterSpawns, hf_double currentTime)
+    {
+        m_mtx.lock();
+        monster.Current_x = monster.Target_x;
+        monster.Current_y = monster.Target_y;
+        monster.Current_z = monster.Target_z;
+
+        hf_uint32 boundary = monsterSpawns->Boundary/*/monsterSpawns->Amount*/;
+        monster.Target_x = monsterSpawns->Pos_x - boundary + (float)rand()/(float)RAND_MAX * boundary*2;
+        monster.Target_y = monster.Target_y;
+        monster.Target_z = monsterSpawns->Pos_z - boundary + (float)rand()/RAND_MAX * boundary*2;
+
+        hf_float dx = monster.Target_x - monster.Current_x;
+        hf_float dz = monster.Target_z - monster.Current_z;
+
+        monster.Direct = CalculationDirect(dx, dz);
+        startTime = currentTime;
+//        hf_float dis = sqrt(dx*dx + dz*dz);
+        aimTime = currentTime + (sqrt(dx*dx + dz*dz) / ((hf_double)monster.MoveRate/100 * MonsterMoveDistance)/* + MonsterStopTime*/);
+
+//        printf("怪物ID:%d,移动速度:%d,距离：%f,目标时间：%f = %f + %f\n", monster.MonsterID, monster.MoveRate, dis, aimTime, currentTime, dis / ((hf_double)monster.MoveRate/100 * MonsterMoveDistance));
+
+        m_mtx.unlock();
+    }
+
+    void MonsterSpawns(STR_MonsterSpawns* monsterSpawns, hf_double currentTime)
+    {
+        hf_uint8 Flag = 1;
+        while(Flag)
+        {
+            monster.Current_x = (monsterSpawns->Pos_x - monsterSpawns->Boundary) + (float)rand()/(float)RAND_MAX * (monsterSpawns->Boundary*2);
+            monster.Current_y = monsterSpawns->Pos_y;
+            monster.Current_z = (monsterSpawns->Pos_z - monsterSpawns->Boundary) + (float)rand()/RAND_MAX * (monsterSpawns->Boundary*2);
+            hf_float dx = monster.Current_x - monsterSpawns->Pos_x;
+            hf_float dz = monster.Current_z - monsterSpawns->Pos_z;
+            hf_float dis = sqrt(dx*dx + dz*dz);
+            if(dis <= monsterSpawns->Boundary)
+            {
+                Flag = 0;
+                pos.Come_x = monster.Current_x;
+                pos.Come_y = monster.Current_y;
+                pos.Come_z = monster.Current_z;
+
+                if(monster.ActID == Action_Run)
+                {
+                    monster.MoveRate /= 2;
+                    monster.ActID = Action_Walk;
+                }
+                else
+                {
+                    monster.ActID = Action_Walk;
+                }
+                spawnsPos = monsterSpawns->SpawnsPosID;
+                monster.HP = monster.MaxHP;
+
+
+                hf_uint32 boundary = monsterSpawns->Boundary/monsterSpawns->Amount;
+                monster.Target_x = monsterSpawns->Pos_x - boundary + (float)rand()/(float)RAND_MAX * boundary*2;
+                monster.Target_y = monster.Current_y;
+                monster.Target_z = monsterSpawns->Pos_z - boundary + (float)rand()/RAND_MAX * boundary*2;
+
+                dx = monster.Target_x - monster.Current_x;
+                dz = monster.Target_z - monster.Current_z;
+                monster.Direct = CalculationDirect(dx,dz);
+
+                startTime = currentTime;
+                dis = sqrt(dx*dx + dz*dz);
+                aimTime = currentTime + dis / ((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
+//                printf("怪物ID:%d,移动速度:%d,距离：%f,目标时间：%f = %f + %f\n", monster.MonsterID, monster.MoveRate, dis, aimTime, currentTime, dis / ((hf_double)monster.MoveRate/100 * MonsterMoveDistance));
+            }
+        }
+    }
+
     void ChangeMonsterAimTime(hf_double _aimTime)
     {
         m_mtx.lock();
@@ -206,6 +275,27 @@ public:
         }
     }
 
+    void ChangeMonsterDirect(hf_float dx, hf_float dz)
+    {
+        m_mtx.lock ();
+        cout << "改变前怪物方向:" << monster.Direct << endl;
+        monster.Direct = 0 - CalculationDirect (dx, dz);
+        monster.Target_x = monster.Current_x;
+        monster.Target_y = monster.Current_y;
+        monster.Target_z = monster.Current_z;
+        m_mtx.unlock ();
+    }
+//    void ChangeMonsterDirect(hf_float direct)
+//    {
+//        m_mtx.lock ();
+//        cout << "改变前怪物方向:" << monster.Direct << endl;
+//        monster.Direct = direct;
+//        monster.Target_x = monster.Current_x;
+//        monster.Target_y = monster.Current_y;
+//        monster.Target_z = monster.Current_z;
+//        m_mtx.unlock ();
+//    }
+
     void ChangeMonsterPos(hf_double currentTime, hf_float dis, hf_float dx, hf_float dz)
     {
         m_mtx.lock();
@@ -215,25 +305,13 @@ public:
         monster.Direct = CalculationDirect(dx, dz);
         monster.ActID = Action_Run;
 
-        if(dis >= PursuitFarDistance*4) //距离较远
-        {
-            monster.Target_x += 2*PursuitFarDistance/dis*dx;
-            monster.Target_z += 2*PursuitFarDistance/dis*dz;
+        monster.Target_x += PursuitNearlyDistance/dis*dx;
+        monster.Target_z += PursuitNearlyDistance/dis*dz;
+        startTime = currentTime;//test
+        aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
+//            printf("怪物ID:%d,距离：%f,目标时间：%f = %f + %f\n", monster.MonsterID, dis, aimTime, currentTime, PursuitNearlyDistance / ((hf_double)monster.MoveRate/100 * MonsterMoveDistance));
+//        }
 
-            aimTime = currentTime + 2*PursuitFarDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
-        }
-        else if(dis < PursuitFarDistance*4 && dis > PursuitFarDistance*2)
-        {
-            monster.Target_x += PursuitFarDistance/dis*dx;
-            monster.Target_z += PursuitFarDistance/dis*dz;
-            aimTime = currentTime + PursuitFarDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
-        }
-        else if(dis < PursuitFarDistance*2 && dis > MonsterAttackView)
-        {
-            monster.Target_x += PursuitNearlyDistance/dis*dx;
-            monster.Target_z += PursuitNearlyDistance/dis*dz;
-            aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
-        }
         m_mtx.unlock();
     }
 
@@ -242,6 +320,7 @@ public:
     STR_Position    pos;            //怪物刷出坐标点,怪物自由活动用
     STR_Position    pursuitPos;     //以这个点为起点追击
     hf_double       aimTime;        //当monster.HP等于0时，怪物死亡计算复活时间，当monster.HP不等于0时，表示怪物到运动到下一个坐标点的时间
+    hf_double       startTime;      //test 怪物起始时间
     hf_uint32       spawnsPos;      //怪物刷怪点
     hf_uint32       roleid;         //第一个攻击此怪物的玩家
     hf_uint32       hatredRoleid;   //仇恨值最大的玩家

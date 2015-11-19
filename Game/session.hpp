@@ -339,7 +339,10 @@ public:
         if(it != m_nameSock->end())
             m_nameSock->erase(name);
         else
+        {
+            printf("要清除的用户名为：%s\n", name);
             Logger::GetLogger()->Error("nameSockErase error");
+        }
         m_nameMtx.unlock();
     }
 

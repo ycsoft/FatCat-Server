@@ -59,6 +59,10 @@ int TCPConnection::Write_all(void *buff, int size)
         cout << "发送数据大于1024,长度为:" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
         return 0;
     }
+//    STR_PackHead t_packHead;
+//    memcpy(&t_packHead, buff, sizeof(STR_PackHead));
+//    cout << "发送数据长度为:" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
+
     m_write_lock.lock();
 
     //将要发送的数据拷贝至发送缓冲区，防止数据丢失

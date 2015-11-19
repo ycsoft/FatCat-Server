@@ -26,6 +26,9 @@
 #include "Game/log.hpp"
 #include "Game/userposition.hpp"
 
+#include "fileOperation/fileoperation.h"
+
+
 using namespace std;
 using namespace hf_types;
 
@@ -39,6 +42,11 @@ const int maxlength = 10000;
 
 int main()
 {
+//    fileOperation file;
+//    file.ReadFile ("/home/hf02/桌面/heightmap.raw");
+//    file.ReadFile("/home/hf02/桌面/aaaaaaaaaaaaaa");
+
+
     //数据库初始化
      Logger::GetLogger()->Info("Init DB ........");
      Server::GetInstance()->InitDB();

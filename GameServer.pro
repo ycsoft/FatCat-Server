@@ -29,7 +29,8 @@ SOURCES += main.cpp \
     OperationPostgres/operationpostgres.cpp \
     Game/cmdparse.cpp \
 #    Monster/monsterstruct.cpp
-    GameChat/gamechat.cpp
+    GameChat/gamechat.cpp \
+    fileOperation/fileoperation.cpp
 
 
 
@@ -70,7 +71,8 @@ HEADERS += \
     Game/cmdparse.h \
     Monster/monsterstruct.h \
     GameChat/gamechat.h \
-    Game/rolestruct.h
+    Game/rolestruct.h \
+    fileOperation/fileoperation.h
 
 
 

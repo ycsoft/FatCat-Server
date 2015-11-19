@@ -304,6 +304,7 @@ hf_int32 DiskDBManager::GetMonsterType(umap_monsterType* monsterType)
 //        打包数据
         for(int i = 0; i < t_row; i++)
         {
+            memset(&t_monsterType, 0, sizeof(STR_MonsterType));
             t_monsterType.MonsterTypeID = atoi(PQgetvalue(t_PGresult, i, 0));
             memcpy(t_monsterType.MonsterName, PQgetvalue(t_PGresult, i, 1), PQgetlength(t_PGresult, i, 1));
             t_monsterType.HP = atoi(PQgetvalue(t_PGresult, i, 2));

@@ -140,7 +140,7 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
     if(dx*cos(t_AttacketPos->Direct) + dz*sin(t_AttacketPos->Direct) < 0)
     {
         t_damageData.Flag = OPPOSITE_DIRECT;
-        printf("方向相反，攻击不上\n");
+//        printf("方向相反，攻击不上\n");
         conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
@@ -242,6 +242,7 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
 
     STR_PosDis t_posDis;
     hf_uint8 res = Server::GetInstance()->GetMonster()->JudgeDisAndDirect(t_AttacketPosition, t_monsterBasicInfo, currentTime, &t_posDis);
+//    return;
     //判断是否在攻击范围内
     if(res == 1)
     {
@@ -253,7 +254,7 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
     else if(res == 2) //判断方向是否可攻击
     {
         t_damageData.Flag = OPPOSITE_DIRECT;
-        printf("方向相反，攻击不上\n");
+//        printf("方向相反，攻击不上\n");
         conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
@@ -354,7 +355,6 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     //发送产生的伤害
-    cout << "wait skill" << damage->Damage << endl;
     conn->Write_all(damage, sizeof(STR_PackDamageData));
 
     STR_PackMonsterAttrbt t_monsterBt;
@@ -367,12 +367,13 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
 
     hf_uint32* t_hatredValue = &((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
 
-    printf("roleid:%d,hatredvalue:%d\n", roleid, *t_hatredValue);
+//    printf("roleid:%d,hatredvalue:%d\n", roleid, *t_hatredValue);
     *t_hatredValue += damage->Damage;
 
     cout << "攻击前：" << monster->hatredRoleid  << "monsterID:" << monster->monster.MonsterID << endl;
     if(monster->hatredRoleid != roleid)
     {
+        cout << "改变仇恨对象" << endl;
         if(monster->hatredRoleid != 0)
         {
             if(*t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
@@ -382,9 +383,11 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
                 {
                     monster->ChangeAimTimeAndPos(roleid, timep, posDis);
                     Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
+
                 }
                 else
                 {
+                    cout << "时间小于0.002秒" << endl;
                     monster->ChangeHatredRoleid(roleid);
                 }
             }
@@ -399,6 +402,7 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
             }
             else
             {
+                cout << "时间小于0.002秒" << endl;
                 monster->ChangeHatredRoleid(roleid);
             }
         }
@@ -406,7 +410,7 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
 
     cout << "攻击后:" << monster->hatredRoleid << endl;
 
-    cout << "hatredRoleid" << monster->hatredRoleid << ",hatred:" << ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid] << endl;
+//    cout << "hatredRoleid" << monster->hatredRoleid << ",hatred:" << ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid] << endl;
     //发送怪物当前血量给可视范围内的玩家
     Server::GetInstance()->GetMonster()->SendMonsterHPToViewRole(&t_monsterBt);
     if(t_monsterBt.HP == 0)
@@ -438,6 +442,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         STR_PackRewardExperience t_RewardExp;
         t_RewardExp.ID = monster->monster.MonsterID;
         t_RewardExp.Experience = GetRewardExperience(monster->monster.Level);
+        cout << "怪物奖励经验:" << t_RewardExp.ID << "," << t_RewardExp.Experience << endl;
         conn->Write_all(&t_RewardExp, sizeof(STR_PackRewardExperience));
 
         STR_PackRoleExperience* t_RoleExp = &(*smap)[conn].m_roleExp;
@@ -454,9 +459,8 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         else
         {
             t_RoleExp->CurrentExp = t_RoleExp->CurrentExp + t_RewardExp.Experience;
-            memcpy(&(*smap)[conn].m_roleExp, &t_RoleExp, sizeof(STR_PackRoleExperience));
         }
-        Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp->UpgradeExp);
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp->CurrentExp);
         conn->Write_all(t_RoleExp, sizeof(STR_PackRoleExperience));
 //      }
 
@@ -472,6 +476,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         t_lootGoods.Count = GetRewardMoney(monster->monster.Level);;
         //暂时只取奖励的金钱，后面会加一些计算公式，计算后奖励的金钱可能为0
 
+        cout << "怪物掉落金钱:" << monster->monster.MonsterID << "," << t_lootGoods.Count << endl;
         if(t_lootGoods.Count > 0)
         {
             t_lootGoods.LootGoodsID = Money_1;

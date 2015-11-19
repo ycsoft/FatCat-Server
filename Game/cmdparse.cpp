@@ -310,12 +310,12 @@ void CmdParse::PopAddFriendReturn()
 }
 
 
-void CmdParse::PushPickGoods(TCPConnection::Pointer conn, hf_uint16 len, STR_PickGoods* pickGoods)
+void CmdParse::PushPickGoods(TCPConnection::Pointer conn, STR_PickGoods* pickGoods)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
-    Queue_PickGoods t_goods(roleid, len, pickGoods);
+    Queue_PickGoods t_goods(roleid, pickGoods);
     m_PickGoods->push(t_goods);
 }
 
@@ -332,7 +332,7 @@ void CmdParse::PopPickGoods()
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
-               optGoods->PickUpGoods(it->second, t_goods.len, t_goods.pickGoods);
+               optGoods->PickUpGoods(it->second, &t_goods.pickGoods);
             }
         }
         else
