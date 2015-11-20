@@ -176,6 +176,23 @@
 #define  Action_RideBike    12      //骑自行车（RideBike）
 
 #define  SQRT3DIV2              0.866   //平方跟3
+
+#define  MAP1                  1      //1号地图
+#define  MAP2                  2      //2号地图
+#define  MAP3                  3      //3号地图
+#define  MAP4                  4      //4号地图
+#define  MAP5                  5      //5号地图
+#define  MAP6                  6      //6号地图
+#define  MAP7                  7      //7号地图
+#define  MAP8                  8      //8号地图
+#define  MAP9                  9      //9号地图
+#define  MAP10                 10     //10号地图
+
+
+
+
+
+
 namespace hf_types{
 
 typedef unsigned int            hf_uint32;

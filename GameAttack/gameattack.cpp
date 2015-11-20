@@ -498,6 +498,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
                 t_lootGoods.LootGoodsID = vec->LootGoodsID;
                 t_lootGoods.Count = vec->Count;
                 memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_LootGoodsPos) + i* sizeof(STR_LootGoods), &t_lootGoods, sizeof(STR_LootGoods));
+                cout << "掉落物品:" << t_lootGoods.LootGoodsID << ",数量:" << t_lootGoods.Count << endl;
                 i++;
 
                 _umap_lootGoods::iterator it = lootGoods->find(monster->monster.MonsterID); //保存掉落物品
@@ -517,6 +518,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         STR_PackHead t_packHead;
         t_packHead.Flag = FLAG_LootGoods;
         t_packHead.Len = sizeof(STR_LootGoodsPos) + i*sizeof(STR_LootGoods);
+        cout << "掉落物品,长度：" << t_packHead.Len << endl;
 
         STR_LootGoodsPos t_PacklootGoods;
         t_PacklootGoods.Pos_x = monster->monster.Current_x;

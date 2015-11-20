@@ -252,34 +252,54 @@ public:
 
     hf_float CalculationDirect(hf_float dx, hf_float dz)
     {
-        if(dx == 0)
+
+        hf_float cosDirect = dx/sqrt(dx*dx + dz*dz);
+        if(dx > 0)
         {
             if(dz > 0)
-                return PI;
+                return acos(cosDirect);          //1
             else
-                return PI*3/2;
-        }
-        if(dz > 0)
-        {
-            if(dx > 0)
-                return atan2(dz, dx);          //1
-            else
-                return atan2(dz, dx) + PI;     //2
+                return 2*PI - acos(cosDirect);     //4
         }
         else
         {
-            if(dx > 0)
-                return atan2(dz, dx) + 2*PI;   //4
+            if(dz > 0)
+                return PI - acos(0 - cosDirect);   //2
             else
-                return atan2(dz, dx) + PI;     //3
+                return PI + acos(0 - cosDirect);     //3
         }
     }
+
+//    hf_float CalculationDirect(hf_float dx, hf_float dz)
+//    {
+//        if(dx == 0)
+//        {
+//            if(dz > 0)
+//                return PI/2;
+//            else
+//                return PI*3/2;
+//        }
+//        if(dz > 0)
+//        {
+//            if(dx > 0)
+//                return atan2(dz, dx);          //1
+//            else
+//                return PI - atan2(dz, 0 - dx);     //2
+//        }
+//        else
+//        {
+//            if(dx > 0)
+//                return 2*PI - atan2(dz, 0 - dx);   //4
+//            else
+//                return PI + atan2(dz, dx);     //3
+//        }
+//    }
 
     void ChangeMonsterDirect(hf_float dx, hf_float dz)
     {
         m_mtx.lock ();
         cout << "改变前怪物方向:" << monster.Direct << endl;
-        monster.Direct = 0 - CalculationDirect (dx, dz);
+        monster.Direct = CalculationDirect (dx, dz);
         monster.Target_x = monster.Current_x;
         monster.Target_y = monster.Current_y;
         monster.Target_z = monster.Current_z;
@@ -315,6 +335,82 @@ public:
         m_mtx.unlock();
     }
 
+    //怪物向做移动一格
+    void MonsterMoveLeft(hf_double currentTime)
+    {
+        m_mtx.lock();
+        monster.Current_x = monster.Target_x;
+        monster.Current_z = monster.Target_z;
+
+        if(monster.ActID != Action_Run)
+        {
+            monster.ActID = Action_Run;
+            monster.MoveRate *= 2;
+        }
+
+        monster.Target_x -= PursuitNearlyDistance;
+        startTime = currentTime;//test
+        aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
+        m_mtx.lock();
+    }
+
+    //怪物向右移动一格
+    void MonsterMoveRight(hf_double currentTime)
+    {
+        m_mtx.lock();
+        monster.Current_x = monster.Target_x;
+        monster.Current_z = monster.Target_z;
+
+        if(monster.ActID != Action_Run)
+        {
+            monster.ActID = Action_Run;
+            monster.MoveRate *= 2;
+        }
+
+        monster.Target_x += PursuitNearlyDistance;
+        startTime = currentTime;//test
+        aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
+        m_mtx.lock();
+    }
+
+    //怪物向上移动一格
+    void MonsterMoveUp(hf_double currentTime)
+    {
+        m_mtx.lock();
+        monster.Current_x = monster.Target_x;
+        monster.Current_z = monster.Target_z;
+
+        if(monster.ActID != Action_Run)
+        {
+            monster.ActID = Action_Run;
+            monster.MoveRate *= 2;
+        }
+
+        monster.Target_z -= PursuitNearlyDistance;
+        startTime = currentTime;//test
+        aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
+        m_mtx.lock();
+    }
+
+    //怪物向下移动一格
+    void MonsterMoveDown(hf_double currentTime)
+    {
+        m_mtx.lock();
+        monster.Current_x = monster.Target_x;
+        monster.Current_z = monster.Target_z;
+
+        if(monster.ActID != Action_Run)
+        {
+            monster.ActID = Action_Run;
+            monster.MoveRate *= 2;
+        }
+
+        monster.Target_z += PursuitNearlyDistance;
+        startTime = currentTime;//test
+        aimTime = currentTime + PursuitNearlyDistance/((hf_double)monster.MoveRate/100 * MonsterMoveDistance);
+        m_mtx.lock();
+    }
+
 
     STR_MonsterBasicInfo monster;   //怪物基本信息
     STR_Position    pos;            //怪物刷出坐标点,怪物自由活动用
@@ -327,6 +423,7 @@ public:
     bool            monsterStatus;  //怪物是否处于返回起始追击点，true表示返回之中
 
 }STR_MonsterInfo;
+
 
 
 //角色ID，仇恨值

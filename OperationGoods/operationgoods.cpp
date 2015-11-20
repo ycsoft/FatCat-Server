@@ -334,38 +334,34 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* pic
     //PickGoods->LootGoodsID == 0  //捡取掉落的全部物品
     for(vector<STR_LootGoods>::iterator vec = loot_it->second.begin(); vec != loot_it->second.end(); )
     {
-        if(pickGoods->LootGoodsID == vec->LootGoodsID)
+        if(vec->LootGoodsID == Money_1)  //掉落的是金钱
         {
-            if(pickGoods->LootGoodsID == Money_1)  //掉落的是金钱
+            PickUpMoney(conn, &(*vec), pickGoods->GoodsFlag);
+            vector<STR_LootGoods>::iterator _vec = vec;
+            vec++;
+            loot_it->second.erase(_vec);
+        }
+        else if(EquTypeMinValue <= vec->LootGoodsID && vec->LootGoodsID <= EquTypeMaxValue)  //直接生成装备ID存起来
+        {
+            PickUpEqu(conn, &(*vec), pickGoods->GoodsFlag);
+            vector<STR_LootGoods>::iterator _vec = vec;
+            vec++;
+            loot_it->second.erase(_vec);
+        }
+        else
+        {
+            if(PickUpcommonGoods(conn, &(*vec), pickGoods->GoodsFlag) == 1)
             {
-                PickUpMoney(conn, &(*vec), pickGoods->GoodsFlag);
                 vector<STR_LootGoods>::iterator _vec = vec;
                 vec++;
                 loot_it->second.erase(_vec);
             }
-            else if(EquTypeMinValue <= vec->LootGoodsID && pickGoods->LootGoodsID <= EquTypeMaxValue)  //直接生成装备ID存起来
-            {
-                PickUpEqu(conn, &(*vec), pickGoods->GoodsFlag);
-                vector<STR_LootGoods>::iterator _vec = vec;
-                vec++;
-                loot_it->second.erase(_vec);
-            }
-            else
-            {
-                if(PickUpcommonGoods(conn, &(*vec), pickGoods->GoodsFlag) == 1)
-                {
-                    vector<STR_LootGoods>::iterator _vec = vec;
-                    vec++;
-                    loot_it->second.erase(_vec);
-                }
-            }
         }
+    }
 
-        if(loot_it->second.empty())
-        {
-            lootGoods->erase(loot_it);
-        }
-
+    if(loot_it->second.empty())
+    {
+        lootGoods->erase(loot_it);
     }
 }
 

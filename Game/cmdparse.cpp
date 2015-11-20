@@ -332,6 +332,7 @@ void CmdParse::PopPickGoods()
             _umap_roleSock::iterator it = t_roleSock->find(t_goods.roleid);
             if(it != t_roleSock->end())
             {
+               cout << "捡东西:" << t_goods.roleid << ",掉落者：" << t_goods.pickGoods.GoodsFlag << ",物品ID：" << t_goods.pickGoods.LootGoodsID << endl;
                optGoods->PickUpGoods(it->second, &t_goods.pickGoods);
             }
         }

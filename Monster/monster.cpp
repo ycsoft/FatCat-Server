@@ -308,12 +308,11 @@ void Monster::Monsteractivity()
     t_packHead.Flag = FLAG_MonsterCome;
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
 
-    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
-
     STR_PackDamageData t_damageData;
     while(1)
     {
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         hf_double currentTime = GetCurrentTime();
         for(_umap_monsterInfo::iterator it = t_monsterBasic->begin(); it != t_monsterBasic->end(); it++)
         {
@@ -366,7 +365,7 @@ void Monster::Monsteractivity()
 //            printf("t_monsterPos:%f,%f,%f\n",t_monster->Current_x, t_monster->Current_y, t_monster->Current_z);
             //计算怪物是否超过追击距离
             hf_float t_startDis = CalculationPursuitDistance(&it->second);
-//            printf("离开追击点的距离：%lf\n", t_startDis);
+            printf("离开追击点的距离：%lf\n", t_startDis);
             if(t_startDis >= MonsterPursuitDis) //超过追击距离，返回起始点
             {
                 it->second.ChangeHatredRoleid(0);
@@ -398,10 +397,12 @@ void Monster::Monsteractivity()
 
                 //计算与玩家之间的距离
                 STR_PackPlayerPosition*  t_playerPos = &(*smap)[role_it->second].m_position;
+                cout << "玩家位置x:" << t_playerPos->Pos_x << ",z:" << t_playerPos->Pos_z << endl;
                 hf_float dx = t_playerPos->Pos_x - t_monster->Current_x;
                 hf_float dz = t_playerPos->Pos_z - t_monster->Current_z;
+
                 hf_float dis = sqrt(dx*dx + dz*dz);
-//                cout << "怪物与玩家的距离:" << dis << endl << endl;
+                cout << "怪物与玩家的距离:" << dis << endl << endl;
                 if(dis > MonsterAttackView)
                 {
                     it->second.ChangeMonsterPos(currentTime, dis, dx, dz);
@@ -411,13 +412,59 @@ void Monster::Monsteractivity()
 
                 hf_float cosDirect = (dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct))/sqrt(dx*dx + dz*dz);
                 printf("角度计算值:%f\n", cosDirect);
-                if((dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct)/sqrt(dx*dx + dz*dz) < SQRT3DIV2))  //夹角大于30度
+//                if((dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct)/sqrt(dx*dx + dz*dz) < SQRT3DIV2))  //夹角大于30度
+//                {
+                if(cosDirect < SQRT3DIV2)
                 {
                     cout << "1玩家方向:" << t_playerPos->Direct << endl;
 //                    it->second.ChangeMonsterDirect(0 - t_playerPos->Direct);
                     it->second.ChangeMonsterDirect(dx, dz);
-                    cout << "1改变怪物方向，改变后:" << it->second.monster.Direct << endl << endl;
+                    cout << "改变后怪物方向，:" << it->second.monster.Direct << endl;
                     SendMonsterToViewRole(&it->second.monster);
+
+                    //test direct
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole(&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+//                    sleep(1);
+//                    it->second.monster.Direct += PI/6;
+//                    SendMonsterToViewRole (&it->second.monster);
+
+                    cosDirect = (dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct))/sqrt(dx*dx + dz*dz);
+                    printf("新的角度计算值:%f\n\n", cosDirect);
                 }
 
                 //攻击玩家
@@ -560,6 +607,7 @@ void Monster::SendMonsterToViewRole(STR_MonsterBasicInfo* monster)
         if(iter != t_roleSock->end())
         {
             iter->second->Write_all(&t_monster, sizeof(STR_PackMonsterBasicInfo));
+//            cout << "22222:" << t_monster.monster.MonsterID << endl;
         }
     }
 }
@@ -583,26 +631,20 @@ void Monster::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
 //计算方向
 hf_float Monster::CalculationDirect(hf_float dx, hf_float dz)
 {
-    if(dx == 0)
+    hf_float cosDirect = dx/sqrt(dx*dx + dz*dz);
+    if(dx > 0)
     {
         if(dz > 0)
-            return PI;
+            return acos(cosDirect);            //1
         else
-            return PI*3/2;
-    }
-    if(dz > 0)
-    {
-        if(dx > 0)
-            return atan2(dz, dx);          //1
-        else
-            return atan2(dz, dx) + PI;     //2
+            return 2*PI - acos(cosDirect);     //4
     }
     else
     {
-        if(dx > 0)
-            return atan2(dz, dx) + 2*PI;   //4
+        if(dz > 0)
+            return PI - acos(0 - cosDirect);   //2
         else
-            return atan2(dz, dx) + PI;     //3
+            return PI + acos(0 - cosDirect);   //3
     }
 }
 
