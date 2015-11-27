@@ -83,6 +83,10 @@ public:
     //查询玩家未捡取的物品
     void SendRoleNotPickGoods(TCPConnection::Pointer conn, hf_uint32 RoleID);
 
+    //查询玩家已经完成的任务
+    void GetPlayerCompleteTask(TCPConnection::Pointer conn);
+
+
 
     //玩家下线
     //用户下线删除保存的对应的<name，sock>

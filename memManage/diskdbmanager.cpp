@@ -14,7 +14,7 @@
 #include "Monster/monster.h"
 
 using namespace std;
-static boost::mutex     mtx;
+//static boost::mutex     mtx;
 
 DiskDBManager::DiskDBManager()
 {
@@ -55,7 +55,9 @@ void* DiskDBManager::Get(const char* str)
 //执行不返回数据的命令  update insert delete move
 hf_int32 DiskDBManager::Set(const char *str,...)
 {
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
+    m_mtx.unlock();
     ExecStatusType t_ExecStatusType = PQresultStatus(t_PGresult);
     if(t_ExecStatusType != PGRES_COMMAND_OK) //成功完成一个不返回数据的命令
     {
@@ -72,9 +74,9 @@ hf_int32 DiskDBManager::Set(const char *str,...)
 //执行返回数据的命令  select
 hf_int32 DiskDBManager::GetSqlResult(const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)   //执行一个返回数据的操作
     {
@@ -88,9 +90,9 @@ hf_int32 DiskDBManager::GetSqlResult(const hf_char* str)
 //得到玩家的登录信息
 hf_int32 DiskDBManager::GetPlayerUserId(STR_PlayerLoginUserId* user,const char *str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
 
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
 
@@ -118,9 +120,9 @@ hf_int32 DiskDBManager::GetPlayerUserId(STR_PlayerLoginUserId* user,const char *
 
 hf_int32 DiskDBManager::GetPlayerRoleList(ResRoleList* RoleList,const char *str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
 
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
 
@@ -165,9 +167,9 @@ hf_int32 DiskDBManager::GetPlayerRoleList(ResRoleList* RoleList,const char *str)
 
 hf_int32 DiskDBManager::GetPlayerRegisterRoleInfo(STR_RoleBasicInfo* t_RoleInfo, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
 
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
 
@@ -212,9 +214,9 @@ hf_int32 DiskDBManager::GetPlayerInitPos(STR_PackPlayerPosition *pos, const char
 {
         if ( ! IsConnected()) return -1;
 
-        mtx.lock();
+        m_mtx.lock();
         PGresult* t_PGresult = PQexec(m_PGconn, sql);
-        mtx.unlock();
+        m_mtx.unlock();
 
         ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
         if(t_ExecStatusType != PGRES_TUPLES_OK) // PGRES_TUPLES_OK表示成功执行一个返回数据的查询查询
@@ -250,9 +252,9 @@ hf_int32 DiskDBManager::GetPlayerInitPos(STR_PackPlayerPosition *pos, const char
 hf_int32 DiskDBManager:: GetMonsterSpawns(umap_monsterSpawns* monsterSpawns)
 {
     const hf_char* str = "select * from T_MonsterSpawns;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_ExecStatusType = PQresultStatus(t_PGresult);
     if(t_ExecStatusType != PGRES_TUPLES_OK) //成功执行一个返回数据的查询查询
     {
@@ -288,9 +290,9 @@ hf_int32 DiskDBManager:: GetMonsterSpawns(umap_monsterSpawns* monsterSpawns)
 hf_int32 DiskDBManager::GetMonsterType(umap_monsterType* monsterType)
 {
     const hf_char* str = "select * from T_MonsterType;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -314,10 +316,13 @@ hf_int32 DiskDBManager::GetMonsterType(umap_monsterType* monsterType)
             t_monsterType.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 6));
             t_monsterType.Attackrate = atoi(PQgetvalue(t_PGresult, i, 7));
             t_monsterType.MoveRate = atoi(PQgetvalue(t_PGresult, i, 8));
-            t_monsterType.RankID = atoi(PQgetvalue(t_PGresult, i, 9));
-            t_monsterType.Level = atoi(PQgetvalue(t_PGresult, i, 10));
-            t_monsterType.AttackTypeID = atoi(PQgetvalue(t_PGresult, i, 11));
-            t_monsterType.AttackRange = atoi(PQgetvalue(t_PGresult, i, 12));
+            t_monsterType.Crit_Rate = atof(PQgetvalue(t_PGresult, i, 9));
+            t_monsterType.Dodge_Rate = atof(PQgetvalue(t_PGresult, i, 10));
+            t_monsterType.Hit_Rate = atof(PQgetvalue(t_PGresult, i, 11));
+            t_monsterType.RankID = atoi(PQgetvalue(t_PGresult, i, 12));
+            t_monsterType.Level = atoi(PQgetvalue(t_PGresult, i, 13));
+            t_monsterType.AttackTypeID = atoi(PQgetvalue(t_PGresult, i, 14));
+//            t_monsterType.AttackRange = atoi(PQgetvalue(t_PGresult, i, 15));
 
             (*monsterType)[t_monsterType.MonsterTypeID] = t_monsterType;
         }
@@ -328,9 +333,9 @@ hf_int32 DiskDBManager::GetMonsterType(umap_monsterType* monsterType)
 hf_int32 DiskDBManager::GetTaskProfile(umap_taskProfile TaskProfile)
 {
     const hf_char* str = "select * from t_taskprofile;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -350,6 +355,7 @@ hf_int32 DiskDBManager::GetTaskProfile(umap_taskProfile TaskProfile)
             t_profile.FinishNPCID = atoi(PQgetvalue(t_PGresult, i, 3));
             t_profile.AcceptModeID = atoi(PQgetvalue(t_PGresult, i, 4));
             t_profile.FinishModeID = atoi(PQgetvalue(t_PGresult, i, 5));
+            t_profile.Status = 1; //已接取
             (*TaskProfile)[t_profile.TaskID] = t_profile;
         }
         return t_row;
@@ -360,9 +366,9 @@ hf_int32 DiskDBManager::GetTaskProfile(umap_taskProfile TaskProfile)
 hf_int32 DiskDBManager::GetTaskDialogue(umap_dialogue* TaskDialogue)
 {
     const hf_char* str = "select * from t_taskdialogue;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -391,9 +397,9 @@ hf_int32 DiskDBManager::GetTaskDialogue(umap_dialogue* TaskDialogue)
 hf_int32 DiskDBManager::GetTaskDescription(umap_taskDescription* TaskDesc)
 {
     const hf_char* str = "select * from t_taskdescription;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -420,9 +426,9 @@ hf_int32 DiskDBManager::GetTaskDescription(umap_taskDescription* TaskDesc)
 hf_int32 DiskDBManager::GetTaskAim(umap_taskAim* TaskAim)
 {
     const hf_char* str = "select * from t_taskaim;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -458,9 +464,9 @@ hf_int32 DiskDBManager::GetTaskAim(umap_taskAim* TaskAim)
 hf_int32 DiskDBManager::GetTaskReward(umap_taskReward* TaskReward)
 {
     const char* str = "select * from t_taskreward;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -488,9 +494,9 @@ hf_int32 DiskDBManager::GetTaskReward(umap_taskReward* TaskReward)
 hf_int32 DiskDBManager::GetGoodsReward(umap_goodsReward* GoodsReward)
 {
     const char* str = "select * from t_GoodsReward;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -531,9 +537,9 @@ hf_int32 DiskDBManager::GetGoodsReward(umap_goodsReward* GoodsReward)
 hf_int32 DiskDBManager::GetTaskPremise(umap_taskPremise* t_TaskPremise)
 {
     const char* str = "select * from t_taskPremise;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -564,9 +570,9 @@ hf_int32 DiskDBManager::GetTaskPremise(umap_taskPremise* t_TaskPremise)
 //查询任务进度
 hf_int32 DiskDBManager::GetPlayerTaskProcess(umap_taskProcess TaskProcess, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -604,9 +610,9 @@ hf_int32 DiskDBManager::GetPlayerTaskProcess(umap_taskProcess TaskProcess, const
 //查询角色信息
 hf_int32 DiskDBManager::GetRoleInfo(STR_RoleInfo* roleinfo, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -659,9 +665,9 @@ hf_int32 DiskDBManager::GetRoleInfo(STR_RoleInfo* roleinfo, const hf_char* str)
 //查询玩家经验
 hf_int32 DiskDBManager::GetRoleExperience(STR_PackRoleExperience* RoleExp, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -684,9 +690,9 @@ hf_int32 DiskDBManager::GetRoleExperience(STR_PackRoleExperience* RoleExp, const
 //查询好友列表
 hf_int32 DiskDBManager::GetFriendList(umap_friendList t_friendList, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -711,9 +717,9 @@ hf_int32 DiskDBManager::GetFriendList(umap_friendList t_friendList, const hf_cha
 //查询某个昵称的roleid
 hf_int32 DiskDBManager::GetNickRoleid(hf_uint32* roleid, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -733,9 +739,9 @@ hf_int32 DiskDBManager::GetNickRoleid(hf_uint32* roleid, const hf_char* str)
 //查询添加好友请求
 hf_int32 DiskDBManager::GetAskAddFriend(vector<STR_AddFriend>& addFriend, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -761,9 +767,9 @@ hf_int32 DiskDBManager::GetAskAddFriend(vector<STR_AddFriend>& addFriend, const 
 hf_int32 DiskDBManager::GetNPCInfo(umap_npcInfo* npcInfo)
 {
     const hf_char* str = "select * from t_npcinfo;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -790,9 +796,9 @@ hf_int32 DiskDBManager::GetNPCInfo(umap_npcInfo* npcInfo)
 hf_int32 DiskDBManager::GetMonsterLoot(umap_monsterLoot* monsterLoot)
 {
     const hf_char* str = "select * from t_monsterloot;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -833,9 +839,9 @@ hf_int32 DiskDBManager::GetMonsterLoot(umap_monsterLoot* monsterLoot)
 hf_int32 DiskDBManager::GetSkillInfo(umap_skillInfo* skillInfo)
 {
     const hf_char* str = "select * from t_skillinfo;";
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -873,9 +879,9 @@ hf_int32 DiskDBManager::GetSkillInfo(umap_skillInfo* skillInfo)
 //查询玩家金币
 hf_int32 DiskDBManager::GetPlayerMoney(umap_roleMoney playerMoney, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -898,9 +904,9 @@ hf_int32 DiskDBManager::GetPlayerMoney(umap_roleMoney playerMoney, const hf_char
 //查询玩家物品
 hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, umap_roleEqu playerEqu, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -945,9 +951,9 @@ hf_int32 DiskDBManager::GetPlayerGoods(umap_roleGoods playerGoods, umap_roleEqu 
 //查询玩家装备属性
 hf_int32 DiskDBManager::GetPlayerEqu(umap_roleEqu playerEqu, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1005,9 +1011,9 @@ hf_int32 DiskDBManager::GetNotPickGoodsPosition(umap_lootPosition lootPosition, 
 {
     time_t timep;
     time(&timep);
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1036,9 +1042,9 @@ hf_int32 DiskDBManager::GetNotPickGoodsPosition(umap_lootPosition lootPosition, 
 //查询玩家未捡取的物品
 hf_int32 DiskDBManager::GetNotPickGoods(umap_lootGoods lootGoods, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1074,9 +1080,9 @@ hf_int32 DiskDBManager::GetNotPickGoods(umap_lootGoods lootGoods, const hf_char*
 //查询物品价格
 hf_int32 DiskDBManager::GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1100,9 +1106,9 @@ hf_int32 DiskDBManager::GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char*
 //查询装备属性
 hf_int32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1159,9 +1165,9 @@ hf_int32 DiskDBManager::GetEquIDMaxValue()
 {
     const hf_char* str = "select max(goodsid) from t_playergoods;";
     Logger::GetLogger()->Debug(str);
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1176,9 +1182,9 @@ hf_int32 DiskDBManager::GetEquIDMaxValue()
 //查询用户身上穿戴的装备
 hf_int32 DiskDBManager::GetUserBodyEqu(hf_char* buff, hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1222,9 +1228,9 @@ hf_int32 DiskDBManager::GetUserBodyEqu(hf_char* buff, hf_char* str)
 //查询玩家身上穿戴的装备
 hf_int32 DiskDBManager::GetRoleBodyEqu(STR_BodyEquipment* bodyEqu, hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1267,9 +1273,9 @@ hf_int32 DiskDBManager::GetRoleBodyEqu(STR_BodyEquipment* bodyEqu, hf_char* str)
 //查询职业属性
 hf_int32 DiskDBManager::GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
     ExecStatusType t_status = PQresultStatus(t_PGresult);
     if(t_status != PGRES_TUPLES_OK)
     {
@@ -1302,9 +1308,9 @@ hf_int32 DiskDBManager::GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* 
 //查询玩家基本信息
 hf_int32 DiskDBManager::GetRoleBasicInfo(STR_RoleBasicInfo* roleInfo, hf_char* str)
 {
-    mtx.lock();
+    m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
-    mtx.unlock();
+    m_mtx.unlock();
 
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
     if(t_ExecStatusType != PGRES_TUPLES_OK)
@@ -1314,7 +1320,7 @@ hf_int32 DiskDBManager::GetRoleBasicInfo(STR_RoleBasicInfo* roleInfo, hf_char* s
     }
     else
     {
-        int t_row = PQntuples(t_PGresult);   //行数
+        hf_int32 t_row = PQntuples(t_PGresult);   //行数
         if(t_row == 1)
         {
             memcpy(roleInfo->Nick, PQgetvalue(t_PGresult, 0, 1), PQgetlength(t_PGresult, 0, 1));
@@ -1330,6 +1336,32 @@ hf_int32 DiskDBManager::GetRoleBasicInfo(STR_RoleBasicInfo* roleInfo, hf_char* s
             roleInfo->HairColor = atoi(PQgetvalue(t_PGresult, 0, 11));
             roleInfo->ModeID = atoi(PQgetvalue(t_PGresult, 0, 13));
             roleInfo->SkirtID = atoi(PQgetvalue(t_PGresult, 0, 14));
+        }
+        return t_row;
+    }
+}
+
+//查询玩家已经完成的任务
+hf_int32 DiskDBManager::GetPlayerCompleteTask(umap_completeTask completeTask, hf_char* str)
+{
+    m_mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    m_mtx.unlock();
+
+    ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
+    if(t_ExecStatusType != PGRES_TUPLES_OK)
+    {
+        printf("PQexec error\n");
+        return -1;
+    }
+    else
+    {
+        hf_int32 t_row = PQntuples(t_PGresult);   //行数
+        hf_uint32 taskid = 0;
+        for(hf_int32 i = 0; i < t_row; i++)
+        {
+            taskid = atoi(PQgetvalue(t_PGresult, 0, 0));
+            (*completeTask)[taskid] = taskid;
         }
         return t_row;
     }

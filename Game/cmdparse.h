@@ -238,7 +238,39 @@ typedef struct _Queue_TakeOffBodyEqu
     hf_uint32 equid;
 }Queue_TakeOffBodyEqu;
 
+typedef struct _Queue_PlayerDirectChange
+{
+    _Queue_PlayerDirectChange(hf_uint32 _roleid, hf_float _direct)
+        :roleid(_roleid), direct(_direct)
+    {
 
+    }
+
+    _Queue_PlayerDirectChange()
+    {
+
+    }
+
+    hf_uint32 roleid;
+    hf_float direct;
+}Queue_PlayerDirectChange;
+
+typedef struct _Queue_PlayerActionChange
+{
+    _Queue_PlayerActionChange(hf_uint32 _roleid, hf_uint8 _action)
+        :roleid(_roleid), action(_action)
+    {
+
+    }
+
+    _Queue_PlayerActionChange()
+    {
+
+    }
+
+    hf_uint32 roleid;
+    hf_uint8 action;
+}Queue_PlayerActionChange;
 
 typedef struct _Queue_PlayerMove
 {
@@ -343,6 +375,14 @@ public:
     void PushTakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid);
     void PopTakeOffBodyEqu();
 
+    //player direct change
+    void PushPlayerDirectChange(TCPConnection::Pointer conn, hf_float direct);
+    void PopPlayerDirectChange();
+
+    //player Action change
+    void PushPlayerActionChange(TCPConnection::Pointer conn, hf_uint8 action);
+    void PopPlayerActionChange();
+
     //player move
     void PushPlayerMove(TCPConnection::Pointer conn, STR_PlayerMove* playerMove);
     void PopPlayerMove();
@@ -357,23 +397,25 @@ public:
 
 
 private:
-    boost::lockfree::queue<Queue_AskTask>           *m_AskTask;
-    boost::lockfree::queue<Queue_QuitTask>          *m_QuitTask;
-    boost::lockfree::queue<Queue_AskFinishTask>     *m_AskFinishTask;
-    boost::lockfree::queue<Queue_AskTaskData>       *m_AskTaskData;
-    boost::lockfree::queue<Queue_AddFriend>         *m_AddFriend;
-    boost::lockfree::queue<Queue_DeleteFriend>      *m_DeleteFriend;
-    boost::lockfree::queue<Queue_AddFriendReturn>   *m_AddFriendReturn;
-    boost::lockfree::queue<Queue_PickGoods>         *m_PickGoods;
-    boost::lockfree::queue<Queue_RemoveGoods>       *m_RemoveGoods;
-    boost::lockfree::queue<Queue_MoveGoods>         *m_MoveGoods;
-    boost::lockfree::queue<Queue_BuyGoods>          *m_BuyGoods;
-    boost::lockfree::queue<Queue_SellGoods>         *m_SellGoods;
-    boost::lockfree::queue<Queue_WearBodyEqu>       *m_WearBodyEqu;
-    boost::lockfree::queue<Queue_TakeOffBodyEqu>    *m_TakeOffBodyEqu;
-    boost::lockfree::queue<Queue_PlayerMove>        *m_PlayerMove;
-    boost::lockfree::queue<Queue_AttackAim>         *m_AttackAim;
-    boost::lockfree::queue<Queue_AttackPoint>       *m_AttackPoint;
+    boost::lockfree::queue<Queue_AskTask>            *m_AskTask;
+    boost::lockfree::queue<Queue_QuitTask>           *m_QuitTask;
+    boost::lockfree::queue<Queue_AskFinishTask>      *m_AskFinishTask;
+    boost::lockfree::queue<Queue_AskTaskData>        *m_AskTaskData;
+    boost::lockfree::queue<Queue_AddFriend>          *m_AddFriend;
+    boost::lockfree::queue<Queue_DeleteFriend>       *m_DeleteFriend;
+    boost::lockfree::queue<Queue_AddFriendReturn>    *m_AddFriendReturn;
+    boost::lockfree::queue<Queue_PickGoods>          *m_PickGoods;
+    boost::lockfree::queue<Queue_RemoveGoods>        *m_RemoveGoods;
+    boost::lockfree::queue<Queue_MoveGoods>          *m_MoveGoods;
+    boost::lockfree::queue<Queue_BuyGoods>           *m_BuyGoods;
+    boost::lockfree::queue<Queue_SellGoods>          *m_SellGoods;
+    boost::lockfree::queue<Queue_WearBodyEqu>        *m_WearBodyEqu;
+    boost::lockfree::queue<Queue_TakeOffBodyEqu>     *m_TakeOffBodyEqu;
+    boost::lockfree::queue<Queue_PlayerDirectChange> *m_PlayerDirectChange;
+    boost::lockfree::queue<Queue_PlayerActionChange> *m_PlayerActionChange;
+    boost::lockfree::queue<Queue_PlayerMove>         *m_PlayerMove;
+    boost::lockfree::queue<Queue_AttackAim>          *m_AttackAim;
+    boost::lockfree::queue<Queue_AttackPoint>        *m_AttackPoint;
 };
 
 

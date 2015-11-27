@@ -132,9 +132,34 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     {
         STR_PackPlayerPosition* reg = (STR_PackPlayerPosition*)srv->malloc();
         memcpy(reg, buf, len + sizeof(STR_PackHead));
-//        printf("玩家方向：%f\n",reg->Direct);
+//        printf("接受到的玩家位置玩家方向：direct = %f,x=%f,y=%f,z=%f\n",reg->Direct, reg->Pos_x, reg->Pos_y, reg->Pos_z);
 
         srv->RunTask(boost::bind(UserPosition::PlayerMove, conn, reg));
+        break;
+    }
+
+    case FLAG_PlayerDirect:
+    {
+//        hf_float direct = 0/* *(hf_float*)buf*/;
+//        memcpy(&direct, buf + sizeof(STR_PackHead), 4);
+//        printf("%f\n", direct);
+//        srv->RunTask(boost::bind(UserPosition::PlayerDirectChange, conn, direct));
+
+        printf("playerDirect:%f\n", *(hf_float*)(buf + sizeof(STR_PackHead)));
+        Server::GetInstance()->GetCmdParse()->PushPlayerDirectChange(conn, *(hf_float*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
+
+    case FLAG_PlayerAction:
+    {
+        hf_uint8 action = 0;
+        memcpy(&action, (buf + sizeof(STR_PackHead)), 1);
+        printf("playerAction:%d\n", action);
+//        srv->RunTask(boost::bind(UserPosition::PlayerActionChange, conn, action));
+
+        printf("playerAction:%d\n", *(hf_uint8*)(buf + sizeof(STR_PackHead)));
+         Server::GetInstance()->GetCmdParse()->PushPlayerActionChange(conn, *(hf_uint8*)(buf + sizeof(STR_PackHead)));
+
         break;
     }
     case FLAG_PlayerMove:    //玩家移动

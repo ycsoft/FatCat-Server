@@ -10,7 +10,7 @@
 
 
 #define RESULT_SUCCESS         1      //成功
-#define RESULT_PRE_TASK        2      //未接取条件任务
+#define RESULT_PRE_TASK        2      //未完成前置任务
 #define RESULT_CONDITION_TASK  3      //未接取条件任务
 #define RESULT_TASK_GOODS      4      //未持有任务物品
 #define RESULT_CONDITION_TITLE 5      //为获得任务条件称号
@@ -207,6 +207,8 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
             return;
         }
         TaskFinishTaskReward(conn, finishTask);  //任务奖励
+        (*(*smap)[conn].m_completeTask)[finishTask->TaskID] = finishTask->TaskID;
+
         Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
     }
 
@@ -374,7 +376,7 @@ void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask*
             {
                 t_RoleExp->CurrentExp = t_RoleExp->CurrentExp + t_RewardExp.Experience;
             }
-            Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp->UpgradeExp);
+            Server::GetInstance()->GetOperationPostgres()->PushUpdateExp((*smap)[conn].m_roleid, t_RoleExp->CurrentExp);
             conn->Write_all(t_RoleExp, sizeof(STR_PackRoleExperience));
         }
         if(taskReward_it->second.Money != 0) //金钱
@@ -783,7 +785,8 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
     //根据任务条件和玩家信息判断玩家可接取的任务
     SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     STR_RoleBasicInfo* t_RoleBaseInfo = &(*smap)[conn].m_RoleBaseInfo; //得到玩家信息
-    umap_taskProcess playerAcceptTask = ((*smap)[conn]).m_playerAcceptTask;
+    umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
+    umap_completeTask playerCompleteTask = (*smap)[conn].m_completeTask;
 
     hf_int32 size = 0;
     Server* srv = Server::GetInstance();
@@ -796,12 +799,21 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
         if(iter == playerAcceptTask->end()) //是否已接取
         {
             STR_TaskPremise t_taskpremise = (*m_taskPremise)[it->first];
-            if(t_RoleBaseInfo->Level >= t_taskpremise.Level)  //等级符合
+            if(t_RoleBaseInfo->Level < t_taskpremise.Level)  //等级符合
             {
-                it->second.Status = 1;
-                memcpy(buff + sizeof(STR_PackHead) + size*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
-                size++;
+                continue;
             }
+            if(t_taskpremise.PreTaskID != 0) //前置任务不为0
+            {
+                _umap_completeTask::iterator completeTask_it = playerCompleteTask->find(t_taskpremise.PreTaskID);
+                if(completeTask_it == playerCompleteTask->end())
+                {
+                    continue;
+                }
+            }
+
+            memcpy(buff + sizeof(STR_PackHead) + size*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
+            size++;
         }
         if(size == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_TaskProfile))
         {

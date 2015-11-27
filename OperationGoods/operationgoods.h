@@ -17,7 +17,7 @@ public:
     void PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* t_pickGoods);
 
     void PickUpMoney(TCPConnection::Pointer conn, STR_LootGoods* lootGoods, hf_uint32 dropID);
-    void PickUpEqu(TCPConnection::Pointer conn, STR_LootGoods* lootGoods, hf_uint32 dropID);
+    hf_uint8 PickUpEqu(TCPConnection::Pointer conn, STR_LootGoods* lootGoods, hf_uint32 dropID);
     hf_uint8 PickUpcommonGoods(TCPConnection::Pointer conn, STR_LootGoods* lootGoods, hf_uint32 dropID);
 
     //查询物品价格

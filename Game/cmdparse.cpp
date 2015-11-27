@@ -20,6 +20,8 @@ CmdParse::CmdParse():
     m_SellGoods(new boost::lockfree::queue<Queue_SellGoods>(100)),
     m_WearBodyEqu(new boost::lockfree::queue<Queue_WearBodyEqu>(100)),
     m_TakeOffBodyEqu(new boost::lockfree::queue<Queue_TakeOffBodyEqu>(100)),
+    m_PlayerDirectChange(new boost::lockfree::queue<Queue_PlayerDirectChange>(100)),
+    m_PlayerActionChange(new boost::lockfree::queue<Queue_PlayerActionChange>(100)),
     m_PlayerMove(new boost::lockfree::queue<Queue_PlayerMove>(100)),
     m_AttackAim(new boost::lockfree::queue<Queue_AttackAim>(100)),
     m_AttackPoint(new boost::lockfree::queue<Queue_AttackPoint>(100))
@@ -43,6 +45,8 @@ CmdParse::~CmdParse()
     delete m_SellGoods;
     delete m_WearBodyEqu;
     delete m_TakeOffBodyEqu;
+    delete m_PlayerDirectChange;
+    delete m_PlayerActionChange;
     delete m_PlayerMove;
     delete m_AttackAim;
     delete m_AttackPoint;
@@ -537,6 +541,63 @@ void CmdParse::PopTakeOffBodyEqu()
     }
 }
 
+void CmdParse::PushPlayerDirectChange(TCPConnection::Pointer conn, hf_float direct)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    Queue_PlayerDirectChange t_action(roleid, direct);
+    m_PlayerDirectChange->push(t_action);
+}
+
+void CmdParse::PopPlayerDirectChange()
+{
+    Queue_PlayerDirectChange t_direct;
+    while(1)
+    {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+        if(m_PlayerDirectChange->pop(t_direct))
+        {
+            _umap_roleSock::iterator it = t_roleSock->find(t_direct.roleid);
+            if(it != t_roleSock->end())
+            {
+                UserPosition::PlayerDirectChange(it->second, t_direct.direct);
+            }
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
+
+void CmdParse::PushPlayerActionChange(TCPConnection::Pointer conn, hf_uint8 action)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    Queue_PlayerActionChange t_action(roleid, action);
+    m_PlayerActionChange->push(t_action);
+}
+
+void CmdParse::PopPlayerActionChange()
+{
+    Queue_PlayerActionChange t_action;
+    while(1)
+    {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+        if(m_PlayerActionChange->pop(t_action))
+        {
+            _umap_roleSock::iterator it = t_roleSock->find(t_action.roleid);
+            if(it != t_roleSock->end())
+            {
+                UserPosition::PlayerActionChange(it->second, t_action.action);
+            }
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
 
 void CmdParse::PushPlayerMove(TCPConnection::Pointer conn, STR_PlayerMove* playerMove)
 {
@@ -568,7 +629,6 @@ void CmdParse::PopPlayerMove()
         }
     }
 }
-
 
 void CmdParse::PushAttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* attackAim)
 {

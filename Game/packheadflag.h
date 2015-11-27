@@ -48,7 +48,7 @@
 #define FLAG_SellGoods               155    //出售物品到商店
 
 #define FLAG_LootGoods               201    //掉落物品数据包Flag
-#define FLAG                         202    //
+#define FLAG_PlayerDirect            202    //玩家方向变化
 #define FLAG_PlayerMove              203    //玩家移动(发送方向)
 #define FLAG_OtherPlayerPosition     204    //其他玩家位置
 #define FLAG_PlayerPosition          205    //玩家位置移动（发送坐标test）
@@ -57,12 +57,13 @@
 #define FLAG_LootGoodsOverTime       208    //掉落物品延时
 #define FLAG_RoleAttribute           209    //玩家属性信息
 #define FLAG_PlayerRevive            210    //玩家复活
-
+#define FLAG_PlayerAction            211    //玩家动作
 
 #define FLAG_MonsterCome      301   //怪物进入可视范围
 #define FLAG_MonsterAttribute 302   //怪物受攻击(攻击)属性数据包Flag
 #define FLAG_MonsterPosition  303   //怪物位置数据包Flag
 #define FLAG_MonsterLeave     305   //怪物离开可视范围
+#define FLAG_MonsterDirect    306   //怪物方向
 
 
 

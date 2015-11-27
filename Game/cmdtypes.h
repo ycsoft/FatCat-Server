@@ -132,6 +132,10 @@ typedef boost::shared_ptr<_umap_taskGoods> umap_taskGoods;
 //角色职业属性
 //typedef boost::unordered_map<hf_uint16, STR_RoleJobAttribute> umap_roleJobAttr;
 
+//玩家已经完成的任务
+typedef boost::unordered_map<hf_uint32, hf_uint32> _umap_completeTask;
+typedef boost::shared_ptr<_umap_completeTask> umap_completeTask;
+
 typedef struct _Configuration
 {
     const char* ip;

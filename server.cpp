@@ -113,13 +113,15 @@ void Server::InitDB()
    srv->RunTask(boost::bind(&CmdParse::PopDeleteFriend, t_cmdParse));
    srv->RunTask(boost::bind(&CmdParse::PopAddFriendReturn, t_cmdParse));
 
-  srv->RunTask(boost::bind(&CmdParse::PopPickGoods, t_cmdParse));
-  srv->RunTask(boost::bind(&CmdParse::PopRemoveGoods, t_cmdParse));
-  srv->RunTask(boost::bind(&CmdParse::PopMoveGoods, t_cmdParse));
-  srv->RunTask(boost::bind(&CmdParse::PopBuyGoods, t_cmdParse));
-  srv->RunTask(boost::bind(&CmdParse::PopSellGoods, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopPickGoods, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopRemoveGoods, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopMoveGoods, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopBuyGoods, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopSellGoods, t_cmdParse));
 
-   srv->RunTask(boost::bind(&CmdParse::PopPlayerMove, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopPlayerDirectChange, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopPlayerActionChange, t_cmdParse));
+    srv->RunTask(boost::bind(&CmdParse::PopPlayerMove, t_cmdParse));
 
    srv->RunTask(boost::bind(&Monster::Monsteractivity, t_monster));
    //技能伤害线程

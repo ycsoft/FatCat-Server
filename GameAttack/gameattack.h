@@ -28,6 +28,7 @@ public:
     //攻击目标
     void AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t_attack);
 
+
     //查询所有技能信息
     void QuerySkillInfo();
     //发送玩家可以使用的技能
@@ -53,6 +54,8 @@ public:
     void AimItselfCircle(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, hf_double timep);
     //怪物为目标
     void AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID);
+    void AimRole(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID);
+
     //怪物为圆心
     void AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID);
 

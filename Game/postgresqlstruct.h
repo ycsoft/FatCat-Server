@@ -257,6 +257,9 @@ typedef struct _STR_MonsterAttackInfo
     hf_uint32 MagicAttack;      //魔法攻击
     hf_uint32 PhysicalDefense;  //物理防御
     hf_uint32 MagicDefense;     //魔法防御
+    hf_float  Crit_Rate;        //暴击率
+    hf_float  Dodge_Rate;       //闪避率
+    hf_float  Hit_Rate;         //命中率
     hf_uint8  Level;            //等级
 }STR_MonsterAttackInfo;
 
@@ -670,7 +673,7 @@ typedef struct _STR_PackPlayerPosition
 //其他玩家位置
 typedef struct _STR_OtherPlayerPosition
 {
-    hf_uint32     Roleid;     //角色名
+//    hf_uint32     Roleid;     //角色名
     hf_float      Pos_x;      //x坐标
     hf_float      Pos_y;
     hf_float      Pos_z;
@@ -682,12 +685,12 @@ typedef struct _STR_OtherPlayerPosition
 //其他玩家位置信息
 typedef struct _STR_PackOtherPlayerPosition
 {
-    _STR_PackOtherPlayerPosition(hf_uint32 roleid, STR_PackPlayerPosition* pos)
+    _STR_PackOtherPlayerPosition(hf_uint32 _roleid, STR_PackPlayerPosition* pos)
     {
         bzero(&head,sizeof(_STR_PackOtherPlayerPosition));
         head.Flag = FLAG_OtherPlayerPosition;
         head.Len = sizeof(_STR_PackOtherPlayerPosition)-sizeof(STR_PackHead);
-        OtherPos.Roleid = roleid;
+        roleid = _roleid;
         OtherPos.Pos_x = pos->Pos_x;
         OtherPos.Pos_y = pos->Pos_y;
         OtherPos.Pos_z = pos->Pos_z;
@@ -695,9 +698,55 @@ typedef struct _STR_PackOtherPlayerPosition
         OtherPos.ActID = pos->ActID;
     }
     STR_PackHead  head;
+    hf_uint32     roleid;
     STR_OtherPlayerPosition OtherPos;
 }STR_PackOtherPlayerPosition;
 
+
+typedef struct _STR_PackOtherPlayerDirect
+{
+    _STR_PackOtherPlayerDirect(hf_uint32 _roleid, hf_float _direct)
+    {
+        bzero(&head,sizeof(_STR_PackOtherPlayerDirect));
+        head.Flag = FLAG_PlayerDirect;
+        head.Len = sizeof(_STR_PackOtherPlayerDirect)-sizeof(STR_PackHead);
+        roleid = _roleid;
+        direct = _direct;
+    }
+    STR_PackHead head;
+    hf_uint32 roleid;
+    hf_float  direct;
+}STR_PackOtherPlayerDirect;
+
+typedef struct _STR_PackOtherPlayerAction
+{
+    _STR_PackOtherPlayerAction(hf_uint32 _roleid, hf_uint8 _action)
+    {
+        bzero(&head,sizeof(_STR_PackOtherPlayerAction));
+        head.Flag = FLAG_PlayerAction;
+        head.Len = sizeof(_STR_PackOtherPlayerAction)-sizeof(STR_PackHead);
+        roleid = _roleid;
+        action = _action;
+    }
+    STR_PackHead head;
+    hf_uint32 roleid;
+    hf_uint8  action;
+}STR_PackOtherPlayerAction;
+
+typedef struct _STR_PackMonsterDirect
+{
+    _STR_PackMonsterDirect(hf_uint32 _monsterID, hf_float _direct)
+    {
+        bzero(&head,sizeof(_STR_PackMonsterDirect));
+        head.Flag = FLAG_MonsterDirect;
+        head.Len = sizeof(_STR_PackMonsterDirect)-sizeof(STR_PackHead);
+        monsterID = _monsterID;
+        direct = _direct;
+    }
+    STR_PackHead head;
+    hf_uint32 monsterID;
+    hf_float  direct;
+}STR_PackMonsterDirect;
 
 typedef struct _STR_PosDis
 {
@@ -898,11 +947,21 @@ typedef struct _STR_PlayerRegisterRole
 }STR_PlayerRegisterRole;
 
 
+
+
 //角色编号
 typedef struct _STR_PlayerRole
 {
     hf_uint32 Role;  //角色编号
 }STR_PlayerRole;
+
+typedef struct _STR_OtherPlayerInfo
+{
+    hf_uint32 MaxHP;                 //最大生命值
+    hf_uint32 HP;                    //当前生命值
+    hf_uint32 MaxMagic;              //最大法力值
+    hf_uint32 Magic;                 //当前法力值
+}STR_OtherPlayerInfo;
 
 typedef struct _STR_PackRoleCome
 {
@@ -915,7 +974,9 @@ typedef struct _STR_PackRoleCome
     STR_PackHead head;
     STR_RoleBasicInfo roleBasicInfo;
     STR_OtherPlayerPosition  otherRolePos;
+    STR_OtherPlayerInfo      otherPlayerInfo;
 }STR_PackRoleCome;
+
 
 //玩家离开可视范围
 typedef struct _STR_PackRoleLeave
@@ -1032,10 +1093,13 @@ typedef struct _STR_MonsterType
     hf_uint32 MagicDefense;    //魔法防御
     hf_uint32 Attackrate;      //攻击速度
     hf_uint32 MoveRate;        //移动速度
+    hf_float  Crit_Rate;       //暴击率
+    hf_float  Dodge_Rate;      //闪避率
+    hf_float  Hit_Rate;        //命中率
     hf_uint8  RankID;          //怪物类别ID
     hf_uint8  Level;           //怪物等级
     hf_uint8  AttackTypeID;    //攻击类型ID
-    hf_uint8  AttackRange;     //攻击距离
+//    hf_uint8  AttackRange;     //攻击距离
 }STR_MonsterType;
 
 //怪物类别
@@ -1197,19 +1261,7 @@ typedef struct _STR_RoleInfo
         Mentality = role.Mentality;
         Physical_fitness = role.Physical_fitness;
     }
-    hf_uint32 ReduceHp(hf_uint32 hp)
-    {
-        if(HP > hp)
-            HP -= hp;
-        else
-        {
-            HP = 0;
-//            struct timeval start;
-//            gettimeofday( &start, NULL);
-//            aimTime = (hf_double)start.tv_sec + MonsterDeathTime + (hf_double)start.tv_usec / 1000000;
-        }
-        return HP;
-    }
+
     hf_uint32 MaxHP;                 //最大生命值
     boost::atomic_uint32_t HP;       //当前生命值
     hf_uint32 MaxMagic;              //最大法力值

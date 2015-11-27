@@ -28,7 +28,7 @@ public:
         return *this;
     }
 
-    hf_uint32 ReduceHp(hf_uint32 _roleid, hf_uint32 hp)
+    hf_uint32 ReduceHp(hf_uint32 _roleid, hf_uint32 hp, double timep)
     {
         m_mtx.lock();
         if(monster.HP == monster.MaxHP)
@@ -38,9 +38,7 @@ public:
         else
         {
             monster.HP = 0;
-            struct timeval start;
-            gettimeofday( &start, NULL);
-            aimTime = (hf_double)start.tv_sec + (hf_double)start.tv_usec/1000000;
+            aimTime = timep + MonsterDeathTime;
         }
 
         m_mtx.unlock();
@@ -147,6 +145,11 @@ public:
         monster.Target_y = pursuitPos.Come_y;
         monster.Target_z = pursuitPos.Come_z;
 
+        hf_float dx = monster.Target_x - monster.Current_x;
+        hf_float dz = monster.Target_z - monster.Current_z;
+        monster.Direct = CalculationDirect(dx, dz);
+
+
         startTime = currentTime;//test
         aimTime = currentTime + dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
         monsterStatus = true;
@@ -224,7 +227,6 @@ public:
                 }
                 spawnsPos = monsterSpawns->SpawnsPosID;
                 monster.HP = monster.MaxHP;
-
 
                 hf_uint32 boundary = monsterSpawns->Boundary/monsterSpawns->Amount;
                 monster.Target_x = monsterSpawns->Pos_x - boundary + (float)rand()/(float)RAND_MAX * boundary*2;

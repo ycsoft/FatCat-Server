@@ -185,10 +185,13 @@ public:
      //查询玩家基本信息
      hf_int32 GetRoleBasicInfo(STR_RoleBasicInfo* basicinfo, hf_char* str);
 
+     //查询玩家已经完成的任务
+     hf_int32 GetPlayerCompleteTask(umap_completeTask completeTask, hf_char* str);
 
 private:
 
     PGconn *m_PGconn;
+    boost::mutex     m_mtx;
 
     bool        IsConnected();
 };

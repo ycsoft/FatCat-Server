@@ -91,7 +91,7 @@
 #define  MonsterDeathTime       100          //怪物死亡时间
 
 #define  RESULT_SUCCESS         1     //成功
-#define  RESULT_PRE_TASK        2     //未接取条件任务
+#define  RESULT_PRE_TASK        2     //未完成前置任务
 #define  RESULT_CONDITION_TASK  3     //未接取条件任务
 #define  RESULT_TASK_GOODS      4     //未持有任务物品
 #define  RESULT_CONDITION_TITLE 5     //为获得任务条件称号
@@ -189,7 +189,8 @@
 #define  MAP10                 10     //10号地图
 
 
-
+#define MAP_X                  5120   //地图x边界区域大小
+#define MAP_Z                  5120   //地图z边界区域大小
 
 
 

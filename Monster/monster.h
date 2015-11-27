@@ -97,8 +97,14 @@ public:
     //将变化的怪物信息发送给怪物可视范围内的玩家
     void SendMonsterToViewRole(STR_MonsterBasicInfo* monster);
 
+    //将变化的怪物方向发送给怪物可视范围内的玩家
+    void SendMonsterDirectToViewRole(STR_PackMonsterDirect* monster);
+
     //发送伤害给可是范围内的玩家
     void SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt);
+
+    //发送施法效果给周围玩家
+    void SendSkillEffectToViewRole(STR_PackSkillAimEffect* skillEffect);
 
     //计算方向
     hf_float CalculationDirect(hf_float dx, hf_float dz);

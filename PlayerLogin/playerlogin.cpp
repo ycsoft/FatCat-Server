@@ -229,7 +229,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
 
         //写入初始金钱
         sbd.Clear();
-        sbd << "insert into t_playermoney values(" << t_roleInfo.RoleInfo.RoleID << ",0," << Money_1 << ");";
+        sbd << "insert into t_playermoney values(" << t_roleInfo.RoleInfo.RoleID << ",1000," << Money_1 << ");";
         Logger::GetLogger()->Debug(sbd.str());
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
@@ -417,13 +417,14 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         SendRoleGoods(conn, roleid);        //发送玩家背包物品
         SendRoleEquAttr(conn, roleid);      //发送玩家装备属性
         SendRoleNotPickGoods(conn, roleid); //发送玩家未捡取的物品
+        GetPlayerCompleteTask(conn);        //查询玩家已经完成的任务
 
         Server* srv = Server::GetInstance();
         srv->GetGameAttack()->SendPlayerSkill(conn);       //玩家可使用的技能
         srv->GetMonster()->PushViewMonsters(conn);         //玩家可视范围内的怪物
         srv->GetPlayerLogin()->SendViewRole(conn);         //玩家可视范围内的玩家
         srv->GetGameTask()->SendPlayerTaskProcess(conn);   //玩家任务进度
-        srv->GetGameTask()->SendPlayerViewTask(conn);      //玩家可接任务
+        srv->GetGameTask()->SendPlayerViewTask(conn);      //玩家可接任务        
         srv->GetTeamFriend()->SendAskAddFriend(conn);      //离线的添加好友请求
         printf("登录数据发送完成\n");
     }
@@ -718,6 +719,21 @@ void PlayerLogin::SendRoleNotPickGoods(TCPConnection::Pointer conn, hf_uint32 Ro
     srv->getDiskDB()->Set(sbd.str());
 
     srv->free(buff);
+}
+
+//查询玩家已经完成的任务
+void PlayerLogin::GetPlayerCompleteTask(TCPConnection::Pointer conn)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_completeTask completeTask = (*smap)[conn].m_completeTask;
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    StringBuilder sbd;
+    sbd << "select taskid from t_playercompletetask where roleid = " << roleid << ";";
+    Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->GetPlayerCompleteTask(completeTask, sbd.str()) == -1)
+    {
+        Logger::GetLogger()->Error("查询玩家已经完成的信息失败");
+    }
 }
 
 //将玩家背包里的物品写进数据库
@@ -1204,11 +1220,19 @@ void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
     hf_uint16 popCount = 0;
     STR_PackHead t_packHead;
 
-    hf_uint16 len = sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition);
+    STR_RoleInfo* t_roleInfo = &(*smap)[conn].m_roleInfo;
+    STR_OtherPlayerInfo playerInfo;
+    playerInfo.MaxHP = t_roleInfo->MaxHP;
+    playerInfo.HP = t_roleInfo->HP;
+    playerInfo.MaxMagic = t_roleInfo->MaxMagic;
+    playerInfo.Magic = t_roleInfo->Magic;
+
+    hf_uint16 len = sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition) + sizeof(STR_OtherPlayerInfo);
 
     STR_PackRoleCome t_roleCome;
     memcpy(&t_roleCome.roleBasicInfo, &((*smap)[conn].m_RoleBaseInfo), sizeof(STR_RoleBasicInfo));
     memcpy(&t_roleCome.otherRolePos, (hf_char*)pos + sizeof(STR_PackHead), sizeof(STR_OtherPlayerPosition));
+    memcpy(&t_roleCome.otherPlayerInfo, &playerInfo, sizeof(STR_OtherPlayerInfo));
 
     STR_PackRoleLeave t_leaveHead;
     t_leaveHead.Role = roleid;
@@ -1225,6 +1249,14 @@ void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
             }
             memcpy(comebuff + sizeof(STR_PackHead) + pushCount*len, &(it->second.m_RoleBaseInfo), sizeof(STR_RoleBasicInfo));
             memcpy(comebuff + sizeof(STR_PackHead) + pushCount*len + sizeof(STR_RoleBasicInfo), ((hf_char*)&(it->second.m_position)) + sizeof(STR_PackHead), sizeof(STR_OtherPlayerPosition));
+
+            STR_RoleInfo* t_otherRoleInfo = &(it->second.m_roleInfo);
+            STR_OtherPlayerInfo t_otherPlayerInfo;
+            t_otherPlayerInfo.MaxHP = t_otherRoleInfo->MaxHP;
+            t_otherPlayerInfo.HP = t_otherRoleInfo->HP;
+            t_otherPlayerInfo.MaxMagic = t_otherRoleInfo->MaxMagic;
+            t_otherPlayerInfo.Magic = t_otherRoleInfo->Magic;
+            memcpy(comebuff + sizeof(STR_PackHead) + pushCount*len + sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition), &t_otherPlayerInfo, sizeof(STR_OtherPlayerInfo));
             pushCount++;
 
 
@@ -1232,10 +1264,10 @@ void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
             (*(it->second.m_viewRole))[roleid] = conn;
             it->first->Write_all(&t_roleCome, sizeof(STR_PackRoleCome));
 
-            if(pushCount == (CHUNK_SIZE - sizeof(STR_PackHead))/(sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition)))
+            if(pushCount == (CHUNK_SIZE - sizeof(STR_PackHead))/len)
             {
                 t_packHead.Flag = FLAG_ViewRoleCome;
-                t_packHead.Len = (sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition)) * pushCount;
+                t_packHead.Len = len * pushCount;
                 memcpy(comebuff, &t_packHead, sizeof(STR_PackHead));
 
                 //发送新看到的玩家
@@ -1259,10 +1291,10 @@ void PlayerLogin::SendViewRole(TCPConnection::Pointer conn)
             }
         }
     }
-    if(pushCount != (CHUNK_SIZE - sizeof(STR_PackHead))/(sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition)) && pushCount != 0)
+    if(pushCount != (CHUNK_SIZE - sizeof(STR_PackHead))/len && pushCount != 0)
     {
         t_packHead.Flag = FLAG_ViewRoleCome;
-        t_packHead.Len = (sizeof(STR_RoleBasicInfo) + sizeof(STR_OtherPlayerPosition)) * pushCount;
+        t_packHead.Len = len * pushCount;
         memcpy(comebuff, &t_packHead, sizeof(STR_PackHead));
 
         //发送新看到的玩家

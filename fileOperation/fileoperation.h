@@ -16,6 +16,8 @@ public:
     //判断移动方向
     hf_uint8 JudgeMoveDirect(hf_float current_x, hf_float current_z, hf_uint32 MapID, hf_float target_x, hf_float target_z);
 
+    hf_uint8 EnsureMoveDirect(hf_float current_x, hf_float current_z, hf_char* buffMap, hf_uint8 direct);
+
     hf_char* buffMap1;
     hf_char* buffMap2;
     hf_char* buffMap3;

@@ -63,6 +63,7 @@ public:
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         memcpy(&((*smap)[conn].m_position), pos, sizeof(STR_PackPlayerPosition));
         conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
+//        printf("发送给玩家的位置玩家方向：direct = %f,x=%f,y=%f,z=%f\n",pos->Direct, pos->Pos_x, pos->Pos_y, pos->Pos_z);
         //给可视范围内的玩家发送位置
         BroadCastUserPosition(conn, pos);
         STR_PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
@@ -80,6 +81,20 @@ public:
             Server::GetInstance()->GetPlayerLogin()->SendViewRole(conn);
         }
         Server::GetInstance()->free(pos);
+    }
+
+    static void PlayerDirectChange(TCPConnection::Pointer conn, hf_float direct)
+    {
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+        (*smap)[conn].m_position.Direct = direct;
+        BroadCastUserDirect(conn, direct);
+    }
+
+    static void PlayerActionChange(TCPConnection::Pointer conn, hf_uint8 action)
+    {
+        SessionMgr::SessionPointer smap = SessionMgr::Instance ()->GetSession ();
+        (*smap)[conn].m_position.ActID = action;
+        BroadCastUserAction(conn, action);
     }
 
     //用户位置移动
@@ -168,6 +183,37 @@ public:
         }
     }
 
+    static void BroadCastUserDirect(TCPConnection::Pointer conn, hf_float direct)
+    {
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+
+        hf_uint32 roleid = (*smap)[conn].m_roleid;
+        STR_PackOtherPlayerDirect playerDirect(roleid, direct);
+        umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
+        printf("roleid:%u, direct:%f\n", playerDirect.roleid, playerDirect.direct);
+//        cout << "roleid:" << playerDirect.roleid << ",direct:" << playerDirect.direct << endl;
+        for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
+        {
+//            cout << "发送玩家方向给周围玩家" << endl;
+            it->second->Write_all(&playerDirect, sizeof(STR_PackOtherPlayerDirect));
+        }
+    }
+
+    static void BroadCastUserAction(TCPConnection::Pointer conn, hf_uint8 action)
+    {
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+
+        hf_uint32 roleid = (*smap)[conn].m_roleid;
+        STR_PackOtherPlayerAction playerAction(roleid, action);
+        umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
+        printf("roleid:%u, action:%d\n", playerAction.roleid, playerAction.action);
+//        cout << "roleid:" << playerAction.roleid << ",action:" << playerAction.action << endl;
+        for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
+        {
+            cout << "发送玩家动作给周围玩家" << endl;
+            it->second->Write_all(&playerAction, sizeof(STR_PackOtherPlayerAction));
+        }
+    }
 
     //
     //向当前玩家推送其他玩家的位置（可见的）

@@ -89,6 +89,7 @@ public:
         ,m_playerEqu(new _umap_roleEqu)
 //        ,m_playerEquAttr(new _umap_roleEquAttr)
         ,m_playerMoney(new _umap_roleMoney)
+        ,m_completeTask(new _umap_completeTask)
         ,m_lootGoods(new _umap_lootGoods)
         ,m_lootPosition(new _umap_lootPosition)
         ,m_interchage(new Interchange)
@@ -126,6 +127,7 @@ public:
     umap_roleEqu            m_playerEqu;         //玩家背包装备
 //    umap_roleEquAttr        m_playerEquAttr;     //玩家背包装备属性
     umap_roleMoney          m_playerMoney;       //玩家金币
+    umap_completeTask       m_completeTask; //玩家已经完成的任务
     STR_PackPlayerPosition  m_position;          //位置
     umap_lootGoods          m_lootGoods;         //掉落物品
     umap_lootPosition       m_lootPosition;      //掉落物品位置，时间
@@ -271,7 +273,7 @@ public:
             m_sessions->erase(it);
         else
             Logger::GetLogger()->Error("sessionsErase error");
-        cout << "m_sessions delete start:" << m_sessions->size() << endl;
+        cout << "m_sessions delete end:" << m_sessions->size() << endl;
         m_sessionsMtx.unlock();
     }
 
@@ -341,7 +343,7 @@ public:
         else
         {
             printf("要清除的用户名为：%s\n", name);
-            Logger::GetLogger()->Error("nameSockErase error");
+            Logger::GetLogger()->Error("name not find,erase error");
         }
         m_nameMtx.unlock();
     }

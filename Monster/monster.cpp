@@ -120,10 +120,10 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
     for(_umap_monsterInfo::iterator it = m_monsterBasic->begin(); it != m_monsterBasic->end(); it++)
     {
         hf_uint32 monsterID = it->second.monster.MonsterID;
-        if(it->second.monster.MapID != playerPosition->MapID)
-        {
-            break;
-        }       
+//        if(it->second.monster.MapID != playerPosition->MapID)
+//        {
+//            break;
+//        }
          hf_float t_distance = caculateDistanceWithMonster(playerPosition, &it->second, currentTime, &t_monsterBasicInfo);
 //         cout << t_distance << endl;
          _umap_playerViewMonster::iterator monster = t_playerViewMonster->find(monsterID);
@@ -225,6 +225,7 @@ void Monster::CreateMonster()
     hf_double currentTime = GetCurrentTime();
 
     printf("生成怪物时间:%f\n", currentTime);
+    srand(time(NULL));
     for(umap_monsterSpawns::iterator it = m_monsterSpawns->begin(); it != m_monsterSpawns->end(); it++)
     {
         umap_monsterType::iterator iter = m_monsterType->find(it->second.MonsterTypeID);
@@ -244,15 +245,19 @@ void Monster::CreateMonster()
         t_monsterInfo.monster.ActID = Action_Walk;
         t_monsterInfo.monster.Flag = 1;
 
-        t_MonsterAttackInfo.Level = iter->second.Level;
+        t_MonsterAttackInfo.MonsterID = t_monsterInfo.monster.MonsterTypeID;
         t_MonsterAttackInfo.PhysicalAttack = iter->second.PhysicalAttack;
         t_MonsterAttackInfo.MagicAttack = iter->second.MagicAttack;
         t_MonsterAttackInfo.PhysicalDefense = iter->second.PhysicalDefense;
         t_MonsterAttackInfo.MagicDefense = iter->second.MagicDefense;
+        t_MonsterAttackInfo.Crit_Rate = iter->second.Crit_Rate;
+        t_MonsterAttackInfo.Dodge_Rate = iter->second.Dodge_Rate;
+        t_MonsterAttackInfo.Hit_Rate = iter->second.Hit_Rate;
+        t_MonsterAttackInfo.Level = iter->second.Level;
 
-        t_MonsterAttackInfo.MonsterID = t_monsterInfo.monster.MonsterTypeID;
+
         (*m_monsterAttack)[t_monsterInfo.monster.MonsterTypeID] = t_MonsterAttackInfo;
-        srand(time(NULL));
+
         for(int j = 0; j < it->second.Amount; j++)
         {
             //生成怪物有效位置
@@ -267,6 +272,8 @@ void Monster::CreateMonster()
 
             //给怪物可视范围内的玩家初始化为空_umap_roleSock
             (*m_monsterViewRole)[t_monsterInfo.monster.MonsterID] = t_roleSock;
+
+             cout << "生成的怪物坐标:" << t_monsterInfo.monster.MonsterID << ",c_x:" << t_monsterInfo.monster.Current_x << ",c_z:" << t_monsterInfo.monster.Current_z << ",t_x:" << t_monsterInfo.monster.Target_x << ",t_z" << t_monsterInfo.monster.Target_z << endl;
 
         }
     }
@@ -420,48 +427,8 @@ void Monster::Monsteractivity()
 //                    it->second.ChangeMonsterDirect(0 - t_playerPos->Direct);
                     it->second.ChangeMonsterDirect(dx, dz);
                     cout << "改变后怪物方向，:" << it->second.monster.Direct << endl;
-                    SendMonsterToViewRole(&it->second.monster);
-
-                    //test direct
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole(&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
-//                    sleep(1);
-//                    it->second.monster.Direct += PI/6;
-//                    SendMonsterToViewRole (&it->second.monster);
+                    STR_PackMonsterDirect t_monsterDirect(it->second.monster.MonsterID, it->second.monster.Direct);
+                    SendMonsterDirectToViewRole(&t_monsterDirect);
 
                     cosDirect = (dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct))/sqrt(dx*dx + dz*dz);
                     printf("新的角度计算值:%f\n\n", cosDirect);
@@ -472,22 +439,42 @@ void Monster::Monsteractivity()
                 t_damageData.AimID = roleid;
                 t_damageData.AttackID = t_monster->MonsterID;
 
+                STR_MonsterAttackInfo* monsterAttackInfo = &(*m_monsterAttack)[t_monster->MonsterTypeID];
+                if(monsterAttackInfo->Crit_Rate*100 < rand()%100) //未命中
+                {
+                    t_damageData.Damage = 0;
+                    t_damageData.TypeID = 0;
+                    t_damageData.Flag = NOT_HIT;
+                    role_it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+                    continue;
+                }
+
                 STR_RoleInfo* t_AimInfo = &(*smap)[role_it->second].m_roleInfo;
                 if(t_AimInfo->Dodge_Rate*100 >= rand()%100) //闪避
                 {
                     t_damageData.Damage = 0;
                     t_damageData.TypeID = 0;
                     t_damageData.Flag = Dodge;
+                    role_it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+                    it->second.ChangeMonsterAimTime(currentTime+MonsterAttackSpeed);
+                    continue;
                 }
-                else
+
+
+                hf_uint8 t_level = (*smap)[role_it->second].m_RoleBaseInfo.Level;
+
+                //物理攻击
+                t_damageData.Damage = monsterAttackInfo->PhysicalAttack* GetDamage_reduction(t_level)/t_AimInfo->PhysicalDefense;
+                t_damageData.TypeID = PhyAttackSkillID;
+
+
+                if(monsterAttackInfo->Crit_Rate*100 >= rand()%100)//暴击
                 {
-                    hf_uint32 monsterPhyAttack = (*m_monsterAttack)[t_monster->MonsterTypeID].PhysicalAttack;
-
-//                    hf_uint8 t_level = (*smap)[role_it->second].m_RoleBaseInfo.Level;
-//                    t_damageData.Damage = monsterPhyAttack* GetDamage_reduction(t_level)/t_AimInfo->PhysicalDefense;
-
-                    t_damageData.Damage = monsterPhyAttack; //test
-                    t_damageData.TypeID = PhyAttackSkillID;
+                    t_damageData.Flag = CRIT;
+                    t_damageData.Damage *= 1.5;
+                }
+                else //未暴击
+                {
                     t_damageData.Flag = HIT;
                 }
 
@@ -612,6 +599,21 @@ void Monster::SendMonsterToViewRole(STR_MonsterBasicInfo* monster)
     }
 }
 
+//发送变化的怪物方向给可视范围内的玩家
+void Monster::SendMonsterDirectToViewRole(STR_PackMonsterDirect* monster)
+{
+    _umap_viewRole* t_viewRole = &(*m_monsterViewRole)[monster->monsterID];
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
+    {
+        _umap_roleSock::iterator iter = t_roleSock->find(it->first);
+        if(iter != t_roleSock->end())
+        {
+            iter->second->Write_all(monster, sizeof(STR_PackMonsterDirect));
+        }
+    }
+}
+
 //发送伤害给可视范围内的玩家
 void Monster::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
 {
@@ -624,6 +626,22 @@ void Monster::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
         if(iter != t_roleSock->end())
         {
             iter->second->Write_all(monsterBt, sizeof(STR_PackMonsterAttrbt));
+        }
+    }
+}
+
+//发送施法效果给周围玩家
+void Monster::SendSkillEffectToViewRole(STR_PackSkillAimEffect* skillEffect)
+{
+    _umap_viewRole* t_viewRole = &(*m_monsterViewRole)[skillEffect->AimID];
+
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
+    {
+        _umap_roleSock::iterator iter = t_roleSock->find(it->first);
+        if(iter != t_roleSock->end())
+        {
+            iter->second->Write_all(skillEffect, sizeof(STR_PackSkillAimEffect));
         }
     }
 }

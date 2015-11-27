@@ -102,6 +102,27 @@ void fileOperation::ReadFile (hf_char* filePath,  hf_uint16 MapID)
 //判断移动方向
 hf_uint8 fileOperation::JudgeMoveDirect(hf_float current_x, hf_float current_z, hf_uint32 MapID, hf_float target_x, hf_float target_z)
 {
+    hf_char* buffMap = NULL;
+    switch(MapID)
+    {
+    case MAP1:
+    {
+        buffMap = buffMap1;
+        break;
+    }
+    case MAP2:
+    {
+        buffMap = buffMap1;
+        break;
+    }
+    case MAP3:
+    {
+        buffMap = buffMap1;
+        break;
+    }
+    default:
+        return 0;
+    }
     //右1 右上2 上3 左上4 左5 左下6 下7 右下8
     hf_uint8 moveDirect = 0;
     if(target_x - current_x >= 1)
@@ -129,22 +150,55 @@ hf_uint8 fileOperation::JudgeMoveDirect(hf_float current_x, hf_float current_z, 
         else if(target_z - current_z <= -1)
             moveDirect = 7; //下
     }
+    return EnsureMoveDirect (current_x, current_z, buffMap, moveDirect);
+}
 
-    switch(MapID)
+
+hf_uint8 fileOperation::EnsureMoveDirect(hf_float current_x, hf_float current_z,hf_char* buffMap, hf_uint8 direct)
+{
+    hf_int32 t_x = (hf_int32)current_x;
+    hf_int32 t_z = (hf_int32)current_z;
+    switch (direct)
     {
-    case MAP1:
+    case 1:
     {
-        break;
+        if(buffMap[t_z*MAP_X+t_x+1] == 0)
+            return 1;
     }
-    case MAP2:
+    case 2:
     {
-        break;
+        if(buffMap[(t_z-1)*MAP_X+t_x+1] == 0)
+            return 2;
     }
-    case MAP3:
+    case 3:
     {
-        break;
+        if(buffMap[(t_z-1)*MAP_X+t_x] == 0)
+            return 3;
     }
+    case 4:
+    {
+        if(buffMap[(t_z-1)*MAP_X+t_x-1] == 0)
+            return 4;
+    }
+    case 5:
+    {
+        if(buffMap[(t_z)*MAP_X+t_x-1] == 0)
+            return 5;
+    }
+    case 6:
+    {
+        if(buffMap[(t_z+1)*MAP_X+t_x-1] == 0)
+            return 6;
+    }
+    case 7:
+    {
+        if(buffMap[(t_z+1)*MAP_X+t_x] == 0)
+            return 7;
+    }
+    case 8:
+        if(buffMap[(t_z+1)*MAP_X+t_x+1] == 0)
+            return 8;
     default:
-        break;
+        return 0;
     }
 }
