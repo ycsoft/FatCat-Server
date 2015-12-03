@@ -64,25 +64,26 @@
 #define FLAG_MonsterPosition  303   //怪物位置数据包Flag
 #define FLAG_MonsterLeave     305   //怪物离开可视范围
 #define FLAG_MonsterDirect    306   //怪物方向
+#define FLAG_MonsterAction    307   //怪物动作
 
 
 
 #define FLAG_TaskProfile      401   //任务概况数据包Flag
-#define FLAG_StartTaskDlg     402   //任务对话数据包Flag
+#define FLAG_TaskStartDlg     402   //任务对话数据包Flag
 #define FLAG_TaskDescription  403   //任务描述数据包Flag
 #define FLAG_TaskAim          404   //任务目标数据包Flag
 #define FLAG_TaskReward       405   //任务奖励数据包Flag
-#define FLAG_GoodsReward      406   //物品奖励数据包Flag
+//#define FLAG_TaskExeDialog    406   //任务执行对话数据包Flag
 #define FLAG_UserAskTask      407   //玩家请求接受任务数据包Flag
 #define FLAG_AskResult        408   //玩家接受任务结果数据包Flag
 #define FLAG_TaskProcess      409   //玩家角色任务进度数据包Flag
 #define FLAG_AskFinishTask    410   //玩家请求完成任务数据包Flag
 #define FLAG_UserTaskResult   411   //玩家任务结果数据包Flag
 #define FLAG_QuitTask         412   //放弃任务包Flag
-#define FLAG_FinishTaskDlg    413   //任务结束对话Flag
+#define FLAG_TaskFinishDlg    413   //任务结束对话Flag
 #define FLAG_TaskExeDlg       414   //任务执行对话数据包Flag
 #define FLAG_AskTaskData      415   //请求任务数据Flag
-
+#define FLAG_TaskExeDlgFinish 416  //任务对话完成Flag
 
 #define FLAG_UserAttackAim    501   //玩家攻击信息数据包Flag
 #define FLAG_DamageData       502   //攻击返回数据包

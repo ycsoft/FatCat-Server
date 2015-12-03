@@ -62,6 +62,8 @@ public:
     //删除任务
     static void DeletePlayerTask(hf_uint32 roleid, hf_uint32 taskid);
 
+    //插入玩家已完成任务
+    static void InsertPlayerCompleteTask(hf_uint32 roleid, hf_uint32 taskid);
 
     //玩家上线
     //发送角色列表
@@ -126,10 +128,35 @@ public:
     //玩家复活
     void PlayerRelive(TCPConnection::Pointer conn, hf_uint16 mode);
 
-    STR_RoleJobAttribute* m_common;                //普通职业
-    STR_RoleJobAttribute* m_sales;                 //销售
-    STR_RoleJobAttribute* m_technology;            //技术
-    STR_RoleJobAttribute* m_administration;        //行政
+    //玩家升级，更新属性
+    void UpdateJobAttr(hf_uint8 profession, hf_uint8 level, STR_RoleInfo* roleInfo);
+
+    STR_RoleJobAttribute* GetCommonJobAttr()
+    {
+        return m_common;
+    }
+
+    STR_RoleJobAttribute* GetSalesJobAttr()
+    {
+        return m_sales;
+    }
+
+    STR_RoleJobAttribute* GetTechnologyCommonJobAttr()
+    {
+        return m_technology;
+    }
+
+    STR_RoleJobAttribute* GetAdminJobAttr()
+    {
+        return m_administration;
+    }
+
+
+    //等级与数组下表对应
+    STR_RoleJobAttribute* m_common;                //普通职业 0
+    STR_RoleJobAttribute* m_sales;                 //销售1
+    STR_RoleJobAttribute* m_technology;            //技术2
+    STR_RoleJobAttribute* m_administration;        //行政3
 };
 
 #endif // PLAYERLOGIN_H

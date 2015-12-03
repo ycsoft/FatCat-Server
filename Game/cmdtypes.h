@@ -16,6 +16,7 @@ using namespace std;
 using namespace hf_types;
 
 typedef boost::unordered_map<hf_uint32,STR_TaskDlg>                umap_dialogue;
+typedef boost::unordered_map<hf_uint32,vector<STR_TaskExeDlg> >             umap_exeDialogue;
 typedef boost::unordered_map<hf_uint32,STR_PackTaskDescription>    umap_taskDescription;
 typedef boost::unordered_map<hf_uint32,vector<STR_TaskAim> >       umap_taskAim;
 typedef boost::unordered_map<hf_uint32,STR_TaskReward>             umap_taskReward;

@@ -31,6 +31,10 @@ public:
      void TaskAim(TCPConnection::Pointer conn, hf_uint32 taskid);
      //请求任务奖励
      void TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid);
+     //请求任务执行对话
+     void AskTaskExeDialog(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg);
+     //任务执行对话完成
+     void TaskExeDialogFinish(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg);
 
 
     void FinishCollectGoodsTask(TCPConnection::Pointer conn, STR_TaskProcess* taskProcess);  //完成收集物品任务
@@ -72,6 +76,11 @@ public:
          return m_dialogue;
      }
 
+     umap_exeDialogue* GetExeDialogue()
+     {
+         return m_exeDialogue;
+     }
+
      umap_taskDescription* GetDesc()
      {
          return m_taskDesc;
@@ -105,6 +114,7 @@ public:
 
  private:
      umap_dialogue*             m_dialogue;     //任务对话
+     umap_exeDialogue*          m_exeDialogue;  //任务执行对话
      umap_taskDescription*      m_taskDesc;     //任务描述
      umap_taskAim*              m_taskAim;      //任务目标
      umap_taskReward*           m_taskReward;   //任务奖励

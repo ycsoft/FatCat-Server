@@ -1,4 +1,5 @@
 #include "OperationPostgres/operationpostgres.h"
+#include "PlayerLogin/playerlogin.h"
 #include "memManage/diskdbmanager.h"
 #include "Game/getdefinevalue.h"
 #include "OperationGoods/operationgoods.h"
@@ -25,6 +26,7 @@
 
 GameTask::GameTask()
     :m_dialogue(new umap_dialogue)
+    ,m_exeDialogue( new umap_exeDialogue)
     ,m_taskDesc(new umap_taskDescription)
     ,m_taskAim(new umap_taskAim)
     ,m_taskReward(new umap_taskReward)
@@ -38,6 +40,7 @@ GameTask::GameTask()
 GameTask::~GameTask()    
 {
     delete m_dialogue;
+    delete m_exeDialogue;
     delete m_taskDesc;
     delete m_taskAim;
     delete m_taskReward;
@@ -50,7 +53,7 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
 {
     //判断任务条件,暂时只判断等级
     SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
-    STR_RoleBasicInfo* t_RoleBaseInfo = &(*smap)[conn].m_RoleBaseInfo;
+    hf_uint8 t_level = (*smap)[conn].m_roleExp.Level;
 
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
 
@@ -69,7 +72,7 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
     STR_PackAskResult t_askResult;
     t_askResult.TaskID = taskid;
     //判断接取条件，暂时只判断等级
-    if(t_RoleBaseInfo->Level < task_it->second.Level)  //等级不符合
+    if(t_level < task_it->second.Level)  //等级不符合
     {
         t_askResult.Result = RESULT_LEVEL;
         conn->Write_all(&t_askResult, sizeof(STR_PackAskResult));
@@ -108,13 +111,13 @@ void GameTask::AskTask(TCPConnection::Pointer conn, hf_uint32 taskid)
             }
             else if(aim_it->ExeModeID == EXE_upgrade) //升级任务
             {
-                if((*smap)[conn].m_RoleBaseInfo.Level > t_taskProcess.AimAmount)
+                if(t_level > t_taskProcess.AimAmount)
                 {
                     t_taskProcess.FinishCount = t_taskProcess.AimAmount;
                 }
                 else
                 {
-                    t_taskProcess.FinishCount = (*smap)[conn].m_RoleBaseInfo.Level;
+                    t_taskProcess.FinishCount = t_level;
                 }
             }
             else  //EXE_attack_monster
@@ -210,6 +213,8 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
         (*(*smap)[conn].m_completeTask)[finishTask->TaskID] = finishTask->TaskID;
 
         Server::GetInstance()->GetOperationPostgres()->PushUpdateTask((*smap)[conn].m_roleid, &(*process_it), PostDelete); //将任务从list中删除
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateCompleteTask((*smap)[conn].m_roleid, finishTask->TaskID);
+        SendPlayerViewTask(conn);
     }
 
     for(vector<hf_uint32>::iterator reduce_it = reduceGoods.begin(); reduce_it != reduceGoods.end(); reduce_it++)
@@ -368,6 +373,11 @@ void GameTask::TaskFinishTaskReward(TCPConnection::Pointer conn, STR_FinishTask*
             {
                 t_RoleExp->Level += 1;
                 Server::GetInstance()->GetOperationPostgres()->PushUpdateLevel((*smap)[conn].m_roleid, t_RoleExp->Level);
+
+                hf_uint8 t_profession = (*smap)[conn].m_RoleBaseInfo.Profession;
+                STR_RoleInfo* t_roleInfo = &(*smap)[conn].m_roleInfo;
+                //更新玩家属性
+                Server::GetInstance()->GetPlayerLogin()->UpdateJobAttr(t_profession, t_RoleExp->Level, t_roleInfo);
                 UpdateAttackUpgradeTaskProcess(conn, t_RoleExp->Level);
                 t_RoleExp->CurrentExp = t_RoleExp->CurrentExp + t_RewardExp.Experience - t_RoleExp->UpgradeExp;
                 t_RoleExp->UpgradeExp = GetUpgradeExprience(t_RoleExp->Level);
@@ -567,7 +577,7 @@ void GameTask::StartTaskDlg(TCPConnection::Pointer conn, hf_uint32 taskid)
         STR_TaskDlg t_dlg= (*m_dialogue)[taskid];
         STR_PackHead t_packHead;
         t_packHead.Len =  t_dlg.StartLen + sizeof(t_dlg.TaskID);
-        t_packHead.Flag = FLAG_StartTaskDlg;
+        t_packHead.Flag = FLAG_TaskStartDlg;
         memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         memcpy(buff + sizeof(STR_PackHead), &t_dlg.TaskID, sizeof(t_dlg.TaskID));
         memcpy(buff + sizeof(STR_PackHead) + sizeof(t_dlg.TaskID), t_dlg.StartDialogue, t_dlg.StartLen);
@@ -587,7 +597,7 @@ void GameTask::FinishTaskDlg(TCPConnection::Pointer conn, hf_uint32 taskid)
         STR_TaskDlg t_dlg= (*m_dialogue)[taskid];
         STR_PackHead t_packHead;
         t_packHead.Len = t_dlg.FinishLen + sizeof(t_dlg.TaskID) ;
-        t_packHead.Flag = FLAG_FinishTaskDlg;
+        t_packHead.Flag = FLAG_TaskFinishDlg;
         memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         memcpy(buff + sizeof(STR_PackHead), &t_dlg.TaskID, sizeof(t_dlg.TaskID));
         memcpy(buff + sizeof(STR_PackHead) + sizeof(t_dlg.TaskID), t_dlg.FinishDialogue, t_dlg.FinishLen);
@@ -644,7 +654,7 @@ void GameTask::TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid)
 
     umap_goodsReward::iterator iter = (*m_goodsReward).find(taskid);  //奖励物品
     hf_uint8 i = 0;
-    if(iter != (*m_goodsReward).end())
+    if(iter != m_goodsReward->end())
     {
         for(vector<STR_GoodsReward>::iterator itt = iter->second.begin(); itt != iter->second.end(); itt++)
         {
@@ -656,6 +666,59 @@ void GameTask::TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid)
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     srv->free(buff);
+}
+
+void GameTask::AskTaskExeDialog(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg)
+{
+    printf("请求任务对话, taskid:%u,aimid:%u\n", exeDlg->TaskID,exeDlg->AimID);
+    umap_exeDialogue::iterator it = (*m_exeDialogue).find(exeDlg->TaskID);
+    if(it == m_exeDialogue->end())
+    {
+        return;
+    }
+    for(vector<STR_TaskExeDlg>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
+    {
+        if(exeDlg->AimID == iter->AimID)
+        {
+            hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
+            STR_PackHead t_packHead;
+            t_packHead.Len =  iter->ExeLen + sizeof(iter->TaskID) + sizeof(iter->AimID);
+            t_packHead.Flag = FLAG_TaskExeDlg;
+
+            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
+            memcpy(buff + sizeof(STR_PackHead), &iter->TaskID, sizeof(iter->TaskID));
+            memcpy(buff + sizeof(STR_PackHead) + sizeof(iter->TaskID), &iter->AimID, sizeof(iter->AimID));
+            memcpy(buff + sizeof(STR_PackHead)  + sizeof(iter->TaskID) + sizeof(iter->AimID), iter->ExeDialogue, iter->ExeLen);
+
+            cout << "taskid" << iter->TaskID << "aimid" << iter->AimID <<  "ExeDialogue:" << iter->ExeDialogue << endl;
+            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
+            Server::GetInstance()->free(buff);
+        }
+    }
+}
+
+void GameTask::TaskExeDialogFinish(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg)
+{
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
+    umap_taskProcess t_task = (*smap)[conn].m_playerAcceptTask;
+    _umap_taskProcess::iterator it = t_task->find(exeDlg->TaskID);
+    if(it == t_task->end())
+    {
+        return;
+    }
+    for(vector<STR_TaskProcess>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
+    {
+        if(exeDlg->AimID == iter->AimID)
+        {
+            if(iter->FinishCount == 1)
+            {
+                return;
+            }
+            iter->FinishCount = 1;
+            STR_PackTaskProcess t_taskProcess(&(*iter));
+            conn->Write_all(&t_taskProcess, sizeof(STR_PackTaskProcess));
+        }
+    }
 }
 
  //发送已接取的任务进度,和任务概述
@@ -698,39 +761,7 @@ void GameTask::SendPlayerTaskProcess(TCPConnection::Pointer conn)
             memcpy(descBuff, &(*m_taskDesc)[it->first], sizeof(STR_PackTaskDescription));
             conn->Write_all(descBuff,  sizeof(STR_PackTaskDescription));
 
-
             TaskReward(conn, it->first);
-
-//            umap_taskReward::iterator taskReward_it = (*m_taskReward).find(it->first);  //其他奖励
-//            if(taskReward_it != (*m_taskReward).end())
-//            {
-//                memcpy(rewardBuff + rewardLen, &(*m_taskReward)[it->first], sizeof(STR_TaskReward));
-//                rewardLen += sizeof(STR_TaskReward);
-//            }
-
-//            hf_uint8 k = 0;
-//            umap_goodsReward::iterator goodReward_it = (*m_goodsReward).find(it->first);  //奖励物品
-
-//            if(goodReward_it != (*m_goodsReward).end())
-//            {
-
-//                for(vector<STR_GoodsReward>::iterator itt = goodReward_it->second.begin(); itt != goodReward_it->second.end(); itt++)
-//                {
-//                    memcpy(rewardBuff + rewardLen + k*sizeof(STR_GoodsReward), &itt->GoodsID, sizeof(STR_GoodsReward));
-//                    k++;
-//                }
-//                rewardLen += sizeof(STR_GoodsReward)*k;
-//            }
-//            t_packHead.Len = sizeof(STR_GoodsReward) + sizeof(STR_GoodsReward)*k;
-//            t_packHead.Flag = FLAG_TaskReward;
-//            memcpy(rewardBuff, &t_packHead, sizeof(STR_PackHead));
-
-//            if(rewardLen >= 900)
-//            {
-//                conn->Write_all(rewardBuff, rewardLen);
-//                rewardLen = 0;
-//            }
-
 
             for(vector<STR_TaskProcess>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
             {
@@ -784,7 +815,7 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
 {
     //根据任务条件和玩家信息判断玩家可接取的任务
     SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
-    STR_RoleBasicInfo* t_RoleBaseInfo = &(*smap)[conn].m_RoleBaseInfo; //得到玩家信息
+    hf_uint8 t_level = (*smap)[conn].m_roleExp.Level; //得到玩家等级
     umap_taskProcess playerAcceptTask = (*smap)[conn].m_playerAcceptTask;
     umap_completeTask playerCompleteTask = (*smap)[conn].m_completeTask;
 
@@ -796,25 +827,32 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
     for(_umap_taskProfile::iterator it = m_taskProfile->begin(); it != m_taskProfile->end(); it++)
     {
         _umap_taskProcess::iterator iter = playerAcceptTask->find(it->first);
-        if(iter == playerAcceptTask->end()) //是否已接取
+        //是否已经完成过了，暂时判断完成了就不再发送，以后根据任务是否可重复接取判断
+        _umap_completeTask::iterator com_it = playerCompleteTask->find(it->first);
+        if(com_it != playerCompleteTask->end())
+            continue;
+
+        if(iter != playerAcceptTask->end()) //已接取
+            continue;
+
+        STR_TaskPremise t_taskpremise = (*m_taskPremise)[it->first];
+        if(t_level < t_taskpremise.Level)  //等级符合
         {
-            STR_TaskPremise t_taskpremise = (*m_taskPremise)[it->first];
-            if(t_RoleBaseInfo->Level < t_taskpremise.Level)  //等级符合
+            continue;
+        }
+        if(t_taskpremise.PreTaskID != 0) //前置任务不为0
+        {
+            _umap_completeTask::iterator completeTask_it = playerCompleteTask->find(t_taskpremise.PreTaskID);
+            if(completeTask_it == playerCompleteTask->end())
             {
                 continue;
             }
-            if(t_taskpremise.PreTaskID != 0) //前置任务不为0
-            {
-                _umap_completeTask::iterator completeTask_it = playerCompleteTask->find(t_taskpremise.PreTaskID);
-                if(completeTask_it == playerCompleteTask->end())
-                {
-                    continue;
-                }
-            }
-
-            memcpy(buff + sizeof(STR_PackHead) + size*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
-            size++;
         }
+
+        memcpy(buff + sizeof(STR_PackHead) + size*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
+
+        printf("taskStatus:%d\n", (*m_taskProfile)[it->first].Status);
+        size++;
         if(size == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_TaskProfile))
         {
             t_packHead.Flag = FLAG_TaskProfile;
@@ -972,6 +1010,13 @@ void GameTask::QueryTaskData()
     if ( t_db->GetTaskDialogue(m_dialogue) < 0 )
     {
         Logger::GetLogger()->Error("Query TaskDialogue error");
+        return;
+    }
+
+    //查询任务执行对话
+    if(t_db->GetTaskExeDialogue(m_exeDialogue) < 0)
+    {
+        Logger::GetLogger()->Error("Query TaskExeDialogue error");
         return;
     }
 

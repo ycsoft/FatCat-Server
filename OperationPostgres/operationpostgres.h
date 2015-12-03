@@ -55,6 +55,14 @@ public:
     }
     void PopUpdateTask();
 
+    void PushUpdateCompleteTask(hf_uint32 roleid, hf_uint32 taskid)
+    {
+        UpdateCompleteTask upTask(roleid, taskid);
+        m_UpdateCompleteTask->push(upTask);
+    }
+
+    void PopUpdateCompleteTask();
+
 private:
     boost::lockfree::queue<UpdateMoney>     *m_UpdateMoney;   //更新金钱
     boost::lockfree::queue<UpdateLevel>     *m_UpdateLevel;   //更新等级
@@ -62,6 +70,7 @@ private:
     boost::lockfree::queue<UpdateGoods>     *m_UpdateGoods;   //更新背包物品
     boost::lockfree::queue<UpdateEquAttr>   *m_UpdateEquAttr; //更新装备属性
     boost::lockfree::queue<UpdateTask>      *m_UpdateTask;    //更新任务进度
+    boost::lockfree::queue<UpdateCompleteTask> *m_UpdateCompleteTask; //更新已完成的任务
 
 };
 

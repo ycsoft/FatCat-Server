@@ -7,7 +7,8 @@ OperationPostgres::OperationPostgres():
     m_UpdateExp(new boost::lockfree::queue<UpdateExp>(100)),
     m_UpdateGoods(new boost::lockfree::queue<UpdateGoods>(100)),
     m_UpdateEquAttr(new boost::lockfree::queue<UpdateEquAttr>(100)),
-    m_UpdateTask(new boost::lockfree::queue<UpdateTask>(100))
+    m_UpdateTask(new boost::lockfree::queue<UpdateTask>(100)),
+    m_UpdateCompleteTask(new boost::lockfree::queue<UpdateCompleteTask>(100))
 {
 
 }
@@ -20,6 +21,7 @@ OperationPostgres::~OperationPostgres()
     delete m_UpdateGoods;
     delete m_UpdateEquAttr;
     delete m_UpdateTask;
+    delete m_UpdateCompleteTask;
 }
 
 //该函数负责实时将玩家数据写入数据库
@@ -159,5 +161,18 @@ void OperationPostgres::PopUpdateTask()
         {
             usleep(1000);
         }
+    }
+}
+
+
+void OperationPostgres::PopUpdateCompleteTask()
+{
+    UpdateCompleteTask t_comTask;
+    while(1)
+    {
+        if(m_UpdateCompleteTask->pop(t_comTask))
+            PlayerLogin::InsertPlayerCompleteTask(t_comTask.RoleID, t_comTask.TaskID);
+        else
+            usleep(1000);
     }
 }

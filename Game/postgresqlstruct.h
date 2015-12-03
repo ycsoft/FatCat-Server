@@ -43,11 +43,21 @@ typedef struct _STR_TaskDlg
 {
     hf_uint32  TaskID;
     hf_uint16  StartLen;            //开始对话长度
+
     hf_uint16  FinishLen;           //结束对话长度
     hf_char    StartDialogue[512];  //任务开始对话
+
     hf_char    FinishDialogue[512]; //任务结束对话
 }STR_TaskDlg;
 
+//任务执行对话
+typedef struct _STR_TaskExeDlg
+{
+    hf_uint32  TaskID;
+    hf_uint32  AimID;               //目标ID
+    hf_uint16  ExeLen;              //执行对话长度
+    hf_char    ExeDialogue[512];    //任务执行对话
+}STR_TaskExeDlg;
 
 //4.任务描述数据
 typedef struct _STR_PackTaskDescription
@@ -139,21 +149,21 @@ typedef struct _STR_PackAskResult
 
 
 //任务执行对话
-typedef struct _STR_PackTaskExeDialogue
-{
-    STR_PackHead        head;
-    _STR_PackTaskExeDialogue()
-    {
-        bzero(&head, sizeof(_STR_PackTaskExeDialogue));
-        head.Flag = 0;
-        head.Len = sizeof(_STR_PackTaskExeDialogue) - sizeof(STR_PackHead);
-    }
+//typedef struct _STR_PackTaskExeDialogue
+//{
+//    STR_PackHead        head;
+//    _STR_PackTaskExeDialogue()
+//    {
+//        bzero(&head, sizeof(_STR_PackTaskExeDialogue));
+//        head.Flag = 0;
+//        head.Len = sizeof(_STR_PackTaskExeDialogue) - sizeof(STR_PackHead);
+//    }
 
-    hf_uint32 TaskID;
-    hf_uint32 AimID;
-    hf_uint32 ExeModeID;
-    hf_char   TaskExeDialogue[512];
-}STR_PackTaskExeDialogue;
+//    hf_uint32 TaskID;
+//    hf_uint32 AimID;
+//    hf_uint32 ExeModeID;
+//    hf_char   TaskExeDialogue[512];
+//}STR_PackTaskExeDialogue;
 
 //11 玩家请求完成任务数据
 typedef struct _STR_FinishTask
@@ -748,6 +758,22 @@ typedef struct _STR_PackMonsterDirect
     hf_float  direct;
 }STR_PackMonsterDirect;
 
+typedef struct _STR_PackMonsterAction
+{
+    _STR_PackMonsterAction(hf_uint32 _monsterID, hf_float _action)
+    {
+        bzero(&head,sizeof(_STR_PackMonsterAction));
+        head.Flag = FLAG_MonsterAction;
+        head.Len = sizeof(_STR_PackMonsterAction)-sizeof(STR_PackHead);
+        monsterID = _monsterID;
+        action = _action;
+    }
+    STR_PackHead head;
+    hf_uint32 monsterID;
+    hf_float  action;
+}STR_PackMonsterAction;
+
+
 typedef struct _STR_PosDis
 {
     _STR_PosDis(hf_float _dis, hf_float _dx, hf_float _dz)
@@ -918,8 +944,8 @@ typedef struct _STR_PlayerRegisterUserId
 //角色职业属性
 typedef struct _STR_RoleJobAttribute
 {
-    hf_uint32 Hp;
-    hf_uint32 Magic;
+    hf_uint32 MaxHP;
+    hf_uint32 MaxMagic;
     hf_uint32 PhysicalDefense;
     hf_uint32 MagicDefense;
     hf_uint32 PhysicalAttack;
@@ -1153,6 +1179,12 @@ typedef struct _AskTaskData
     hf_uint16 Flag;
 }AskTaskData;
 
+typedef struct _STR_AskTaskExeDlg
+{
+    hf_uint32 TaskID;
+    hf_uint32 AimID;
+}STR_AskTaskExeDlg;
+
 typedef struct _RoleNick
 {
     _RoleNick()
@@ -1171,7 +1203,25 @@ typedef struct _STR_TaskProcess
     hf_uint8   ExeModeID;         //执行方式
 }STR_TaskProcess;
 
+typedef struct _STR_PackTaskProcess
+{
+    _STR_PackTaskProcess()
+    {
+        bzero(&head, sizeof(_STR_PackTaskProcess));
+        head.Flag = FLAG_TaskProcess;
+        head.Len = sizeof(_STR_PackTaskProcess) - sizeof(STR_PackHead);
+    }
+    _STR_PackTaskProcess(STR_TaskProcess* _process)
+    {
+        bzero(&head, sizeof(_STR_PackTaskProcess));
+        head.Flag = FLAG_TaskProcess;
+        head.Len = sizeof(_STR_PackTaskProcess) - sizeof(STR_PackHead);
+        memcpy(&process, _process, sizeof(STR_TaskProcess));
+    }
 
+    STR_PackHead head;
+    STR_TaskProcess process;
+}STR_PackTaskProcess;
 
 //typedef struct _STR_RoleInfo
 //{
@@ -1688,6 +1738,23 @@ typedef struct _UpdateTask         //更新任务进度
     hf_uint8  Operate;
 }UpdateTask;
 
+
+typedef struct _UpdateCompleteTask
+{
+    _UpdateCompleteTask(hf_uint32 _RoleID, hf_uint32 _TaskID)
+        :RoleID(_RoleID),TaskID(_TaskID)
+    {
+
+    }
+    _UpdateCompleteTask()
+    {
+
+    }
+
+    hf_uint32 RoleID;
+    hf_uint32 TaskID;
+}UpdateCompleteTask;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1737,6 +1804,38 @@ enum TaskExeMode
     EXE_choice,                 //选择
     EXE_email_dialogue          //地点触发对话
 };
+
+
+//请求
+typedef struct _STR_RequestOper
+{
+    STR_PackHead head;
+    hf_uint32    RoleID;
+    hf_uint8     operType;
+    _STR_RequestOper()
+    {
+        bzero(&head,sizeof(_STR_RequestOper));
+        head.Flag =  FLAG_OperRequest;
+        head.Len = sizeof(_STR_RequestOper)-sizeof(STR_PackHead);
+    }
+}STR_RequestOper;
+
+//请求返回结果
+typedef struct _STR_RequestReply
+{
+    STR_PackHead head;
+    hf_uint32    RoleID;
+    hf_uint8     operType;
+    hf_uint8     operResult;
+    _STR_RequestReply()
+    {
+        bzero(&head,sizeof(_STR_RequestOper));
+        head.Flag =  FLAG_OperResult;
+        head.Len = sizeof(_STR_RequestReply)-sizeof(STR_PackHead);
+    }
+}STR_RequestReply;
+
+
 
 typedef struct _operationRequest
 {

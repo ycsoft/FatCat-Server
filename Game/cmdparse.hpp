@@ -64,8 +64,11 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
             hf_uint32 hp = (*smap)[conn].m_roleInfo.HP;
             if(hp == 0)
             {
-                if(flag != FLAG_PlayerRevive)
+                if(!(flag == FLAG_PlayerRevive || flag == FLAG_PlayerPosition))
                     return;
+
+//                if(flag != FLAG_PlayerRevive && flag != FLAG_PlayerPosition)
+//                    return;
             }
         }
     }
@@ -145,7 +148,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
 //        printf("%f\n", direct);
 //        srv->RunTask(boost::bind(UserPosition::PlayerDirectChange, conn, direct));
 
-        printf("playerDirect:%f\n", *(hf_float*)(buf + sizeof(STR_PackHead)));
+//        printf("playerDirect:%f\n", *(hf_float*)(buf + sizeof(STR_PackHead)));
         Server::GetInstance()->GetCmdParse()->PushPlayerDirectChange(conn, *(hf_float*)(buf + sizeof(STR_PackHead)));
         break;
     }
@@ -154,10 +157,10 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     {
         hf_uint8 action = 0;
         memcpy(&action, (buf + sizeof(STR_PackHead)), 1);
-        printf("playerAction:%d\n", action);
+//        printf("playerAction:%d\n", action);
 //        srv->RunTask(boost::bind(UserPosition::PlayerActionChange, conn, action));
 
-        printf("playerAction:%d\n", *(hf_uint8*)(buf + sizeof(STR_PackHead)));
+//        printf("playerAction:%d\n", *(hf_uint8*)(buf + sizeof(STR_PackHead)));
          Server::GetInstance()->GetCmdParse()->PushPlayerActionChange(conn, *(hf_uint8*)(buf + sizeof(STR_PackHead)));
 
         break;
@@ -199,6 +202,16 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
 //        srv->RunTask(boost::bind(&GameTask::AskFinishTask, t_task, conn, finishTask));
         break;
     }
+    case FLAG_TaskExeDlg:
+    {
+        Server::GetInstance()->GetCmdParse()->PushAskTaskExeDlg(conn, (STR_AskTaskExeDlg*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
+    case FLAG_TaskExeDlgFinish:
+    {
+        Server::GetInstance()->GetCmdParse()->PushAskTaskExeDlgFinish(conn, (STR_AskTaskExeDlg*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
     case FLAG_AskTaskData:    //请求任务数据包
     {               
         AskTaskData* t_ask = (AskTaskData*)(buf + sizeof(STR_PackHead));
@@ -207,12 +220,12 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
 
 //        switch(t_ask->Flag)
 //        {
-//        case FLAG_StartTaskDlg:
+//        case FLAG_TaskStartDlg:
 //        {
 //            srv->RunTask(boost::bind(&GameTask::StartTaskDlg, t_task, conn, taskID));
 //            break;
 //        }
-//        case FLAG_FinishTaskDlg:
+//        case FLAG_TaskFinishDlg:
 //        {
 //            srv->RunTask(boost::bind(&GameTask::FinishTaskDlg, t_task, conn, taskID));
 //            break;

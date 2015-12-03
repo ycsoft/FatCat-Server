@@ -61,6 +61,7 @@ hf_int32 DiskDBManager::Set(const char *str,...)
     ExecStatusType t_ExecStatusType = PQresultStatus(t_PGresult);
     if(t_ExecStatusType != PGRES_COMMAND_OK) //成功完成一个不返回数据的命令
     {
+        printf("%d\n", t_ExecStatusType);
         printf("PQexec error\n");
         return -1;
     }
@@ -355,7 +356,7 @@ hf_int32 DiskDBManager::GetTaskProfile(umap_taskProfile TaskProfile)
             t_profile.FinishNPCID = atoi(PQgetvalue(t_PGresult, i, 3));
             t_profile.AcceptModeID = atoi(PQgetvalue(t_PGresult, i, 4));
             t_profile.FinishModeID = atoi(PQgetvalue(t_PGresult, i, 5));
-            t_profile.Status = 1; //已接取
+            t_profile.Status = 1; //未接取
             (*TaskProfile)[t_profile.TaskID] = t_profile;
         }
         return t_row;
@@ -384,15 +385,60 @@ hf_int32 DiskDBManager::GetTaskDialogue(umap_dialogue* TaskDialogue)
             memset(&t_dialogue, 0, sizeof(STR_TaskDlg));
             t_dialogue.TaskID = atoi(PQgetvalue(t_PGresult, i, 0));
             t_dialogue.StartLen = PQgetlength(t_PGresult, i, 1) + 1;
+//            t_dialogue.ExeLen = PQgetlength(t_PGresult, i, 2) + 1;
             t_dialogue.FinishLen = PQgetlength(t_PGresult, i, 2) + 1;
-            memcpy(t_dialogue.StartDialogue, PQgetvalue(t_PGresult, i,1), t_dialogue.StartLen);
-            memcpy(t_dialogue.FinishDialogue, PQgetvalue(t_PGresult, i, 2), t_dialogue.FinishLen);
+            memcpy(t_dialogue.StartDialogue, PQgetvalue(t_PGresult, i,1), t_dialogue.StartLen - 1);
+//            memcpy(t_dialogue.ExeDialogue, PQgetvalue(t_PGresult, i, 2), t_dialogue.ExeLen - 1);
+            memcpy(t_dialogue.FinishDialogue, PQgetvalue(t_PGresult, i, 2), t_dialogue.FinishLen - 1);
             (*TaskDialogue).insert(make_pair(t_dialogue.TaskID,t_dialogue));
+
         }
         return t_row;
     }
 }
 
+hf_int32 DiskDBManager::GetTaskExeDialogue(umap_exeDialogue* TaskExeDialogue)
+{
+    const hf_char* str = "select * from t_taskexedialogue;";
+    m_mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    m_mtx.unlock();
+    ExecStatusType t_status = PQresultStatus(t_PGresult);
+    if(t_status != PGRES_TUPLES_OK)
+    {
+        Logger::GetLogger()->Error("select t_taskDialogue error");
+        return -1;
+    }
+    else
+    {
+        int t_row = PQntuples(t_PGresult);
+        if(t_row == 0)
+        {
+            return 0;
+        }
+        STR_TaskExeDlg t_dialogue;
+        for(int i = 0; i < t_row; i++)
+        {
+            memset(&t_dialogue, 0, sizeof(STR_TaskExeDlg));
+            t_dialogue.TaskID = atoi(PQgetvalue(t_PGresult, i, 0));
+            t_dialogue.AimID = atoi(PQgetvalue(t_PGresult, i, 1));
+            t_dialogue.ExeLen = PQgetlength(t_PGresult, i, 2) + 1;
+            memcpy(t_dialogue.ExeDialogue, PQgetvalue(t_PGresult, i, 2), t_dialogue.ExeLen - 1);
+            umap_exeDialogue::iterator it = TaskExeDialogue->find(t_dialogue.TaskID);
+            if(it == TaskExeDialogue->end())
+            {
+                vector<STR_TaskExeDlg> t_exeDlg;
+                t_exeDlg.push_back(t_dialogue);
+                (*TaskExeDialogue)[t_dialogue.TaskID] = t_exeDlg;
+            }
+            else
+            {
+                it->second.push_back(t_dialogue);
+            }
+        }
+        return t_row;
+    }
+}
 
 hf_int32 DiskDBManager::GetTaskDescription(umap_taskDescription* TaskDesc)
 {
@@ -1163,7 +1209,7 @@ hf_int32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
 //查询数据库中装备现在的最大值
 hf_int32 DiskDBManager::GetEquIDMaxValue()
 {
-    const hf_char* str = "select max(goodsid) from t_playergoods;";
+    const hf_char* str = "select max(equid) from t_playerequattr;";
     Logger::GetLogger()->Debug(str);
     m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
@@ -1173,9 +1219,22 @@ hf_int32 DiskDBManager::GetEquIDMaxValue()
     {
         return -1;
     }
+    hf_int32 t_row = PQntuples(t_PGresult);
+    if(t_row == 0)
+    {
+        return EquipMentID;
+    }
     else
     {
-        return atoi(PQgetvalue(t_PGresult, 0, 0));
+        hf_uint32 equid = atoi(PQgetvalue(t_PGresult, 0, 0));
+        if(equid < EquipMentID)
+        {
+            return EquipMentID;
+        }
+        else
+        {
+            return equid;
+        }
     }
 }
 
@@ -1287,8 +1346,8 @@ hf_int32 DiskDBManager::GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* 
         hf_int32 t_row = PQntuples(t_PGresult);
         for(hf_int32 i = 0; i < t_row; i++)
         {
-            jobAttr->Hp = atoi(PQgetvalue(t_PGresult, i, 0));;
-            jobAttr->Magic = atoi(PQgetvalue(t_PGresult, i, 1));;
+            jobAttr->MaxHP = atoi(PQgetvalue(t_PGresult, i, 0));;
+            jobAttr->MaxMagic = atoi(PQgetvalue(t_PGresult, i, 1));;
             jobAttr->PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 2));;
             jobAttr->MagicDefense = atoi(PQgetvalue(t_PGresult, i, 3));;
             jobAttr->PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 4));

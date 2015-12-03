@@ -9,6 +9,8 @@ CmdParse::CmdParse():
     m_AskTask(new boost::lockfree::queue<Queue_AskTask>(100)),
     m_QuitTask(new boost::lockfree::queue<Queue_QuitTask>(100)),
     m_AskFinishTask(new boost::lockfree::queue<Queue_AskFinishTask>(100)),
+    m_AskTaskExeDlg(new boost::lockfree::queue<Queue_AskTaskExeDlg>(100)),
+    m_AskTaskExeDlgFinish(new boost::lockfree::queue<Queue_AskTaskExeDlg>(100)),
     m_AskTaskData(new boost::lockfree::queue<Queue_AskTaskData>(100)),
     m_AddFriend(new boost::lockfree::queue<Queue_AddFriend>(100)),
     m_DeleteFriend(new boost::lockfree::queue<Queue_DeleteFriend>(100)),
@@ -34,6 +36,8 @@ CmdParse::~CmdParse()
     delete m_AskTask;
     delete m_QuitTask;
     delete m_AskFinishTask;
+    delete m_AskTaskExeDlg;
+    delete m_AskTaskExeDlgFinish;
     delete m_AskTaskData;
     delete m_AddFriend;
     delete m_DeleteFriend;
@@ -156,6 +160,72 @@ void CmdParse::PopAskFinishTask()
     }
 }
 
+//请求任务执行对话
+void CmdParse::PushAskTaskExeDlg(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+
+    Queue_AskTaskExeDlg t_task(roleid, exeDlg);
+    m_AskTaskExeDlg->push(t_task);
+}
+
+void CmdParse::PopAskTaskExeDlg()
+{
+    GameTask* gameTask = Server::GetInstance()->GetGameTask();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    Queue_AskTaskExeDlg t_task;
+    while(1)
+    {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+        if(m_AskTaskExeDlg->pop(t_task))
+        {
+            _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
+            if(it != t_roleSock->end())
+            {
+                gameTask->AskTaskExeDialog(it->second, &t_task.exeDlg);
+            }
+        }
+        else
+        {
+            usleep(10000);
+        }
+    }
+}
+
+//请求任务执行对话完成
+void CmdParse::PushAskTaskExeDlgFinish(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+
+    Queue_AskTaskExeDlg t_task(roleid, exeDlg);
+    m_AskTaskExeDlgFinish->push(t_task);
+}
+
+void CmdParse::PopAskTaskExeDlgFinish()
+{
+    GameTask* gameTask = Server::GetInstance()->GetGameTask();
+//    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    Queue_AskTaskExeDlg t_task;
+    while(1)
+    {
+        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+        if(m_AskTaskExeDlgFinish->pop(t_task))
+        {
+            _umap_roleSock::iterator it = t_roleSock->find(t_task.roleid);
+            if(it != t_roleSock->end())
+            {
+                gameTask->TaskExeDialogFinish(it->second, &t_task.exeDlg);
+            }
+        }
+        else
+        {
+            usleep(10000);
+        }
+    }
+}
+
 void CmdParse::PushAskTaskData(TCPConnection::Pointer conn, hf_uint32 taskID, hf_uint16 flag)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
@@ -180,12 +250,12 @@ void CmdParse::PopAskTaskData()
             {
                 switch(t_task.flag)
                 {
-                case FLAG_StartTaskDlg:
+                case FLAG_TaskStartDlg:
                 {
                     gameTask->StartTaskDlg(it->second, t_task.taskID);
                     break;
                 }
-                case FLAG_FinishTaskDlg:
+                case FLAG_TaskFinishDlg:
                 {
                     gameTask->FinishTaskDlg(it->second, t_task.taskID);
                     break;
@@ -545,8 +615,8 @@ void CmdParse::PushPlayerDirectChange(TCPConnection::Pointer conn, hf_float dire
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_uint32 roleid = (*smap)[conn].m_roleid;
-    Queue_PlayerDirectChange t_action(roleid, direct);
-    m_PlayerDirectChange->push(t_action);
+    Queue_PlayerDirectChange t_direct(roleid, direct);
+    m_PlayerDirectChange->push(t_direct);
 }
 
 void CmdParse::PopPlayerDirectChange()

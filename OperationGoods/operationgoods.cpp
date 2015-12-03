@@ -459,6 +459,8 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
         STR_PackGoods t_goods(&equ_it->second.goods);
         conn->Write_all(&t_goods, sizeof(STR_PackGoods));
 
+        ReleasePos(conn, removeGoods->Position); //释放位置
+
         Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods((*smap)[conn].m_roleid, &(equ_it->second.goods), PostDelete);
         Server::GetInstance()->GetOperationPostgres()->PushUpdateEquAttr((*smap)[conn].m_roleid, &(equ_it->second.equAttr), PostDelete);
 
@@ -484,7 +486,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
 //                Server::GetInstance()->free(removeGoods);
                 return;
             }
-            OperationGoods::ReleasePos(conn, removeGoods->Position);
+            ReleasePos(conn, removeGoods->Position);
 
             iter->Count = 0;
             STR_PackGoods t_goods(&(*iter));
@@ -792,6 +794,8 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
         STR_PackGoods t_goods(&(equ_it->second.goods));
         conn->Write_all(&t_goods, sizeof(STR_PackGoods));
         t_post->PushUpdateGoods(roleid, &(equ_it->second.goods), PostDelete);
+
+        ReleasePos(conn, t_goods.goods.Position); //释放位置
         //装备属性
         t_post->PushUpdateEquAttr(roleid, &(equ_it->second.equAttr), PostDelete);
 
@@ -821,9 +825,11 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
         if(pos_it->Position == sellGoods->Position)
         {          
             pos_it->Count = 0;
-            t_post->PushUpdateGoods(roleid, &(*pos_it), PostDelete);
             STR_PackGoods t_goods(&(*pos_it));
             conn->Write_all(&t_goods, sizeof(STR_PackGoods));
+
+            t_post->PushUpdateGoods(roleid, &(*pos_it), PostDelete);
+            ReleasePos(conn, t_goods.goods.Position); //释放位置
 
             Server::GetInstance()->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, t_goods.goods.TypeID);
             goods_it->second.erase(pos_it);

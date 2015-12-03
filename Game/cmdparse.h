@@ -61,6 +61,23 @@ typedef struct _Queue_AskFinishTask
     STR_FinishTask finishTask;
 }Queue_AskFinishTask;
 
+typedef struct _Queue_AskTaskExeDlg
+{
+    _Queue_AskTaskExeDlg(hf_uint32 _roleid, STR_AskTaskExeDlg* _exeDlg)
+        :roleid(_roleid)
+    {
+        exeDlg.TaskID = _exeDlg->TaskID;
+        exeDlg.AimID = _exeDlg->AimID;
+    }
+    _Queue_AskTaskExeDlg()
+    {
+
+    }
+
+    hf_uint32 roleid;
+    STR_AskTaskExeDlg exeDlg;
+}Queue_AskTaskExeDlg;
+
 typedef struct _Queue_AskTaskData
 {
     _Queue_AskTaskData(hf_uint32 _roleid, hf_uint32 _taskID, hf_uint16 _flag)
@@ -338,6 +355,12 @@ public:
     void PushAskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finishTask); //请求完成任务
     void PopAskFinishTask();
 
+    void PushAskTaskExeDlg(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg); //请求任务执行对话
+    void PopAskTaskExeDlg();
+
+    void PushAskTaskExeDlgFinish(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg); //请求任务执行对话完成
+    void PopAskTaskExeDlgFinish();
+
     void PushAskTaskData(TCPConnection::Pointer conn, hf_uint32 taskID, hf_uint16 flag); //请求任务数据
     void PopAskTaskData();
 
@@ -400,6 +423,8 @@ private:
     boost::lockfree::queue<Queue_AskTask>            *m_AskTask;
     boost::lockfree::queue<Queue_QuitTask>           *m_QuitTask;
     boost::lockfree::queue<Queue_AskFinishTask>      *m_AskFinishTask;
+    boost::lockfree::queue<Queue_AskTaskExeDlg>      *m_AskTaskExeDlg;
+    boost::lockfree::queue<Queue_AskTaskExeDlg>      *m_AskTaskExeDlgFinish;
     boost::lockfree::queue<Queue_AskTaskData>        *m_AskTaskData;
     boost::lockfree::queue<Queue_AddFriend>          *m_AddFriend;
     boost::lockfree::queue<Queue_DeleteFriend>       *m_DeleteFriend;

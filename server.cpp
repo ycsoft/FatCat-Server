@@ -107,6 +107,8 @@ void Server::InitDB()
    srv->RunTask(boost::bind(&CmdParse::PopAskTask, t_cmdParse));
    srv->RunTask(boost::bind(&CmdParse::PopQuitTask, t_cmdParse));
    srv->RunTask(boost::bind(&CmdParse::PopAskFinishTask, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopAskTaskExeDlg, t_cmdParse));
+   srv->RunTask(boost::bind(&CmdParse::PopAskTaskExeDlgFinish, t_cmdParse));
    srv->RunTask(boost::bind(&CmdParse::PopAskTaskData, t_cmdParse));
 
    srv->RunTask(boost::bind(&CmdParse::PopAddFriend, t_cmdParse));
@@ -137,6 +139,7 @@ void Server::InitDB()
    srv->RunTask(boost::bind(&OperationPostgres::PopUpdateGoods, t_opePost));
    srv->RunTask(boost::bind(&OperationPostgres::PopUpdateEquAttr, t_opePost));
    srv->RunTask(boost::bind(&OperationPostgres::PopUpdateTask, t_opePost));
+   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateCompleteTask, t_opePost));
 
 }
 

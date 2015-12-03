@@ -30,7 +30,8 @@ SOURCES += main.cpp \
     Game/cmdparse.cpp \
 #    Monster/monsterstruct.cpp
     GameChat/gamechat.cpp \
-    fileOperation/fileoperation.cpp
+    fileOperation/fileoperation.cpp \
+    PlayerTrading/playertrading.cpp
 
 
 
@@ -72,7 +73,8 @@ HEADERS += \
     Monster/monsterstruct.h \
     GameChat/gamechat.h \
     Game/rolestruct.h \
-    fileOperation/fileoperation.h
+    fileOperation/fileoperation.h \
+    PlayerTrading/playertrading.h
 
 
 

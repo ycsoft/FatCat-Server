@@ -38,6 +38,8 @@ public:
         else
         {
             monster.HP = 0;
+            hatredRoleid = 0;
+            roleid = 0;
             aimTime = timep + MonsterDeathTime;
         }
 
@@ -48,19 +50,7 @@ public:
     void ChangeHatredRoleid(hf_uint32 _hatredRoleid)
     {
         m_mtx.lock();
-        if(_hatredRoleid == 0)
-        {
-//            if(monster.ActID == Action_Run)
-//            {
-//                monster.ActID = Action_Walk;
-//                monster.MoveRate /= 2;
-//            }
-//            else
-//            {
-//                monster.ActID = Action_Walk;
-//            }
-        }
-        else
+        if(_hatredRoleid != 0)
         {
             if(monster.ActID != Action_Run)
             {
@@ -141,6 +131,7 @@ public:
     {
         m_mtx.lock();
         hatredRoleid = 0;
+        roleid = 0;
         monster.Target_x = pursuitPos.Come_x;
         monster.Target_y = pursuitPos.Come_y;
         monster.Target_z = pursuitPos.Come_z;
@@ -151,7 +142,7 @@ public:
 
 
         startTime = currentTime;//test
-        aimTime = currentTime + dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
+        aimTime = currentTime + dis/((hf_double)(monster.MoveRate/100*MonsterMoveDistance));
         monsterStatus = true;
         m_mtx.unlock();
     }

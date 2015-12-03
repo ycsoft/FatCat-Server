@@ -87,6 +87,13 @@ public:
      hf_int32 GetTaskDialogue(umap_dialogue* TaskDialogue);
 
      /**
+      * @brief GetTaskExeDialogue 得到任务执行对话
+      * @param TaskExeDialogue
+      * @return
+      */
+     hf_int32 GetTaskExeDialogue(umap_exeDialogue* TaskExeDialogue);
+
+     /**
       * @brief GetTaskDescription得到任务描述
       * @param TaskDesc
       * @return

@@ -5,7 +5,7 @@
 
 using namespace hf_types;
 //得到伤害减免系数
-hf_int32 GetDamage_reduction(hf_uint8 level);
+hf_uint32 GetDamage_reduction(hf_uint8 level);
 
 //得到怪物奖励经验
 hf_uint32 GetRewardExperience(hf_uint8 level);

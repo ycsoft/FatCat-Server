@@ -127,7 +127,7 @@ public:
     umap_roleEqu            m_playerEqu;         //玩家背包装备
 //    umap_roleEquAttr        m_playerEquAttr;     //玩家背包装备属性
     umap_roleMoney          m_playerMoney;       //玩家金币
-    umap_completeTask       m_completeTask; //玩家已经完成的任务
+    umap_completeTask       m_completeTask;      //玩家已经完成的任务
     STR_PackPlayerPosition  m_position;          //位置
     umap_lootGoods          m_lootGoods;         //掉落物品
     umap_lootPosition       m_lootPosition;      //掉落物品位置，时间

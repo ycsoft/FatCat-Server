@@ -33,7 +33,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     //将玩家当前数据写进数据库,(位置，任务进度等)
     STR_PackPlayerPosition* playerPosition =   &((*smap)[conn].m_position);
     StringBuilder sbd;
-    sbd << "update t_playerposition set pos_x=" << playerPosition->Pos_x << ",pos_y=" << playerPosition->Pos_y << ",pos_z=" << playerPosition->Pos_z << ",direct=" << playerPosition->Direct <<",mapid=" << playerPosition->MapID << ",actid=" << playerPosition->ActID << " where roleid=" << roleid;
+    sbd << "update t_playerposition set pos_x=" << playerPosition->Pos_x << ",pos_y=" << playerPosition->Pos_y << ",pos_z=" << playerPosition->Pos_z << ",direct=" << playerPosition->Direct <<",mapid=" << playerPosition->MapID << ",actid=" << playerPosition->ActID << " where roleid=" << roleid << ";";
 
     Logger::GetLogger()->Debug(sbd.str());
     if(srv->getDiskDB()->Set(sbd.str()) == -1)
@@ -219,7 +219,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
 
         //写入玩家初始属性
         sbd.Clear();
-        sbd << "insert into t_roleinfo(roleid) values(" << t_roleInfo.RoleInfo.RoleID << ");";
+        sbd << "insert into t_roleinformation(roleid) values(" << t_roleInfo.RoleInfo.RoleID << ");";
         Logger::GetLogger()->Debug(sbd.str());
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
@@ -797,7 +797,7 @@ void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
     StringBuilder sbd;
     hf_uint32 roleid = (*smap)[conn].m_roleid;
 
-    sbd << "delete from t_playerequ where roleid = " << roleid << ";";
+    sbd << "delete from t_playerequattr where roleid = " << roleid << ";";
 
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
@@ -806,7 +806,7 @@ void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
     }
 
     sbd.Clear();
-    sbd << "insert into t_playerequ values(";
+    sbd << "insert into t_playerequattr values(";
     hf_uint32 count = roleEqu->size();
     if(count == 0)
     {
@@ -1026,6 +1026,8 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
     sbd << "insert into t_notpickgoodspos values(";
     for(_umap_lootPosition::iterator it = t_lootPosition->begin(); it != t_lootPosition->end(); it++)
     {
+
+//        printf("插入物品位置，goods:物品掉落时间：%u,%u,当点时间：%u\n", it->second.timep,it->second.continueTime,timep);
         sbd << roleid << "," << it->second.timep + it->second.continueTime - (hf_uint32)timep << "," << it->second.goodsPos.GoodsFlag << "," << it->second.goodsPos.Pos_x << "," << it->second.goodsPos.Pos_y << "," << it->second.goodsPos.Pos_z << "," << it->second.goodsPos.MapID << ")";
         if(count == (i+1))
         {
@@ -1136,7 +1138,7 @@ void PlayerLogin::DeletePlayerGoods(hf_uint32 roleid, hf_uint16 pos)
 void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEquAttr)
 {
     StringBuilder sbd;
-    sbd << "update t_playerequ set physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->HP << ",addmagic = " << upEquAttr->Magic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << " and roleid = " << roleid << ";";
+    sbd << "update t_playerequattr set physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->HP << ",addmagic = " << upEquAttr->Magic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << " and roleid = " << roleid << ";";
      Logger::GetLogger()->Debug(sbd.str());
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
@@ -1149,7 +1151,7 @@ void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEqu
 void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEquAttr)
 {
     StringBuilder sbd;
-    sbd << "insert into t_playerequ values(" << roleid << "," << insEquAttr->EquID << "," << insEquAttr->TypeID << "," << insEquAttr->PhysicalAttack << "," << insEquAttr->PhysicalDefense << "," << insEquAttr->MagicAttack << "," << insEquAttr->MagicDefense << "," << insEquAttr->HP << "," << insEquAttr->Magic << "," << insEquAttr->Durability << ");";
+    sbd << "insert into t_playerequattr values(" << roleid << "," << insEquAttr->EquID << "," << insEquAttr->TypeID << "," << insEquAttr->PhysicalAttack << "," << insEquAttr->PhysicalDefense << "," << insEquAttr->MagicAttack << "," << insEquAttr->MagicDefense << "," << insEquAttr->HP << "," << insEquAttr->Magic << "," << insEquAttr->Durability << ");";
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
@@ -1161,7 +1163,7 @@ void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEq
 void PlayerLogin::DeletePlayerEquAttr(hf_uint32 roleid, hf_uint32 equid)
 {
     StringBuilder sbd;
-    sbd << "delete from t_playerequ where roleid = " << roleid << " and equid = " << equid << ";";
+    sbd << "delete from t_playerequattr where roleid = " << roleid << " and equid = " << equid << ";";
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
@@ -1203,6 +1205,17 @@ void PlayerLogin::DeletePlayerTask(hf_uint32 roleid, hf_uint32 taskid)
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
         Logger::GetLogger()->Error("删除玩家任务失败");
+    }
+}
+
+void PlayerLogin::InsertPlayerCompleteTask(hf_uint32 roleid, hf_uint32 taskid)
+{
+    StringBuilder sbd;
+    sbd << "insert into t_playercompletetask values(" << roleid << "," << taskid << ");";
+     Logger::GetLogger()->Debug(sbd.str());
+    if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
+    {
+        Logger::GetLogger()->Error("插入玩家完成任务失败");
     }
 }
 
@@ -1440,9 +1453,9 @@ void PlayerLogin::CalculationRoleAttribute(STR_RoleInfo* roleInfo, STR_BodyEquip
     {
         roleInfo->Small_Universe = 0;
     }
-    roleInfo->HP = t_roleAttr.Hp;
+    roleInfo->HP = t_roleAttr.MaxHP;
     roleInfo->MaxHP = roleInfo->HP;
-    roleInfo->Magic = t_roleAttr.Magic;
+    roleInfo->Magic = t_roleAttr.MaxMagic;
     roleInfo->MaxMagic = roleInfo->Magic;
     roleInfo->PhysicalDefense = t_roleAttr.PhysicalDefense;
     roleInfo->MagicDefense = t_roleAttr.MagicDefense;
@@ -1543,4 +1556,32 @@ void PlayerLogin::PlayerRelive(TCPConnection::Pointer conn, hf_uint16 mode)
     {
         view_it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
     }
+}
+
+
+//玩家升级，更新属性
+void PlayerLogin::UpdateJobAttr(hf_uint8 profession, hf_uint8 level, STR_RoleInfo* roleInfo)
+{
+    STR_RoleJobAttribute t_jobAttr;
+
+    if(profession == CommonJob && level <= 15)
+        memcpy(&t_jobAttr, &m_common[level], sizeof(STR_RoleJobAttribute));
+    else if(profession == SaleJob)
+        memcpy(&t_jobAttr, &m_sales[level], sizeof(STR_RoleJobAttribute));
+    else if(profession == TechnologyJob)
+        memcpy(&t_jobAttr, &m_technology[level], sizeof(STR_RoleJobAttribute));
+    else if(profession == AdministrationJob)
+        memcpy(&t_jobAttr, &m_administration[level], sizeof(STR_RoleJobAttribute));
+
+    roleInfo->MaxHP = t_jobAttr.MaxHP;
+    roleInfo->MaxMagic = t_jobAttr.MaxMagic;
+    roleInfo->PhysicalDefense = t_jobAttr.PhysicalDefense;
+    roleInfo->MagicDefense = t_jobAttr.MagicDefense;
+    roleInfo->PhysicalAttack = t_jobAttr.PhysicalAttack;
+    roleInfo->MagicAttack = t_jobAttr.MagicAttack;
+    roleInfo->Rigorous = t_jobAttr.Rigorous;
+    roleInfo->Will = t_jobAttr.Will;
+    roleInfo->Wise = t_jobAttr.Wise;
+    roleInfo->Mentality = t_jobAttr.Mentality;
+    roleInfo->Physical_fitness = t_jobAttr.Physical_fitness;
 }

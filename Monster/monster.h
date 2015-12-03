@@ -64,6 +64,8 @@ public:
 
     hf_uint8 JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_PosDis* t_posDis);
 
+    hf_uint8 JudgeSkillDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_PosDis* t_posDis, STR_PackSkillInfo* skillInfo);
+
     hf_float caculateDistanceWithRole(STR_PackPlayerPosition *usr,  STR_MonsterBasicInfo *monster);
 
     //计算玩家与怪物之间的距离
@@ -111,6 +113,9 @@ public:
 
     //计算怪物与追击点之间的距离
     hf_float CalculationPursuitDistance(STR_MonsterInfo* monsterInfo);
+
+    //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
+    void  SearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_float startDis, hf_uint32 roleid);
 
     //返回当前时间
     hf_double GetCurrentTime()

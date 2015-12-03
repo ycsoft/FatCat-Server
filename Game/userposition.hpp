@@ -84,7 +84,7 @@ public:
     }
 
     static void PlayerDirectChange(TCPConnection::Pointer conn, hf_float direct)
-    {
+    {       
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         (*smap)[conn].m_position.Direct = direct;
         BroadCastUserDirect(conn, direct);
@@ -190,7 +190,7 @@ public:
         hf_uint32 roleid = (*smap)[conn].m_roleid;
         STR_PackOtherPlayerDirect playerDirect(roleid, direct);
         umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
-        printf("roleid:%u, direct:%f\n", playerDirect.roleid, playerDirect.direct);
+//        printf("roleid:%u, direct:%f\n", playerDirect.roleid, playerDirect.direct);
 //        cout << "roleid:" << playerDirect.roleid << ",direct:" << playerDirect.direct << endl;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
@@ -206,11 +206,11 @@ public:
         hf_uint32 roleid = (*smap)[conn].m_roleid;
         STR_PackOtherPlayerAction playerAction(roleid, action);
         umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
-        printf("roleid:%u, action:%d\n", playerAction.roleid, playerAction.action);
+//        printf("roleid:%u, action:%d\n", playerAction.roleid, playerAction.action);
 //        cout << "roleid:" << playerAction.roleid << ",action:" << playerAction.action << endl;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
-            cout << "发送玩家动作给周围玩家" << endl;
+//            cout << "发送玩家动作给周围玩家" << endl;
             it->second->Write_all(&playerAction, sizeof(STR_PackOtherPlayerAction));
         }
     }
