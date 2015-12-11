@@ -33,8 +33,11 @@ public:
     void QuerySkillInfo();
     //发送玩家可以使用的技能
     void SendPlayerSkill(TCPConnection::Pointer conn);
-    //计算技能产生的伤害
-    hf_uint32 CalDamage(STR_PackSkillInfo* skillInfo, STR_RoleInfo* roleInfo, STR_MonsterAttackInfo* monster, hf_uint8* type);
+    //计算技能对怪物产生的伤害
+    hf_uint32 CalMonsterDamage(hf_uint8 monsterLevel, STR_PackSkillInfo* skillInfo, STR_RoleInfo* roleInfo, STR_MonsterAttackInfo* monster, hf_uint8* type);
+
+    //计算技能对玩家产生的伤害
+    hf_uint32 CalRoleDamage(hf_uint8 roleLevel, STR_PackSkillInfo* skillInfo, STR_RoleInfo* attackInfo, STR_RoleInfo* aimInfo, hf_uint8* type);
 
     //伤害处理函数
     void DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData* damage, STR_MonsterInfo* monster, STR_PosDis* posDis);
@@ -54,7 +57,7 @@ public:
     void AimItselfCircle(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, hf_double timep);
     //怪物为目标
     void AimMonster(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID);
-    void AimRole(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID);
+    void AimRole(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, hf_double timep, hf_uint32 AimID);
 
     //怪物为圆心
     void AimMonsterCircle(TCPConnection::Pointer conn, STR_PackSkillInfo* skillInfo, double timep, hf_uint32 AimID);

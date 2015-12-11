@@ -8,18 +8,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-//#include "Game/session.hpp"
-#include "hf_types.h"
-
-using namespace hf_types;
-
 #define       TCP_BUFFER_SIZE           1024
-
-typedef struct _STR_Package
-{
-    char data[TCP_BUFFER_SIZE];
-    unsigned int roleid;
-}STR_Package;
 
 using  boost::asio::ip::tcp;
 
@@ -51,15 +40,9 @@ public:
      */
     int   Write_all( void *buff, int size );
 
-
-    void CallBack_Read_Some(const boost::system::error_code &code,size_t size);
-
-
+    void CallBack_Read_Head(const boost::system::error_code &code,size_t size);
+    void CallBack_Read_Body( const boost::system::error_code &code,size_t size);
     void CallBack_Write( const boost::system::error_code &code, size_t transfferd);
-
-    //判断玩家是否登录角色
-    bool JudgePlayerLogin(/*SessionMgr::SessionPointer smap, */TCPConnection::Pointer conn, hf_uint8 flag);
-
     /**
      * @brief Start
      */
@@ -70,17 +53,17 @@ public:
      */
     tcp::socket&        socket()   { return m_socket;}
 
-    boost::mutex          m_write_lock;
+
+
+    boost::mutex         m_write_lock;
     boost::mutex          m_read_lock;
 
 private:
     TCPConnection(boost::asio::io_service &io);
 
-    hf_uint32 currentIndex;
-    hf_char                 m_buf[TCP_BUFFER_SIZE];
-    STR_Package             m_pack;
-
-    void                    ReadSome();
+    char                    m_buf[TCP_BUFFER_SIZE];
+    void                    ReadHead( );
+    void                    ReadBody( );
 
     tcp::socket             m_socket;
 

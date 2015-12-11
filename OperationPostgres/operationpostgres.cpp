@@ -25,13 +25,64 @@ OperationPostgres::~OperationPostgres()
 }
 
 //该函数负责实时将玩家数据写入数据库
-//void OperationPostgres::UpdatePlayerData()
-//{
-//    while(1)
-//    {
+void OperationPostgres::UpdatePostgresData()
+{
+    UpdateMoney t_updateMoney;
+    UpdateLevel t_updateLevel;
+    UpdateExp t_updateExp;
+    UpdateGoods t_updateGoods;
+    UpdateEquAttr t_updateEquAttr;
+    UpdateTask t_updateTask;
+    UpdateCompleteTask t_comTask;
+    while(1)
+    {
+        if(m_UpdateMoney->pop(t_updateMoney))
+            PlayerLogin::UpdatePlayerMoney(&t_updateMoney);
 
-//    }
-//}
+        if(m_UpdateLevel->pop(t_updateLevel))
+            PlayerLogin::UpdatePlayerLevel(&t_updateLevel);
+
+        if(m_UpdateExp->pop(t_updateExp))
+            PlayerLogin::UpdatePlayerExp(&t_updateExp);
+
+
+        if(m_UpdateGoods->pop(t_updateGoods))
+        {
+            if(t_updateGoods.Operate == PostUpdate)
+                PlayerLogin::UpdatePlayerGoods(t_updateGoods.RoleID, &t_updateGoods.Goods);
+            else if(t_updateGoods.Operate == PostInsert)
+                PlayerLogin::InsertPlayerGoods(t_updateGoods.RoleID, &t_updateGoods.Goods);
+            else if(t_updateGoods.Operate == PostDelete)
+                PlayerLogin::DeletePlayerGoods(t_updateGoods.RoleID, t_updateGoods.Goods.Position);
+        }
+
+        if(m_UpdateEquAttr->pop(t_updateEquAttr))
+        {
+            if(t_updateEquAttr.Operate == PostUpdate)
+                PlayerLogin::UpdatePlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
+            else if(t_updateEquAttr.Operate == PostInsert)
+                PlayerLogin::InsertPlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
+            else if(t_updateEquAttr.Operate == PostDelete)
+                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.RoleID, t_updateEquAttr.EquAttr.EquID);
+        }
+
+
+        if(m_UpdateTask->pop(t_updateTask))
+        {
+            if(t_updateTask.Operate == PostUpdate)
+                PlayerLogin::UpdatePlayerTask(t_updateTask.RoleID, &t_updateTask.TaskProcess);
+            else if(t_updateTask.Operate == PostInsert)
+                PlayerLogin::InsertPlayerTask(t_updateTask.RoleID, &t_updateTask.TaskProcess);
+            else if(t_updateTask.Operate == PostDelete)
+                PlayerLogin::DeletePlayerTask(t_updateTask.RoleID, t_updateTask.TaskProcess.TaskID);
+        }
+
+        if(m_UpdateCompleteTask->pop(t_comTask))
+            PlayerLogin::InsertPlayerCompleteTask(t_comTask.RoleID, t_comTask.TaskID);
+
+        usleep(1000);
+    }
+}
 
 void OperationPostgres::PopUpdateMoney()
 {

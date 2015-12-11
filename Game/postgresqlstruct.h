@@ -270,7 +270,7 @@ typedef struct _STR_MonsterAttackInfo
     hf_float  Crit_Rate;        //暴击率
     hf_float  Dodge_Rate;       //闪避率
     hf_float  Hit_Rate;         //命中率
-    hf_uint8  Level;            //等级
+//    hf_uint8  Level;            //等级
 }STR_MonsterAttackInfo;
 
 //14.怪物属性数据包 受攻击后怪物属性，暂时只有HP变化
@@ -294,13 +294,15 @@ typedef struct _STR_RoleAttribute
     STR_PackHead        head;
     hf_uint32 RoleID;
     hf_uint32 HP;
-    _STR_RoleAttribute(hf_uint32 _RoleID, hf_uint32 _HP)
+    hf_uint32 Magic;
+    _STR_RoleAttribute(hf_uint32 _RoleID, hf_uint32 _HP, hf_uint32 _Magic = 0)
     {
         bzero(&head,sizeof(_STR_RoleAttribute));
         head.Flag = /*htons*/(FLAG_RoleAttribute);
         head.Len = /*htons*/(sizeof(_STR_RoleAttribute)-sizeof(STR_PackHead));
         RoleID = _RoleID;
         HP = _HP;
+        Magic = _Magic;
     }
 }STR_RoleAttribute;
 
@@ -760,7 +762,7 @@ typedef struct _STR_PackMonsterDirect
 
 typedef struct _STR_PackMonsterAction
 {
-    _STR_PackMonsterAction(hf_uint32 _monsterID, hf_float _action)
+    _STR_PackMonsterAction(hf_uint32 _monsterID, hf_uint8 _action)
     {
         bzero(&head,sizeof(_STR_PackMonsterAction));
         head.Flag = FLAG_MonsterAction;
@@ -770,7 +772,7 @@ typedef struct _STR_PackMonsterAction
     }
     STR_PackHead head;
     hf_uint32 monsterID;
-    hf_float  action;
+    hf_uint8  action;
 }STR_PackMonsterAction;
 
 
@@ -1754,6 +1756,85 @@ typedef struct _UpdateCompleteTask
     hf_uint32 RoleID;
     hf_uint32 TaskID;
 }UpdateCompleteTask;
+
+
+typedef struct _STR_Consumable
+{
+    hf_uint32  GoodsID;          //物品ID
+    hf_uint32  HP;               //血量瞬间恢复值
+    hf_uint32  Magic;            //魔法值瞬间恢复值
+    hf_uint16  ColdTime;         //冷却时间
+    hf_uint16  StackNumber;      //堆叠数
+    hf_uint16  PersecondHP;      //每秒恢复血量值
+    hf_uint16  PersecondMagic;   //每秒恢复魔法值
+    hf_uint8   UserLevel;        //等级限制
+    hf_uint8   ContinueTime;     //持续时间
+    hf_uint8   Type;             //恢复类别
+}STR_Consumable;
+
+typedef struct _STR_UseBagGoods
+{
+    hf_uint32 goodsid;   //物品ID
+    hf_uint8  pos;       //在背包的位置
+}STR_UseBagGoods;
+
+
+typedef struct _STR_RecoveryHP
+{
+    _STR_RecoveryHP(hf_double _Timep, hf_uint16 _HP, hf_uint8 _Count)
+        :Timep(_Timep),HP(_HP),Count(_Count)
+    {
+
+    }
+    _STR_RecoveryHP()
+    {
+
+    }
+
+    hf_double Timep;    //下次恢复时间
+    hf_uint16 HP;       //恢复血量值
+    hf_uint8  Count;    //剩余恢复时间（次数） 1秒恢复1次
+}STR_RecoveryHP;
+
+typedef struct _STR_RecoveryMagic
+{
+    _STR_RecoveryMagic(hf_double _Timep, hf_uint16 _Magic, hf_uint8 _Count)
+        :Timep(_Timep),Magic(_Magic),Count(_Count)
+    {
+
+    }
+    _STR_RecoveryMagic()
+    {
+
+    }
+
+    hf_double Timep;    //下次恢复时间
+    hf_uint16 Magic;    //恢复魔法值
+    hf_uint8  Count;    //剩余恢复时间（次数） 1秒恢复1次
+}STR_RecoveryMagic;
+
+
+typedef struct _STR_RecoveryHPMagic
+{
+    _STR_RecoveryHPMagic(hf_double _Timep, hf_uint16 _HP, hf_uint16 _Magic, hf_uint8 _Count)
+        :Timep(_Timep),HP(_HP),Magic(_Magic),Count(_Count)
+    {
+
+    }
+    _STR_RecoveryHPMagic()
+    {
+
+    }
+
+    hf_double Timep;    //下次恢复时间
+    hf_uint16 HP;       //恢复血量值
+    hf_uint16 Magic;    //恢复魔法值
+    hf_uint8  Count;    //剩余恢复时间（次数） 1秒恢复1次
+}STR_RecoveryHPMagic;
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

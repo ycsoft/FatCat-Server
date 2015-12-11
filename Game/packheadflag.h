@@ -43,6 +43,7 @@
 #define FLAG_StrengthenEqu           143    //强化装备时
 #define FLAG_UseEqu                  144    //使用装备时
 
+#define FLAG_UseBagGoods             145    //使用背包物品恢复属性
 
 #define FLAG_BuyGoods                154    //从商店购买物品
 #define FLAG_SellGoods               155    //出售物品到商店

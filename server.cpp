@@ -16,8 +16,8 @@
 #include "OperationGoods/operationgoods.h"
 #include "OperationPostgres/operationpostgres.h"
 #include "Game/userposition.hpp"
-#include "Game/cmdparse.h"
 #include "GameChat/gamechat.h"
+#include "Game/cmdparse.h"
 
 #include "server.h"
 
@@ -27,7 +27,7 @@ Server* Server::m_instance = NULL;
 Server::Server() :
     m_MemDB(new MemDBManager),
     m_DiskDB(new DiskDBManager),
-    m_task_pool(50),
+    m_task_pool(ThreadCount),
     m_memory_factory(CHUNK_SIZE,CHUNK_COUNT),
     m_monster( new Monster()),
     m_playerLogin( new PlayerLogin),
@@ -37,8 +37,9 @@ Server::Server() :
     m_gameInterchange(new GameInterchange),
     m_operationGoods(new OperationGoods),
     m_operationPostgres(new OperationPostgres),
-    m_cmdParse(new CmdParse),
-    m_gameChat(new GameChat)
+//    m_cmdParse(new CmdParse),
+    m_gameChat(new GameChat),
+    m_package(new boost::lockfree::queue<STR_Package>(PackageCount))
 {
 
 }
@@ -55,7 +56,7 @@ Server::~Server()
     delete m_gameInterchange;
     delete m_operationGoods;
     delete m_operationPostgres;
-    delete m_cmdParse;
+//    delete m_cmdParse;
     delete m_gameChat;
 }
 
@@ -93,6 +94,7 @@ void Server::InitDB()
    m_gameTask->QueryTaskData();
    m_gameAttack->QuerySkillInfo();
    m_operationGoods->QueryGoodsPrice();
+   m_operationGoods->QueryConsumableAttr();
    m_operationGoods->QueryEquAttr();
    m_operationGoods->SetEquIDInitialValue();
    m_playerLogin->QueryRoleJobAttribute();
@@ -102,45 +104,15 @@ void Server::InitDB()
    GameAttack* t_attack = srv->GetGameAttack();
    Monster* t_monster = srv->GetMonster();
    OperationPostgres* t_opePost = srv->GetOperationPostgres();
-   CmdParse* t_cmdParse = srv->GetCmdParse();
 
-   srv->RunTask(boost::bind(&CmdParse::PopAskTask, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopQuitTask, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopAskFinishTask, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopAskTaskExeDlg, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopAskTaskExeDlgFinish, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopAskTaskData, t_cmdParse));
-
-   srv->RunTask(boost::bind(&CmdParse::PopAddFriend, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopDeleteFriend, t_cmdParse));
-   srv->RunTask(boost::bind(&CmdParse::PopAddFriendReturn, t_cmdParse));
-
-    srv->RunTask(boost::bind(&CmdParse::PopPickGoods, t_cmdParse));
-    srv->RunTask(boost::bind(&CmdParse::PopRemoveGoods, t_cmdParse));
-    srv->RunTask(boost::bind(&CmdParse::PopMoveGoods, t_cmdParse));
-    srv->RunTask(boost::bind(&CmdParse::PopBuyGoods, t_cmdParse));
-    srv->RunTask(boost::bind(&CmdParse::PopSellGoods, t_cmdParse));
-
-    srv->RunTask(boost::bind(&CmdParse::PopPlayerDirectChange, t_cmdParse));
-    srv->RunTask(boost::bind(&CmdParse::PopPlayerActionChange, t_cmdParse));
-    srv->RunTask(boost::bind(&CmdParse::PopPlayerMove, t_cmdParse));
-
+   srv->RunTask(boost::bind(&Server::PopPackage, srv));
    srv->RunTask(boost::bind(&Monster::Monsteractivity, t_monster));
    //技能伤害线程
    srv->RunTask(boost::bind(&GameAttack::RoleSkillAttack, t_attack));
-
    //删除过了时间的掉落物品
    srv->RunTask(boost::bind(&GameAttack::DeleteOverTimeGoods, t_attack));
-
    //操作数据库更新用户数据
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateMoney, t_opePost));
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateLevel, t_opePost));
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateExp, t_opePost));
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateGoods, t_opePost));
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateEquAttr, t_opePost));
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateTask, t_opePost));
-   srv->RunTask(boost::bind(&OperationPostgres::PopUpdateCompleteTask, t_opePost));
-
+   srv->RunTask(boost::bind(&OperationPostgres::UpdatePostgresData, t_opePost));
 }
 
 //
@@ -169,3 +141,27 @@ Server* Server::GetInstance()
     return m_instance;
 }
 
+void Server::PopPackage()
+{
+    STR_Package pack;
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    while(1)
+    {
+        if(m_package->pop(pack))
+        {
+            TCPConnection::Pointer conn = (*t_roleSock)[pack.roleid];
+            if(conn == NULL)
+            {
+                continue;
+            }
+            else
+            {
+                CommandParse(conn, pack.data);
+            }
+        }
+        else
+        {
+            usleep(100);
+        }
+    }
+}

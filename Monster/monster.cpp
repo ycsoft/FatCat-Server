@@ -289,7 +289,7 @@ void Monster::CreateMonster()
         t_MonsterAttackInfo.Crit_Rate = iter->second.Crit_Rate;
         t_MonsterAttackInfo.Dodge_Rate = iter->second.Dodge_Rate;
         t_MonsterAttackInfo.Hit_Rate = iter->second.Hit_Rate;
-        t_MonsterAttackInfo.Level = iter->second.Level;
+//        t_MonsterAttackInfo.Level = iter->second.Level;
 
 
         (*m_monsterAttack)[t_monsterInfo.monster.MonsterTypeID] = t_MonsterAttackInfo;
@@ -340,7 +340,10 @@ void Monster::QueryMonsterLoot()
 //怪物运动
 void Monster::Monsteractivity()
 {
-//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+
+
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
     umap_monsterInfo t_monsterBasic = Server::GetInstance()->GetMonster()->GetMonsterBasic();
     umap_monsterSpawns* monsterSpawns = Server::GetInstance()->GetMonster()->GetMonsterSpawns();
     umap_monsterViewRole  monsterViewRole = Server::GetInstance()->GetMonster()->GetMonsterViewRole();
@@ -354,8 +357,8 @@ void Monster::Monsteractivity()
     STR_PackDamageData t_damageData;
     while(1)
     {
-        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+//        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+//        umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
         hf_double currentTime = GetCurrentTime();
         for(_umap_monsterInfo::iterator it = t_monsterBasic->begin(); it != t_monsterBasic->end(); it++)
         {
@@ -416,6 +419,19 @@ void Monster::Monsteractivity()
 
             hf_uint32 roleid = it->second.hatredRoleid;
             _umap_roleSock::iterator role_it = t_roleSock->find(it->second.hatredRoleid);
+
+
+//            if ( t_roleSock->size() == 0)
+//            {
+//                cout<<"No Online User!"<<endl;
+//                umap_roleSock t_role = SessionMgr::Instance()->GetRoleSock();
+//                int sz =t_role->size();
+//                cout<<t_role->size()<<endl;
+//                continue;
+//            }else{
+//                _umap_roleSock::iterator r_it = t_roleSock->begin();
+//                cout<<r_it->first<<endl;
+//            }
             if(role_it == t_roleSock->end()) //确定新目标 玩家已经退出游戏,暂时让其自由活动
             {
                 //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
@@ -676,7 +692,7 @@ void Monster::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
 }
 
 //发送施法效果给周围玩家
-void Monster::SendSkillEffectToViewRole(STR_PackSkillAimEffect* skillEffect)
+void Monster::SendSkillEffectToMonsterViewRole(STR_PackSkillAimEffect* skillEffect)
 {
     _umap_viewRole* t_viewRole = &(*m_monsterViewRole)[skillEffect->AimID];
 

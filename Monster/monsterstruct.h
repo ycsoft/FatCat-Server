@@ -73,22 +73,6 @@ public:
     {
         m_mtx.lock();
         hatredRoleid = _hatredRoleid;
-//        cout << "修改前怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
-//        cout << "修改前怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
-//        cout << "移动速度" << monster.MoveRate << endl;
-
-//        hf_float dx = monster.Target_x - monster.Current_x;
-//        hf_float dz = monster.Target_z - monster.Current_z;
-//        hf_float dis = sqrt(dx*dx + dz*dz);
-//        hf_double userTime = dis/(hf_double)(monster.MoveRate/100*MonsterMoveDistance);
-
-//        printf("怪物受到攻击时的时间timep:%lf\n", timep);
-//        printf("怪物目标时间aimTime:%lf\n",aimTime);
-//        cout << "要用的时间" << userTime << endl;
-
-//        monster.Current_x = monster.Target_x - (aimTime - currentTime)/userTime * dx;
-//        monster.Current_z = monster.Target_z - (aimTime - currentTime)/userTime * dz;
-
         monster.Current_x = posDis->Current_x;
         monster.Current_z = posDis->Current_z;
 
@@ -120,10 +104,6 @@ public:
             startTime = currentTime;//test
             aimTime = currentTime;
         }
-
-//        cout << "修改后怪物当前坐标点" << monster.Current_x << "," << monster.Current_z << endl;
-//        cout << "修改后怪物要走到的目标点:" << monster.Target_x << "," << monster.Target_z << endl;
-//        cout << "移动速度" << monster.MoveRate << endl;
         m_mtx.unlock();
     }
 
@@ -328,7 +308,7 @@ public:
         m_mtx.unlock();
     }
 
-    //怪物向做移动一格
+    //怪物向左移动一格
     void MonsterMoveLeft(hf_double currentTime)
     {
         m_mtx.lock();

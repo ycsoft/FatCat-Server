@@ -183,7 +183,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
     _umap_taskProcess::iterator it = playerAcceptTask->find(finishTask->TaskID);
     if(it == playerAcceptTask->end()) //没接取当前任务
     {
-//        Server::GetInstance()->free(finishTask);
+        Server::GetInstance()->free(finishTask);
         return;
     }
 
@@ -191,7 +191,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
     {
         if(process_it->AimAmount != process_it->FinishCount)
         {
-//            Server::GetInstance()->free(finishTask);
+            Server::GetInstance()->free(finishTask);
             return;
         }
     }
@@ -206,7 +206,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
         }
         if(!TaskFinishGoodsReward(conn, finishTask)) //物品奖励
         {
-//            Server::GetInstance()->free(finishTask);
+            Server::GetInstance()->free(finishTask);
             return;
         }
         TaskFinishTaskReward(conn, finishTask);  //任务奖励
@@ -222,7 +222,7 @@ void GameTask::AskFinishTask(TCPConnection::Pointer conn, STR_FinishTask* finish
         UpdateCollectGoodsTaskProcess(conn, *reduce_it);
     }
     (*smap)[conn].m_playerAcceptTask->erase(it);
-//    Server::GetInstance()->free(finishTask);
+    Server::GetInstance()->free(finishTask);
 }
 
 bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask* finishTask)
@@ -674,6 +674,7 @@ void GameTask::AskTaskExeDialog(TCPConnection::Pointer conn, STR_AskTaskExeDlg* 
     umap_exeDialogue::iterator it = (*m_exeDialogue).find(exeDlg->TaskID);
     if(it == m_exeDialogue->end())
     {
+        Server::GetInstance()->free(exeDlg);
         return;
     }
     for(vector<STR_TaskExeDlg>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
@@ -695,6 +696,7 @@ void GameTask::AskTaskExeDialog(TCPConnection::Pointer conn, STR_AskTaskExeDlg* 
             Server::GetInstance()->free(buff);
         }
     }
+    Server::GetInstance()->free(exeDlg);
 }
 
 void GameTask::TaskExeDialogFinish(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg)
@@ -704,6 +706,7 @@ void GameTask::TaskExeDialogFinish(TCPConnection::Pointer conn, STR_AskTaskExeDl
     _umap_taskProcess::iterator it = t_task->find(exeDlg->TaskID);
     if(it == t_task->end())
     {
+        Server::GetInstance()->free(exeDlg);
         return;
     }
     for(vector<STR_TaskProcess>::iterator iter = it->second.begin(); iter != it->second.end(); iter++)
@@ -712,6 +715,7 @@ void GameTask::TaskExeDialogFinish(TCPConnection::Pointer conn, STR_AskTaskExeDl
         {
             if(iter->FinishCount == 1)
             {
+                Server::GetInstance()->free(exeDlg);
                 return;
             }
             iter->FinishCount = 1;
@@ -719,6 +723,7 @@ void GameTask::TaskExeDialogFinish(TCPConnection::Pointer conn, STR_AskTaskExeDl
             conn->Write_all(&t_taskProcess, sizeof(STR_PackTaskProcess));
         }
     }
+    Server::GetInstance()->free(exeDlg);
 }
 
  //发送已接取的任务进度,和任务概述
@@ -826,14 +831,16 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
     //发送玩家所在地图上的任务
     for(_umap_taskProfile::iterator it = m_taskProfile->begin(); it != m_taskProfile->end(); it++)
     {
+        cout << "任务编号：" << it->first << endl;
         _umap_taskProcess::iterator iter = playerAcceptTask->find(it->first);
         //是否已经完成过了，暂时判断完成了就不再发送，以后根据任务是否可重复接取判断
+        if(iter != playerAcceptTask->end()) //已接取
+            continue;
         _umap_completeTask::iterator com_it = playerCompleteTask->find(it->first);
         if(com_it != playerCompleteTask->end())
             continue;
 
-        if(iter != playerAcceptTask->end()) //已接取
-            continue;
+
 
         STR_TaskPremise t_taskpremise = (*m_taskPremise)[it->first];
         if(t_level < t_taskpremise.Level)  //等级符合

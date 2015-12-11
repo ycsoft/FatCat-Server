@@ -31,7 +31,8 @@ SOURCES += main.cpp \
 #    Monster/monsterstruct.cpp
     GameChat/gamechat.cpp \
     fileOperation/fileoperation.cpp \
-    PlayerTrading/playertrading.cpp
+    PlayerTrading/playertrading.cpp \
+#    Game/log.cpp \
 
 
 
@@ -40,9 +41,9 @@ include(deployment.pri)
 qtcAddDeployment()
 
 HEADERS += \
-    Game/cmdparse.hpp \
+#    Game/cmdparse.hpp \
     Game/cmdtypes.h \
-    Game/log.hpp \
+#    Game/log.hpp \
     Game/packheadflag.h \
     Game/postgresqlstruct.h \
     Game/session.hpp \
@@ -74,7 +75,10 @@ HEADERS += \
     GameChat/gamechat.h \
     Game/rolestruct.h \
     fileOperation/fileoperation.h \
-    PlayerTrading/playertrading.h
+    PlayerTrading/playertrading.h \
+    Game/log.hpp \
+#    Game/log.h
+
 
 
 
@@ -89,4 +93,8 @@ LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_system.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_thread.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_log.a
 
+LIBS += /usr/local/lib/liblog4c.a
 QMAKE_LFLAGS += -pthread
+
+#DISTFILES += \
+#    Game/log4crc

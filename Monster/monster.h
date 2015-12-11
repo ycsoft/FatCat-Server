@@ -106,7 +106,7 @@ public:
     void SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt);
 
     //发送施法效果给周围玩家
-    void SendSkillEffectToViewRole(STR_PackSkillAimEffect* skillEffect);
+    void SendSkillEffectToMonsterViewRole(STR_PackSkillAimEffect* skillEffect);
 
     //计算方向
     hf_float CalculationDirect(hf_float dx, hf_float dz);

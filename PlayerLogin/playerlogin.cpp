@@ -317,6 +317,7 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
             t_PackResult.result = RESULT_SUCCESS;
             conn->Write_all(&t_PackResult, sizeof(STR_PackResult));
 
+            printf("用户登录成功:%s\n", reg->userName);
             SessionMgr::Instance()->SaveSession(conn, reg->userName);
             SessionMgr::Instance()->NameSockAdd(reg->userName, conn);
             //发送角色列表
@@ -408,8 +409,8 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         }
 
 
-        Logger::GetLogger()->Debug("Send Position data.....");
-        UserPosition::Position_push(conn, roleid);
+//        Logger::GetLogger()->Debug("Send Position data.....");
+//        UserPosition::Position_push(conn, roleid);
 
         SendRoleExperence(conn);            //发送角色经验
         SendFriendList(conn, roleid);       //发送好友列表
@@ -427,6 +428,14 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         srv->GetGameTask()->SendPlayerViewTask(conn);      //玩家可接任务        
         srv->GetTeamFriend()->SendAskAddFriend(conn);      //离线的添加好友请求
         printf("登录数据发送完成\n");
+
+
+        //test
+//        hf_double* timep = &(*(*smap)[conn].m_skillTime)[100];
+//        printf("%lf\n", *timep);
+//        *timep = 1000.56;
+//        timep = &(*(*smap)[conn].m_skillTime)[100];
+//        printf("%lf\n", *timep);
     }
 }
 
@@ -510,6 +519,7 @@ void PlayerLogin::SendRoleList(TCPConnection::Pointer conn, hf_char* userID)
             memcpy(buff, &t_packHead, sizeof(STR_PackHead));
             conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
         }
+        printf("角色列表发送成功:namebuff = %s\n", namebuff);
         srv->free(buff);
     }   
 }
@@ -709,14 +719,14 @@ void PlayerLogin::SendRoleNotPickGoods(TCPConnection::Pointer conn, hf_uint32 Ro
         conn->Write_all(buff, t_packHead.Len + sizeof(STR_PackHead));
     }
 
-    sbd << "delete from t_notpickgoodspos where roleid = " << RoleID << ";";
-    Logger::GetLogger()->Debug(sbd.str());
-    srv->getDiskDB()->Set(sbd.str());
+//    sbd << "delete from t_notpickgoodspos where roleid = " << RoleID << ";";
+//    Logger::GetLogger()->Debug(sbd.str());
+//    srv->getDiskDB()->Set(sbd.str());
 
-    sbd.Clear();
-    sbd << "delete from t_notpickgoods where roleid = " << RoleID << ";";
-    Logger::GetLogger()->Debug(sbd.str());
-    srv->getDiskDB()->Set(sbd.str());
+//    sbd.Clear();
+//    sbd << "delete from t_notpickgoods where roleid = " << RoleID << ";";
+//    Logger::GetLogger()->Debug(sbd.str());
+//    srv->getDiskDB()->Set(sbd.str());
 
     srv->free(buff);
 }
@@ -1585,3 +1595,4 @@ void PlayerLogin::UpdateJobAttr(hf_uint8 profession, hf_uint8 level, STR_RoleInf
     roleInfo->Mentality = t_jobAttr.Mentality;
     roleInfo->Physical_fitness = t_jobAttr.Physical_fitness;
 }
+

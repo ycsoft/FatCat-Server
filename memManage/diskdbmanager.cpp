@@ -128,9 +128,9 @@ hf_int32 DiskDBManager::GetPlayerRoleList(ResRoleList* RoleList,const char *str)
     ExecStatusType t_ExecStatusType = PQresultStatus((t_PGresult));
 
     StringBuilder sbd;
-    sbd<<"Function GetPlayerRoleList :" << str;
+//    sbd<<"Function GetPlayerRoleList :" << str;
 
-    Logger::GetLogger()->Debug(sbd.str());
+//    Logger::GetLogger()->Debug(sbd.str());
     if(t_ExecStatusType != PGRES_TUPLES_OK) // PGRES_TUPLES_OK表示成功执行一个返回数据的查询查询
     {
         printf("PQexec error\n");
@@ -261,7 +261,7 @@ hf_int32 DiskDBManager:: GetMonsterSpawns(umap_monsterSpawns* monsterSpawns)
     {
         std::ostringstream  os;
         os<<"Function : GetMonsterSpawns SQL: '"<<str<<"'' Execute Error";
-        Logger::GetLogger()->Error(os.str());
+//        Logger::GetLogger()->Error(os.str());
         return -1;
     }
     else
@@ -1124,7 +1124,7 @@ hf_int32 DiskDBManager::GetNotPickGoods(umap_lootGoods lootGoods, const hf_char*
 }
 
 //查询物品价格
-hf_int32 DiskDBManager::GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char* str)
+hf_int32 DiskDBManager::GetGoodsPrice(umap_goodsPrice* goodsPrice, const hf_char* str)
 {
     m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
@@ -1144,6 +1144,40 @@ hf_int32 DiskDBManager::GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char*
             t_goodsPrice.BuyPrice = atoi(PQgetvalue(t_PGresult, i, 1));
             t_goodsPrice.SellPrice = atoi(PQgetvalue(t_PGresult, i, 2));
             (*goodsPrice)[t_goodsPrice.GoodsID] = t_goodsPrice;
+        }
+        return t_row;
+    }
+}
+
+//查询消耗品价格
+hf_int32 DiskDBManager::GetConsumableAttr(umap_consumable* consumable, const hf_char* str)
+{
+    m_mtx.lock();
+    PGresult* t_PGresult = PQexec(m_PGconn, str);
+    m_mtx.unlock();
+    ExecStatusType t_status = PQresultStatus(t_PGresult);
+    if(t_status != PGRES_TUPLES_OK)
+    {
+        return -1;
+    }
+    else
+    {
+        hf_int32 t_row = PQntuples(t_PGresult);
+        STR_Consumable t_consumable;
+        for(hf_int32 i = 0; i < t_row; i++)
+        {
+            t_consumable.GoodsID = atoi(PQgetvalue(t_PGresult, i, 0));
+            t_consumable.HP = atoi(PQgetvalue(t_PGresult, i, 1));
+            t_consumable.Magic = atoi(PQgetvalue(t_PGresult, i, 2));
+            t_consumable.ColdTime = atoi(PQgetvalue(t_PGresult, i, 3));
+            t_consumable.StackNumber = atoi(PQgetvalue(t_PGresult, i, 4));
+            t_consumable.PersecondHP = atoi(PQgetvalue(t_PGresult, i, 5));
+            t_consumable.PersecondMagic = atoi(PQgetvalue(t_PGresult, i, 6));
+            t_consumable.UserLevel = atoi(PQgetvalue(t_PGresult, i, 7));
+            t_consumable.ContinueTime = atoi(PQgetvalue(t_PGresult, i, 8));
+            t_consumable.Type = atoi(PQgetvalue(t_PGresult, i, 9));
+
+            (*consumable)[t_consumable.GoodsID] = t_consumable;
         }
         return t_row;
     }
@@ -1419,7 +1453,7 @@ hf_int32 DiskDBManager::GetPlayerCompleteTask(umap_completeTask completeTask, hf
         hf_uint32 taskid = 0;
         for(hf_int32 i = 0; i < t_row; i++)
         {
-            taskid = atoi(PQgetvalue(t_PGresult, 0, 0));
+            taskid = atoi(PQgetvalue(t_PGresult, i, 0));
             (*completeTask)[taskid] = taskid;
         }
         return t_row;

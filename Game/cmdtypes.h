@@ -116,8 +116,22 @@ typedef boost::unordered_map<hf_uint32, LootPositionTime> _umap_lootPosition;
 typedef boost::shared_ptr<_umap_lootPosition> umap_lootPosition;
 
 //物品价格
-typedef boost::unordered_map<hf_uint32, STR_GoodsPrice> _umap_goodsPrice;
-typedef boost::shared_ptr<_umap_goodsPrice> umap_goodsPrice;
+typedef boost::unordered_map<hf_uint32, STR_GoodsPrice> umap_goodsPrice;
+//typedef boost::shared_ptr<_umap_goodsPrice> umap_goodsPrice;
+
+//消耗品
+typedef boost::unordered_map<hf_uint32, STR_Consumable> umap_consumable;
+
+typedef boost::unordered_map<TCPConnection::Pointer, STR_RecoveryHP> _umap_recoveryHP;
+typedef boost::shared_ptr<_umap_recoveryHP> umap_recoveryHP;
+
+typedef boost::unordered_map<TCPConnection::Pointer, STR_RecoveryMagic> _umap_recoveryMagic;
+typedef boost::shared_ptr<_umap_recoveryMagic> umap_recoveryMagic;
+
+typedef boost::unordered_map<TCPConnection::Pointer, STR_RecoveryHPMagic> _umap_recoveryHPMagic;
+typedef boost::shared_ptr<_umap_recoveryHPMagic> umap_recoveryHPMagic;
+
+
 
 //怪物刷新点 <怪物ID,刷新点ID>
 typedef boost::unordered_map<hf_uint32, hf_uint32> umap_monsterSpawnsPos;

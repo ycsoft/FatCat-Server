@@ -24,7 +24,6 @@ public:
 private:
 
     void        CallBack_Accept( TCPConnection::Pointer conn, const boost::system::error_code &ec);
-    bool setSockKeepAlive(int Sock);
 
     tcp::acceptor               m_acceptor;
     //boost::asio::io_service::strand     m_strand;

@@ -13,7 +13,8 @@
 hf_uint32 OperationGoods::m_equipmentID = EquipMentID;
 
 OperationGoods::OperationGoods()
-    :m_goodsPrice(new _umap_goodsPrice)
+    :m_goodsPrice(new umap_goodsPrice)
+    ,m_consumableAttr(new umap_consumable)
     ,m_equAttr(new umap_equAttr)
 {
 
@@ -21,11 +22,9 @@ OperationGoods::OperationGoods()
 
 OperationGoods::~OperationGoods()
 {
-    if(m_equAttr)
-    {
-        delete m_equAttr;
-        m_equAttr = NULL;
-    }
+    delete m_goodsPrice;
+    delete m_consumableAttr;
+    delete m_equAttr;
 }
 
 //得到装备编号
@@ -279,14 +278,14 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* pic
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*(*smap)[conn].m_interchage).isInchange == true) //处于交易状态
     {
-//        Server::GetInstance()->free(pickGoods);
+        Server::GetInstance()->free(pickGoods);
         return;
     }
     umap_lootGoods lootGoods = (*smap)[conn].m_lootGoods;
     _umap_lootGoods::iterator loot_it = lootGoods->find(pickGoods->GoodsFlag);
     if(loot_it == lootGoods->end())  //掉落者不存在
     {
-//        Server::GetInstance()->free(pickGoods);
+        Server::GetInstance()->free(pickGoods);
         return;
     }
 
@@ -328,6 +327,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* pic
             {
                 STR_PackPickGoodsResult t_pickResult(pickGoods->GoodsFlag, pickGoods->LootGoodsID, 0, PICK_GOODNOTEXIST);
                 conn->Write_all(&t_pickResult, sizeof(STR_PackPickGoodsResult));
+                Server::GetInstance()->free(pickGoods);
                 return;
             }
         }
@@ -336,6 +336,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* pic
         {
             lootGoods->erase(loot_it);
         }
+        Server::GetInstance()->free(pickGoods);
         return;
     }
 
@@ -387,6 +388,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* pic
         lootGoods->erase(loot_it);
         cout << "erase:" << loot_it->first << endl;
     }
+    Server::GetInstance()->free(pickGoods);
 }
 
 //查询物品价格
@@ -403,7 +405,7 @@ void OperationGoods::QueryGoodsPrice()
     }
 
     sbd.Clear();
-    sbd << "select goodsid,buyprice,sellprice from t_consumableprice;";
+    sbd << "select goodsid,buyprice,sellprice from t_consumable;";
     count = db->GetGoodsPrice(m_goodsPrice, sbd.str());
     if ( count < 0 )
     {
@@ -417,6 +419,20 @@ void OperationGoods::QueryGoodsPrice()
     if ( count < 0 )
     {
         Logger::GetLogger()->Error("Query materia price error");
+        return;
+    }
+}
+
+//查询物品信息
+void OperationGoods::QueryConsumableAttr()
+{
+    DiskDBManager *db = Server::GetInstance()->getDiskDB();
+    StringBuilder       sbd;
+    sbd << "select goodsid,hp,magic,coldtime,stacknumber,persecondhp,persecondmagic,userlevel,continuetime ,type from t_consumable;";
+    hf_int32 count = db->GetConsumableAttr(m_consumableAttr, sbd.str());
+    if ( count < 0 )
+    {
+        Logger::GetLogger()->Error("Query consumableattr error");
         return;
     }
 }
@@ -445,12 +461,12 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
         _umap_roleEqu::iterator equ_it = (*smap)[conn].m_playerEqu->find(removeGoods->GoodsID);
         if(equ_it == (*smap)[conn].m_playerEqu->end())
         {
-//            Server::GetInstance()->free(removeGoods);
+            Server::GetInstance()->free(removeGoods);
             return;
         }
         if((*smap)[conn].m_goodsPosition[removeGoods->Position] == POS_LOCKED)
         {
-//            Server::GetInstance()->free(removeGoods);
+            Server::GetInstance()->free(removeGoods);
             return;
         }
 
@@ -466,7 +482,7 @@ void OperationGoods::RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGo
 
         Server::GetInstance()->GetGameTask()->UpdateCollectGoodsTaskProcess(conn, equ_it->second.goods.TypeID);
         (*smap)[conn].m_playerEqu->erase(equ_it);
-//        Server::GetInstance()->free(removeGoods);
+        Server::GetInstance()->free(removeGoods);
         return;
     }
 
@@ -505,20 +521,20 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
 {
     if(moveGoods->CurrentPos == moveGoods->TargetPos)
     {
-//        Server::GetInstance()->free(moveGoods);
+        Server::GetInstance()->free(moveGoods);
         return;
     }
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*smap)[conn].m_goodsPosition[moveGoods->CurrentPos] == POS_LOCKED || (*smap)[conn].m_goodsPosition[moveGoods->TargetPos] == POS_LOCKED)  //当前位置或者目标位置商品处于锁定状态，不可以移动
     {
-//        Server::GetInstance()->free(moveGoods);
+        Server::GetInstance()->free(moveGoods);
         return;
     }
 
     if(moveGoods->CurrentGoodsID != moveGoods->TargetGoodsID)
     {
         ExchangeBagGoods(conn, moveGoods);
-//        Server::GetInstance()->free(moveGoods);
+        Server::GetInstance()->free(moveGoods);
         return;
     }
 
@@ -527,7 +543,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
     _umap_roleGoods::iterator cur_goodsID = playerBagGoods->find(moveGoods->CurrentGoodsID);
     if(cur_goodsID == playerBagGoods->end())
     {
-//        Server::GetInstance()->free(moveGoods);
+        Server::GetInstance()->free(moveGoods);
         return;
     }
 
@@ -537,7 +553,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
         {
             if(moveGoods->Count > curPos->Count) //移动数量大于当前数量返回
             {
-//                Server::GetInstance()->free(moveGoods);
+                Server::GetInstance()->free(moveGoods);
                 return;
             }
             break;
@@ -545,7 +561,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
         curPos++;
         if(curPos == cur_goodsID->second.end())
         {
-//            Server::GetInstance()->free(moveGoods);
+            Server::GetInstance()->free(moveGoods);
             return;
         }
     }
@@ -557,7 +573,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
         tarPos++;
         if(tarPos == cur_goodsID->second.end()) //没找到目标位置
         {
-//            Server::GetInstance()->free(moveGoods);
+            Server::GetInstance()->free(moveGoods);
             return;
         }
     }
@@ -623,7 +639,7 @@ void OperationGoods::MoveBagGoods(TCPConnection::Pointer conn, STR_MoveBagGoods*
     memcpy(buff, &t_packHead, sizeof(STR_PackHead));
     conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     Server::GetInstance()->free(buff);
-//    Server::GetInstance()->free(moveGoods);
+    Server::GetInstance()->free(moveGoods);
 }
 
 
@@ -728,20 +744,20 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*(*smap)[conn].m_interchage).isInchange == true)
     {
-//        Server::GetInstance()->free(buyGoods);
+        Server::GetInstance()->free(buyGoods);
         return;
     }
     umap_roleMoney t_playerMoney = (*smap)[conn].m_playerMoney;
-    _umap_goodsPrice::iterator price_it = m_goodsPrice->find(buyGoods->GoodsID);
+    umap_goodsPrice::iterator price_it = m_goodsPrice->find(buyGoods->GoodsID);
     if(price_it == m_goodsPrice->end())  //购买的商品不存在
     {
-//        Server::GetInstance()->free(buyGoods);
+        Server::GetInstance()->free(buyGoods);
         return;
     }
     if(price_it->second.BuyPrice == 0)   //不可买物品
     {
         Logger::GetLogger()->Debug("此物品不可购买");
-//        Server::GetInstance()->free(buyGoods);
+        Server::GetInstance()->free(buyGoods);
         return;
     }
 
@@ -751,7 +767,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
         t_result.Flag = FLAG_BuyGoods;
         t_result.result = Buy_NotEnoughMoney;
         conn->Write_all(&t_result, sizeof(STR_PackOtherResult));
-//        Server::GetInstance()->free(buyGoods);
+        Server::GetInstance()->free(buyGoods);
         return;
     }
 
@@ -763,7 +779,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
     {
         BuyOtherGoods(conn, buyGoods, &(*t_playerMoney)[Money_1], price_it->second.BuyPrice);
     }
-//    Server::GetInstance()->free(buyGoods);
+    Server::GetInstance()->free(buyGoods);
 }
 
 //出售物品
@@ -772,7 +788,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     if((*(*smap)[conn].m_interchage).isInchange == true)
     {
-//        Server::GetInstance()->free(sellGoods);
+        Server::GetInstance()->free(sellGoods);
         return;
     }
 
@@ -786,7 +802,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
         _umap_roleEqu::iterator equ_it = playerEqu->find(sellGoods->GoodsID);
         if(equ_it == playerEqu->end())
         {
-//            Server::GetInstance()->free(sellGoods);
+            Server::GetInstance()->free(sellGoods);
             return;
         }
         STR_GoodsPrice* equPrice = &(*m_goodsPrice)[equ_it->second.goods.TypeID]; //装备价格
@@ -808,7 +824,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
         conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
         t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
 
-//        Server::GetInstance()->free(sellGoods);
+        Server::GetInstance()->free(sellGoods);
         return;
     }
 
@@ -816,7 +832,7 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
     _umap_roleGoods::iterator goods_it = t_playerGoods->find(sellGoods->GoodsID);
     if(goods_it == t_playerGoods->end()) //背包没有这种物品
     {
-//        Server::GetInstance()->free(sellGoods);
+        Server::GetInstance()->free(sellGoods);
         return;
     }
     for(vector<STR_Goods>::iterator pos_it = goods_it->second.begin(); pos_it != goods_it->second.end();)
@@ -842,13 +858,13 @@ void OperationGoods::SellGoods(TCPConnection::Pointer conn, STR_SellGoods* sellG
             STR_PackPlayerMoney t_money(&(*t_playerMoney)[Money_1]);
             conn->Write_all(&t_money, sizeof(STR_PackPlayerMoney));
             t_post->PushUpdateMoney(roleid, &(*t_playerMoney)[Money_1]);  //将金钱变动插入到list
-//            Server::GetInstance()->free(sellGoods);
+            Server::GetInstance()->free(sellGoods);
             return;
         }
         pos_it++;
         if(pos_it == goods_it->second.end()) //到结尾了没找到这种物品
         {
-//            Server::GetInstance()->free(sellGoods);
+            Server::GetInstance()->free(sellGoods);
             return;
         }
     }
@@ -1613,4 +1629,172 @@ void OperationGoods::DeleteEquAttrToRole(STR_RoleInfo* roleInfo, hf_uint32 equTy
     roleInfo->Wise -= equAttr->Wise;
     roleInfo->Mentality -= equAttr->Mentality;
     roleInfo->Physical_fitness -= equAttr->Physical_fitness;
+}
+
+
+//使用背包物品恢复属性
+void OperationGoods::UseBagGoods(TCPConnection::Pointer conn, hf_uint32 goodsid, hf_uint8 pos)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_roleGoods t_playerGoods = (*smap)[conn].m_playerGoods;
+
+    vector<STR_Goods>* t_goods = &(*t_playerGoods)[goodsid];
+    if(t_goods == NULL)//背包没有这种物品
+    {
+        return;
+    }
+
+    hf_double currentTime = Server::GetInstance()->GetGameAttack()->GetCurrentTime();
+    hf_double* timep = &(*(*smap)[conn].m_skillTime)[goodsid];
+    if(*timep > currentTime) //冷却时间还没到，不可以使用
+    {
+        return;
+    }
+
+    STR_Consumable* t_consum = &(*m_consumableAttr)[goodsid];
+    STR_RoleInfo*  t_roleInfo = &(*smap)[conn].m_roleInfo;
+    switch(t_consum->Type)
+    {
+    case MomentMagic:
+    {
+        if(t_roleInfo->Magic == t_roleInfo->MaxMagic) //魔法值是满的
+        {
+            return;
+        }
+        if(t_roleInfo->Magic + t_consum->Magic < t_roleInfo->MaxMagic)
+            t_roleInfo->Magic += t_consum->Magic;
+        else
+            t_roleInfo->Magic = t_roleInfo->MaxMagic;
+        break;
+    }
+    case MomentHP:
+    {
+        if(t_roleInfo->HP == t_roleInfo->MaxHP) //血量是满的
+        {
+            return;
+        }
+        if(t_roleInfo->HP + t_consum->HP < t_roleInfo->MaxHP)
+            t_roleInfo->HP += t_consum->HP;
+        else
+            t_roleInfo->HP = t_roleInfo->MaxHP;
+        break;
+    }
+    case SecondMagic:
+    {
+        STR_RecoveryMagic t_magic(currentTime + 1, t_consum->Magic, t_consum->ContinueTime - 1);
+        SessionMgr::Instance()->RecoveryMagicAdd(conn, t_magic);
+        if(t_roleInfo->Magic == t_roleInfo->MaxMagic) //魔法值是满的
+        {
+            return;
+        }
+        if(t_roleInfo->Magic + t_consum->Magic < t_roleInfo->MaxMagic)
+            t_roleInfo->Magic += t_consum->Magic;
+        else
+            t_roleInfo->Magic = t_roleInfo->MaxMagic;
+        break;
+    }
+    case SecondHP:
+    {
+        STR_RecoveryHP t_hp(currentTime + 1, t_consum->HP, t_consum->ContinueTime - 1 );
+        SessionMgr::Instance()->RecoveryHPAdd(conn, t_hp);
+        if(t_roleInfo->HP == t_roleInfo->MaxHP) //血量是满的
+        {
+            return;
+        }
+        if(t_roleInfo->HP + t_consum->HP < t_roleInfo->MaxHP)
+            t_roleInfo->HP += t_consum->HP;
+        else
+            t_roleInfo->HP = t_roleInfo->MaxHP;
+        break;
+    }
+    case MomentHPMagic:
+    {
+        if(t_roleInfo->HP == t_roleInfo->MaxHP && t_roleInfo->Magic == t_roleInfo->MaxMagic) //血量和魔法值都是满的，不可以使用
+        {
+            return;
+        }
+        if(t_roleInfo->HP < t_roleInfo->MaxHP) //血量不满
+        {
+            if(t_roleInfo->HP + t_consum->HP < t_roleInfo->MaxHP)
+                t_roleInfo->HP += t_consum->HP;
+            else
+                t_roleInfo->HP = t_roleInfo->MaxHP;
+        }
+        if(t_roleInfo->Magic < t_roleInfo->MaxMagic) //魔法值不满
+        {
+            if(t_roleInfo->Magic + t_consum->Magic < t_roleInfo->MaxMagic)
+                t_roleInfo->Magic += t_consum->Magic;
+            else
+                t_roleInfo->Magic = t_roleInfo->MaxMagic;
+        }
+        break;
+    }
+    case SecondHPMagic:
+    {
+        STR_RecoveryHPMagic t_hpMagic(currentTime + 1, t_consum->HP, t_consum->Magic, t_consum->ContinueTime - 1 );
+        SessionMgr::Instance()->RecoveryHPMagicAdd(conn, t_hpMagic);
+        if(t_roleInfo->HP == t_roleInfo->MaxHP && t_roleInfo->Magic == t_roleInfo->MaxMagic) //血量和魔法值都是满的，不可以使用
+        {
+            return;
+        }
+        if(t_roleInfo->HP < t_roleInfo->MaxHP) //血量不满
+        {
+            if(t_roleInfo->HP + t_consum->HP < t_roleInfo->MaxHP)
+                t_roleInfo->HP += t_consum->HP;
+            else
+                t_roleInfo->HP = t_roleInfo->MaxHP;
+        }
+        if(t_roleInfo->Magic < t_roleInfo->MaxMagic) //魔法值不满
+        {
+            if(t_roleInfo->Magic + t_consum->Magic < t_roleInfo->MaxMagic)
+                t_roleInfo->Magic += t_consum->Magic;
+            else
+                t_roleInfo->Magic = t_roleInfo->MaxMagic;
+        }
+        break;
+    }
+    default:
+        return;
+    }
+
+    *timep = currentTime + t_consum->ColdTime;
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
+    STR_RoleAttribute t_roleAttr(roleid, t_roleInfo->HP, t_roleInfo->Magic);
+    conn->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+
+    Session* sess = &(*smap)[conn];
+    sess->SendHPToViewRole(&t_roleAttr);
+
+    vector<STR_Goods>::iterator it = t_goods->begin();
+    if(pos != 0)
+    {
+        for(;it != t_goods->end(); it++)
+        {
+            if(it->Position == pos)
+            {
+                break;
+            }
+            if(it == t_goods->end())
+                return;
+        }
+    }
+    it->Count -= 1;
+    STR_PackGoods t_packGoods(&(*it));
+    conn->Write_all(&t_packGoods, sizeof(STR_PackGoods));
+    Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods(roleid, &(*it), PostUpdate);
+    if(it->Count == 0)
+    {
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods(roleid, &(*it), PostDelete);
+        ReleasePos(conn, it->Position);
+        t_goods->erase(it);
+    }
+    else
+    {
+        Server::GetInstance()->GetOperationPostgres()->PushUpdateGoods(roleid, &(*it), PostUpdate);
+    }
+
+    if(t_goods->size() == 0)
+    {
+        t_playerGoods->erase(goodsid);
+    }
 }

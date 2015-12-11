@@ -3,38 +3,17 @@
 #include "server.h"
 #include "tcpconnection.h"
 #include "Game/postgresqlstruct.h"
+#include "PlayerLogin/playerlogin.h"
 
-#include "Game/cmdparse.hpp"
+#include "Game/cmdparse.h"
 
 #include "Game/session.hpp"
 
-#include "Game/log.hpp"
+//#include "Game/log.hpp"
 
-
-//size_t hash_value(  TCPConnection &conn)
-//{
-//    size_t seed = 0;
-//    boost::hash_combine(seed, conn.socket().native_handle());
-//    return seed;
-//}
-//size_t hash_value(  TCPConnection::Pointer conn)
-//{
-//    size_t seed = 0;
-//    boost::hash_combine(seed, conn->socket().native_handle());
-//    return seed;
-//}
-//bool operator ==( TCPConnection::Pointer p1, TCPConnection::Pointer p2)
-//{
-//    return p1->socket().native_handle() == p2->socket().native_handle();
-//}
-
-//bool operator ==( TCPConnection &p1, TCPConnection &p2)
-//{
-//    return p1.socket().native_handle() == p2.socket().native_handle();
-//}
 
 TCPConnection::TCPConnection(boost::asio::io_service &io)
-    :m_socket(io)
+    :m_socket(io),currentIndex(0)
 {
 
 }
@@ -47,7 +26,7 @@ TCPConnection::~TCPConnection()
 
 void TCPConnection::Start()
 {
-    ReadHead();
+    ReadSome();
 }
 
 int TCPConnection::Write_all(void *buff, int size)
@@ -72,51 +51,70 @@ int TCPConnection::Write_all(void *buff, int size)
                               boost::asio::placeholders::bytes_transferred()
                               )
                             );
+    return 0;
 }
 
-void TCPConnection::ReadHead()
+void TCPConnection::ReadSome()
 {
-
-        m_read_lock.lock();
-
-        boost::asio::async_read(m_socket,boost::asio::buffer(m_buf,sizeof(STR_PackHead)),
-                                boost::bind(&TCPConnection::CallBack_Read_Head,
+        m_socket.async_read_some(boost::asio::buffer(m_buf + currentIndex,TCP_BUFFER_SIZE - currentIndex),
+                                boost::bind(&TCPConnection::CallBack_Read_Some,
                                             shared_from_this(),
                                             boost::asio::placeholders::error(),
                                             boost::asio::placeholders::bytes_transferred()));
-
-
-
-}
-void TCPConnection::ReadBody()
-{
-    STR_PackHead *pack = (STR_PackHead*)m_buf;
-    hf_uint16           len = /*ntohs*/(pack->Len);
-//    hf_uint16           flag = /*ntohs*/(pack->Flag);
-    if(len >= 1024)
-    {
-        m_read_lock.unlock();
-        SessionMgr::Instance()->RemoveSession(shared_from_this());
-        return;
-    }
-    if(len == 0)
-    {
-        cout << len << endl;
-        return;
-    }
-
-    boost::asio::async_read(m_socket,boost::asio::buffer(m_buf+sizeof(STR_PackHead),len),
-                            boost::bind(&TCPConnection::CallBack_Read_Body,
-                                        shared_from_this(),
-                                        boost::asio::placeholders::error(),
-                                        boost::asio::placeholders::bytes_transferred()));
 }
 
-void TCPConnection::CallBack_Read_Head(const boost::system::error_code &ec,size_t size)
+void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec,size_t size)
 {
     if ( !ec )
      {
-        ReadBody();
+//        cout << "size = " << size << endl;
+        currentIndex += size;
+        hf_uint32 start = 0;
+        hf_uint32 end = 0;
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+
+        STR_PackHead head;
+        while(start < currentIndex)
+        {
+            end += sizeof(STR_PackHead);            
+            memcpy(&head, m_buf + start, sizeof(STR_PackHead));
+
+            if(end < currentIndex &&
+                    start + sizeof(STR_PackHead) + head.Len <= currentIndex)
+            {
+                memcpy(m_pack.data, m_buf + start, sizeof(STR_PackHead) + head.Len);
+                //未登录角色
+               if(JudgePlayerLogin(shared_from_this(), head.Flag))
+               {
+                   m_pack.roleid = (*smap)[shared_from_this()].m_roleid;
+                   Server::GetInstance()->PushPackage(m_pack);
+               }
+               else
+               {
+                   CommandParseLogin(shared_from_this(), m_pack.data);
+               }
+
+                start += sizeof(STR_PackHead) + head.Len;
+                if(start == currentIndex)
+                {
+                    currentIndex = 0;
+                    break;
+                }
+                end = start;
+            }
+            else
+            {
+                cout << "有未处理完的数据" << endl;
+                hf_char buff[TCP_BUFFER_SIZE] = { 0 };
+                memcpy(buff, m_buf+start,currentIndex - start);
+                memcpy(m_buf, buff, TCP_BUFFER_SIZE);
+//                memcpy(m_buf,m_buf+start,currentIndex - start);
+//                memset(m_buf + currentIndex - start,0,TCP_BUFFER_SIZE + start - currentIndex);
+                currentIndex -= start;
+                break;
+            }
+        }
+        ReadSome();
       }
     else if ( size == 0 || ec == boost::asio::error::eof || ec == boost::asio::error::shut_down)
     {
@@ -125,42 +123,9 @@ void TCPConnection::CallBack_Read_Head(const boost::system::error_code &ec,size_
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
         SessionMgr::Instance()->SessionsErase(shared_from_this());
-
-//        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
-//        SessionMgr::Instance()->RemoveSession(shared_from_this());
-
-        m_read_lock.unlock();
     }
 }
-void TCPConnection::CallBack_Read_Body(const boost::system::error_code &ec, size_t size)
-{
-    if ( ! ec )
-    {
-        Server  *srv = Server::GetInstance();
-        char *buf = (char*)srv->malloc();
-        memcpy(buf,m_buf,size + sizeof(STR_PackHead));
-        //srv->RunTask(boost::bind(&CommandParse,&m_socket,buf));
-        CommandParse(shared_from_this(),buf);
-        srv->free(buf);
 
-        //至此，已处理完一个完整数据包
-        m_read_lock.unlock();
-        ReadHead();
-    }
-    else if ( size == 0 || ec == boost::asio::error::eof || ec == boost::asio::error::shut_down)
-    {
-        Logger::GetLogger()->Debug("Client body Disconnected");
-//        int fd = m_socket.native_handle();
-        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-
-        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-        SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
-        SessionMgr::Instance()->SessionsErase(shared_from_this());
-//        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
-//        SessionMgr::Instance()->RemoveSession(shared_from_this());
-        m_read_lock.unlock();
-    }
-}
 
 void TCPConnection::CallBack_Write(const boost::system::error_code &code, size_t transfferd)
 {
@@ -171,3 +136,27 @@ void TCPConnection::CallBack_Write(const boost::system::error_code &code, size_t
         return;
       }
 }
+
+//判断玩家是否登录角色
+bool TCPConnection::JudgePlayerLogin(/*SessionMgr::SessionPointer smap,*/ TCPConnection::Pointer conn, hf_uint8 flag)
+{
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    Session* sess = &(*smap)[conn];
+    if(sess == NULL)//未登录用户名，只能登录或注册用户
+    {
+        if(flag != FLAG_PlayerLoginUserId && flag != FLAG_PlayerRegisterUserId)
+            return false;
+    }
+
+    //已经登录用户不能登录或注册用户，只能退出用户后再登录或注册用户
+    if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+        return false;
+    if(sess->m_roleid == 0) //未登录角色，只能登录或注册或删除角色
+    {
+        if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
+            return false;
+    }
+    return true;
+}
+
+

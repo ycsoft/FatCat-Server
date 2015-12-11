@@ -43,18 +43,7 @@ void TCPServer::CallBack_Accept(TCPConnection::Pointer conn, const boost::system
 {
     if ( ! ec)
     {
-        cout << "Client Connected" << endl;
-//        Logger4c::GetLogger4c()->Debug("Client Connected");
-
-//        int fd = conn->socket().native_handle();
-//        if(setSockKeepAlive(fd))
-//        {
-//            printf("%d 设置心跳包成功\n", fd);
-//        }
-//        else
-//        {
-//            printf("%d 设置心跳包失败\n", fd);
-//        }
+        Logger::GetLogger()->Debug("Client Connected");
 
         //set nodelay option
         boost::asio::ip::tcp::no_delay  nodelay(true);
@@ -63,25 +52,4 @@ void TCPServer::CallBack_Accept(TCPConnection::Pointer conn, const boost::system
         Server::GetInstance()->RunTask(boost::bind(&TCPConnection::Start,conn));
     }
     StartListen();
-}
-
-bool TCPServer::setSockKeepAlive(int Sock)
-{
-    int t_sockVal = 1;
-    if(setsockopt(Sock, SOL_SOCKET, SO_KEEPALIVE, &t_sockVal, (socklen_t)sizeof(t_sockVal)))
-        return false;
-
-    t_sockVal = 10;
-    if(setsockopt(Sock, SOL_TCP, TCP_KEEPIDLE, &t_sockVal, (socklen_t)sizeof(t_sockVal)))
-        return false;
-
-    t_sockVal = 10;
-    if(setsockopt(Sock, SOL_TCP, TCP_KEEPINTVL, &t_sockVal, (socklen_t)sizeof(t_sockVal)))
-        return false;
-
-    t_sockVal = 3;
-    if(setsockopt(Sock, SOL_TCP, TCP_KEEPCNT, &t_sockVal, (socklen_t)sizeof(t_sockVal)))
-        return false;
-
-    return true;
 }

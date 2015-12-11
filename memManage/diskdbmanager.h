@@ -173,7 +173,9 @@ public:
      hf_int32 GetNotPickGoods(umap_lootGoods lootGoods, const hf_char* str);
 
      //查询物品价格
-     hf_int32 GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char* str);
+     hf_int32 GetGoodsPrice(umap_goodsPrice* goodsPrice, const hf_char* str);
+     //查询消耗品价格
+     hf_int32 GetConsumableAttr(umap_consumable* consumable, const hf_char* str);
      //查询装备属性
      hf_int32 GetEquAttr(umap_equAttr* equAttr, const hf_char* str);
 

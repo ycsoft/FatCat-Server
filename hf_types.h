@@ -16,6 +16,8 @@
 //#define     SRV_PORT_DEFAULT      7000         //监听端口
 #define  CORE_NUM              4           //CPU核心数
 #define  PI                    3.141592654
+#define  ThreadCount           1000        //线程池，线程数量
+#define  PackageCount          10*1024    //队列中可以存放未处理包的数量
 
 #define  View                  1           //能看到，用来表示玩家之间和玩家与怪物之间
 #define  NotView               2           //看不到
@@ -36,7 +38,6 @@
 #define  PlayerMoveDistance    5           //玩家移动一次的距离  单位分米
 #define  RefreshDistance       20          //玩家刷新数据的距离
 
-//#define  PursuitFarDistance    10          //怪物追击玩家，距离较远一次移动的距离  单位分米
 #define  PursuitNearlyDistance 10           //怪物追击玩家，距离较近一次移动的距离
 
 #define  MonsterStopTime       5           //每次怪物运动到一个点后停留的时间
@@ -71,9 +72,6 @@
 #define  EquTypeMinValue       20000        //装备类型最小值
 #define  EquTypeMaxValue       29999        //装备类型最大值
 
-
-//#define  MonsterAlive           1            //怪物复活
-#define  MonsterDie             0            //怪物死亡
 
 #define  ActiveMonster          1            //主动怪物
 #define  UnactiveMonster        2            //被动怪物
@@ -175,7 +173,7 @@
 #define  Action_RideMotor   11      //骑摩托(RideMotor )
 #define  Action_RideBike    12      //骑自行车（RideBike）
 
-#define  SQRT3DIV2              0.866   //平方跟3
+#define  SQRT3DIV2          0.866   //平方跟3
 
 #define  MAP1                  1      //1号地图
 #define  MAP2                  2      //2号地图
@@ -193,6 +191,12 @@
 #define MAP_Z                  5120   //地图z边界区域大小
 
 
+#define MomentMagic           1      //瞬间恢复魔法值
+#define MomentHP              2      //瞬间恢复生命值
+#define SecondMagic           3      //每秒恢复魔法值
+#define SecondHP              4      //每秒恢复生命值
+#define MomentHPMagic         5      //瞬间恢复生命魔法值
+#define SecondHPMagic         6      //每秒恢复生命魔法值
 
 namespace hf_types{
 

@@ -1,5 +1,5 @@
-#ifndef SESSION
-#define SESSION
+#ifndef SESSION_H
+#define SESSION_H
 
 #include <boost/unordered_map.hpp>
 #include <boost/noncopyable.hpp>
@@ -79,56 +79,14 @@ public:
 class Session
 {
 public:
-    Session()
-        :m_playerAcceptTask(new _umap_taskProcess)
-        ,m_friendList(new _umap_friendList)
-        ,m_viewRole(new _umap_roleSock)
-        ,m_viewMonster(new _umap_playerViewMonster)
-        ,m_skillTime(new _umap_skillTime)
-        ,m_playerGoods(new _umap_roleGoods)
-        ,m_playerEqu(new _umap_roleEqu)
-//        ,m_playerEquAttr(new _umap_roleEquAttr)
-        ,m_playerMoney(new _umap_roleMoney)
-        ,m_completeTask(new _umap_completeTask)
-        ,m_lootGoods(new _umap_lootGoods)
-        ,m_lootPosition(new _umap_lootPosition)
-        ,m_interchage(new Interchange)
-        ,m_taskGoods( new _umap_taskGoods)
-    {
-        m_publicCoolTime = 0;
-        memset(m_goodsPosition, 0, BAGCAPACITY);
-        m_skillUseTime = 0;
-        m_roleid = 0;
-        m_usrid.assign(0);
-//        m_nick.assign(0);
-    }
-
+    Session();
     ~Session()
     {
 
     }
 
-    void SendSkillEffectToViewRole(STR_PackSkillAimEffect* effect)
-    {
-        for(_umap_roleSock::iterator it = m_viewRole->begin(); it != m_viewRole->end(); it++)
-        {
-            cout << "给发送了施法效果:" << it->first << endl;
-            it->second->Write_all(effect, sizeof(STR_PackSkillAimEffect));
-        }
-    }
-
-    void SendHPToViewRole(STR_RoleAttribute* attr)
-    {
-        for(_umap_roleSock::iterator it = m_viewRole->begin(); it != m_viewRole->end(); it++)
-        {
-            cout << "给发送了血量信息:" << it->first << endl;
-            it->second->Write_all(attr, sizeof(STR_RoleAttribute));
-        }
-    }
-
     typedef boost::array<char,40>    Buff;
     Buff                    m_usrid;             //用户名
-//    Buff                    m_nick;              //昵称
     hf_uint32               m_roleid;            //角色ID
     hf_double               m_publicCoolTime;    //公共冷却时间
     hf_double               m_skillUseTime;      //再次使用技能的时间
@@ -140,7 +98,7 @@ public:
     umap_friendList         m_friendList;        //好友列表
     umap_roleSock           m_viewRole;          //可视范围内的玩家
     umap_playerViewMonster  m_viewMonster;       //可视范围内的怪物
-    umap_skillTime          m_skillTime;         //保存玩家所有技能的再次使用时间,此处和消耗品共用一个结构，也保存了消耗品再次使用时间
+    umap_skillTime          m_skillTime;         //保存玩家所有技能的再次使用时间
     umap_roleGoods          m_playerGoods;       //玩家背包其他物品
     umap_roleEqu            m_playerEqu;         //玩家背包装备
 //    umap_roleEquAttr        m_playerEquAttr;     //玩家背包装备属性
@@ -213,10 +171,15 @@ public:
      }
 
 
-     void   RemoveSession( TCPConnection::Pointer conn)
+     void   RemoveSession( TCPConnection::Pointer sk)
      {
-        Logger::GetLogger()->Info("Remove Session");
-        m_sessions->erase(conn);
+       Logger::GetLogger()->Info("Remove Session");
+
+       SessionMgr::SessionMap::iterator it = m_sessions->find(sk);
+       if(it != m_sessions->end())
+       {
+           m_sessions->erase(it);
+       }
      }
 
     char *GetUserBySock(TCPConnection::Pointer sk )
@@ -255,28 +218,17 @@ public:
         return m_nameSock;
     }
 
-    umap_recoveryHP GetRecoveryHP()
-    {
-        return m_recoveryHP;
-    }
-
-    umap_recoveryMagic GetRecoveryMagic()
-    {
-        return m_recoveryMagic;
-    }
-
-    umap_recoveryHPMagic GetRecoveryHPMagic()
-    {
-        return m_recoveryHPMagic;
-    }
-
     void SessionsAdd(TCPConnection::Pointer conn, Session s)
     {
         m_sessionsMtx.lock();
-//        cout << conn->socket().native_handle() << endl;
+        cout << conn->socket().native_handle() << endl;
         cout << "m_sessions add start:" << m_sessions->size() << endl;
-        (*m_sessions)[conn] = s;
-        cout << "m_sessions add end:" << m_sessions->size() << endl;
+        SessionMap::iterator it = m_sessions->find(conn);
+        if(it == m_sessions->end())
+            (*m_sessions)[conn] = s;
+        else
+            Logger::GetLogger()->Error("sessionsAdd error");
+        cout << "m_sessions add end:" << m_sessions->size() << endl << endl << endl;
         m_sessionsMtx.unlock();
     }
 
@@ -284,7 +236,11 @@ public:
     {
         m_sessionsMtx.lock();
         cout << "m_sessions delete start:" << m_sessions->size() << endl;
-        m_sessions->erase(conn);
+        SessionMap::iterator it = m_sessions->find(conn);
+        if(it != m_sessions->end())
+            m_sessions->erase(it);
+        else
+            Logger::GetLogger()->Error("sessionsErase error");
         cout << "m_sessions delete end:" << m_sessions->size() << endl;
         m_sessionsMtx.unlock();
     }
@@ -293,7 +249,11 @@ public:
     {
         m_roleMtx.lock();
         cout << "addstart" << m_roleSock->size() << endl;
-        (*m_roleSock)[roleid] = conn;
+        _umap_roleSock::iterator it = m_roleSock->find(roleid);
+        if(it == m_roleSock->end())
+            (*m_roleSock)[roleid] = conn;
+        else
+            Logger::GetLogger()->Error("roleSockAdd error");
         cout << "add end" << m_roleSock->size() << endl;
         m_roleMtx.unlock();
     }
@@ -301,91 +261,76 @@ public:
     void RoleSockErase(hf_uint32 roleid)
     {
         m_roleMtx.lock();
-        m_roleSock->erase(roleid);
+        _umap_roleSock::iterator it = m_roleSock->find(roleid);
+        if(it != m_roleSock->end())
+            m_roleSock->erase(roleid);
+        else
+            Logger::GetLogger()->Error("roleSockErase error");
         m_roleMtx.unlock();
     }
 
     void NickSockAdd(hf_char* nick, TCPConnection::Pointer conn)
     {
         m_nickMtx.lock();
-        (*m_nickSock)[nick] = conn;
+        _umap_nickSock::iterator it = m_nickSock->find(nick);
+        if(it == m_nickSock->end())
+            (*m_nickSock)[nick] = conn;
+        else
+            Logger::GetLogger()->Error("nickSockAdd error");
         m_nickMtx.unlock();
     }
 
     void NickSockErase(hf_char* nick)
     {
         m_nickMtx.lock();
-        m_nickSock->erase(nick);
+        _umap_nickSock::iterator it = m_nickSock->find(nick);
+        if(it != m_nickSock->end())
+            m_nickSock->erase(nick);
+        else
+            Logger::GetLogger()->Error("nickSockErase error");
         m_nickMtx.unlock();
     }
 
     void NameSockAdd(hf_char* name, TCPConnection::Pointer conn)
     {
         m_nameMtx.lock();
-        (*m_nameSock)[name] = conn;
+        _umap_nickSock::iterator it = m_nameSock->find(name);
+        if(it == m_nameSock->end())
+            (*m_nameSock)[name] = conn;
+        else
+            Logger::GetLogger()->Error("nameSockAdd error");        
         m_nameMtx.unlock();
     }
 
     void NameSockErase(hf_char* name)
     {
         m_nameMtx.lock();
-        m_nameSock->erase(name);
+        _umap_nickSock::iterator it = m_nameSock->find(name);
+        if(it != m_nameSock->end())
+            m_nameSock->erase(name);
+        else
+        {
+//            printf("要清除的用户名为：%s\n", name);
+            Logger::GetLogger()->Error("name not find,erase error");
+        }
         m_nameMtx.unlock();
     }
 
-    void RecoveryHPAdd(TCPConnection::Pointer conn, STR_RecoveryHP hp)
-    {
-        m_ReHPMtx.lock();
-        (*m_recoveryHP)[conn] = hp;
-        m_ReHPMtx.unlock();
+    int addRef(int tp  = 0){
+        static int tms = 0;
+        if( 0 == tp){
+        tms++;
+        }
+        return tms;
     }
-
-    void RecoveryHPDelete(TCPConnection::Pointer conn)
-    {
-        m_ReHPMtx.lock();
-        m_recoveryHP->erase(conn);
-        m_ReHPMtx.unlock();
-    }
-    void RecoveryMagicAdd(TCPConnection::Pointer conn, STR_RecoveryMagic magic)
-    {
-        m_ReMagicMtx.lock();
-        (*m_recoveryMagic)[conn] = magic;
-        m_ReMagicMtx.unlock();
-    }
-
-    void RecoveryMagicDelete(TCPConnection::Pointer conn)
-    {
-        m_ReMagicMtx.lock();
-        m_recoveryHP->erase(conn);
-        m_ReMagicMtx.unlock();
-    }
-
-    void RecoveryHPMagicAdd(TCPConnection::Pointer conn, STR_RecoveryHPMagic hpMagic)
-    {
-        m_ReHPMagicMtx.lock();
-        (*m_recoveryHPMagic)[conn] = hpMagic;
-        m_ReHPMagicMtx.unlock();
-    }
-
-    void RecoveryHPMagicDelete(TCPConnection::Pointer conn)
-    {
-        m_ReHPMagicMtx.lock();
-        m_recoveryHPMagic->erase(conn);
-        m_ReHPMagicMtx.unlock();
-    }
-
-
 
 private:
 
     SessionMgr():
-      m_sessions(new SessionMap()),
-      m_roleSock(new _umap_roleSock),
-      m_nickSock(new _umap_nickSock),
-      m_nameSock(new _umap_nickSock),
-      m_recoveryHP(new _umap_recoveryHP),
-      m_recoveryMagic(new _umap_recoveryMagic),
-      m_recoveryHPMagic(new _umap_recoveryHPMagic)
+      m_sessions(new SessionMap())
+      ,m_roleSock(new _umap_roleSock)
+      ,m_nickSock(new _umap_nickSock)
+      ,m_nameSock(new _umap_nickSock)
     {
         cout<<"\n===================Create SessionMgr================="<<endl;
     }
@@ -394,18 +339,16 @@ private:
     umap_roleSock               m_roleSock;
     umap_nickSock               m_nickSock;
     umap_nickSock               m_nameSock;
-    umap_recoveryHP             m_recoveryHP;      //使用延时恢复血量的消耗品
-    umap_recoveryMagic          m_recoveryMagic;   //使用延时恢复魔法的消耗品
-    umap_recoveryHPMagic        m_recoveryHPMagic; //使用延时恢复血量魔法的消耗品
 
     boost::mutex                m_sessionsMtx;
     boost::mutex                m_roleMtx;
     boost::mutex                m_nickMtx;
     boost::mutex                m_nameMtx;
-    boost::mutex                m_ReHPMtx;
-    boost::mutex                m_ReMagicMtx;
-    boost::mutex                m_ReHPMagicMtx;
+
+
+
 };
 
 
-#endif // SESSION
+#endif // SESSION_H
+

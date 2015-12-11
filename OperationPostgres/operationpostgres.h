@@ -11,7 +11,7 @@ public:
     ~OperationPostgres();
 
     //该函数负责实时将玩家数据写入数据库
-//    void UpdatePlayerData();
+    void UpdatePostgresData();
 
     void PushUpdateMoney(hf_uint32 roleid, STR_PlayerMoney* money)
     {

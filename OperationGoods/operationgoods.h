@@ -22,8 +22,12 @@ public:
 
     //查询物品价格
     void QueryGoodsPrice();
+    //查询消耗品信息
+    void QueryConsumableAttr();
     //查询装备属性
     void QueryEquAttr();
+    //查询材料属性
+
     //丢弃物品
     void RemoveBagGoods(TCPConnection::Pointer conn, STR_RemoveBagGoods* removeGoods);
     //移动或分割物品
@@ -69,10 +73,15 @@ public:
     //角色属性去掉此装备属性
     void DeleteEquAttrToRole(STR_RoleInfo* roleinfo, hf_uint32 equTypeid);
 
+    //使用背包物品恢复属性
+    void UseBagGoods(TCPConnection::Pointer conn, hf_uint32 goodsid, hf_uint8 pos);
+
+
 private:
-    umap_goodsPrice    m_goodsPrice;   //物品价格
-    umap_equAttr*      m_equAttr;      //装备属性
-    static hf_uint32   m_equipmentID;  //装备ID
+    umap_goodsPrice*    m_goodsPrice;       //物品价格
+    umap_consumable*    m_consumableAttr;   //消耗品属性
+    umap_equAttr*       m_equAttr;          //装备属性
+    static hf_uint32    m_equipmentID;      //装备ID
 };
 
 #endif // OPERATIONGOODS_H
