@@ -633,14 +633,14 @@ void GameAttack::RoleSkillAttack()
     //遍历m_attackMonster,m_attackRole,m_attackPoint 根据时间判断，计算伤害发送给玩家
     while(1)
     {
-        if(m_attackMonster->size() == 0)
-        {
-            usleep(1000);
-        }
-        hf_double timep = GetCurrentTime();
+//        if(m_attackMonster->size() == 0)
+//        {
+//            usleep(1000);
+//        }
+        hf_double t_currentTime = GetCurrentTime();
         for(_umap_roleAttackAim::iterator it = m_attackMonster->begin(); it != m_attackMonster->end();)
         {
-            if(timep < (it->second).HurtTime) //时间没到
+            if(t_currentTime < (it->second).HurtTime) //时间没到
             {
                 it++;
                 continue;
@@ -781,11 +781,240 @@ void GameAttack::RoleSkillAttack()
 //        }
 
 
-        //使用延时类物品
+        RoleRecoveryHP(smap, t_currentTime);
+        RoleRecoveryMagic(smap, t_currentTime);
+        RoleRecoveryHPMagic(smap, t_currentTime);
 
+        usleep(1000);
     }
 }
 
+void GameAttack::RoleRecoveryHP(SessionMgr::SessionPointer smap, hf_double currentTime)
+{
+//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_recoveryHP t_recoveryHP = SessionMgr::Instance()->GetRecoveryHP();
+    for(_umap_recoveryHP::iterator HP_it = t_recoveryHP->begin(); HP_it != t_recoveryHP->end();)
+    {
+//        cout << "recoveryHP start" << endl;
+//        printf("timep:%lf,currentTime:%lf\n", HP_it->second.Timep, currentTime);
+        if(HP_it->second.Timep >= currentTime) //时间没到
+        {
+            HP_it++;
+            continue;
+        }
+        Session* sess = &(*smap)[HP_it->first];
+        if(sess == NULL) //玩家退出游戏
+        {
+            _umap_recoveryHP::iterator _HP_it = HP_it;
+            HP_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_HP_it->first);
+            continue;
+        }
+        STR_RoleInfo* t_roleInfo = &(*smap)[HP_it->first].m_roleInfo;
+//        printf("未恢复前玩家血量：%u\n", t_roleInfo->HP);
+        if(t_roleInfo->HP == t_roleInfo->MaxHP)
+        {
+            HP_it->second.Count -= 1;
+            if(HP_it->second.Count >= 1)
+            {
+                HP_it->second.Timep = currentTime + 1;
+                HP_it++;
+            }
+            else   //作用时间结束了
+            {
+                _umap_recoveryHP::iterator _HP_it = HP_it;
+                HP_it++;
+                SessionMgr::Instance()->RecoveryHPDelete(_HP_it->first);
+            }
+            continue;
+        }
+        if(t_roleInfo->HP == 0) //玩家已经死亡
+        {
+            _umap_recoveryHP::iterator _HP_it = HP_it;
+            HP_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_HP_it->first);
+            continue;
+        }
+
+        if(t_roleInfo->HP + HP_it->second.HP < t_roleInfo->MaxHP)
+            t_roleInfo->HP += HP_it->second.HP;
+        else
+            t_roleInfo->HP = t_roleInfo->MaxHP;
+
+        hf_uint32 roleid = (*smap)[HP_it->first].m_roleid;
+        STR_RoleAttribute t_roleAttr(roleid, t_roleInfo->HP, t_roleInfo->Magic);
+        HP_it->first->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+        cout << "roleid:" << t_roleAttr.RoleID << ",HP:" << t_roleAttr.HP << ",magic:" << t_roleAttr.Magic << endl;
+        sess->SendHPToViewRole(&t_roleAttr);
+
+        HP_it->second.Count -= 1;
+        if(HP_it->second.Count >= 1)
+        {
+            HP_it->second.Timep = currentTime + 1;
+            HP_it++;
+        }
+        else   //作用时间结束了
+        {
+            _umap_recoveryHP::iterator _HP_it = HP_it;
+            HP_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_HP_it->first);
+        }
+    }
+}
+
+void GameAttack::RoleRecoveryMagic(SessionMgr::SessionPointer smap, hf_double currentTime)
+{
+//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_recoveryMagic t_recoveryMagic = SessionMgr::Instance()->GetRecoveryMagic();
+    for(_umap_recoveryMagic::iterator Magic_it = t_recoveryMagic->begin(); Magic_it != t_recoveryMagic->end();)
+    {
+        if(Magic_it->second.Timep >= currentTime) //时间没到
+        {
+            Magic_it++;
+            continue;
+        }
+        Session* sess = &(*smap)[Magic_it->first];
+        if(sess == NULL) //玩家退出游戏
+        {
+            _umap_recoveryMagic::iterator _Magic_it = Magic_it;
+            Magic_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_Magic_it->first);
+            continue;
+        }
+        STR_RoleInfo* t_roleInfo = &(*smap)[Magic_it->first].m_roleInfo;
+
+        if(t_roleInfo->HP == 0) //玩家已经死亡
+        {
+            _umap_recoveryMagic::iterator _Magic_it = Magic_it;
+            Magic_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_Magic_it->first);
+            continue;
+        }
+
+        if(t_roleInfo->Magic == t_roleInfo->MaxMagic)
+        {
+            Magic_it->second.Count -= 1;
+            if(Magic_it->second.Count >= 1)
+            {
+                Magic_it->second.Timep = currentTime + 1;
+                Magic_it++;
+            }
+            else
+            {
+                _umap_recoveryMagic::iterator _Magic_it = Magic_it;
+                Magic_it++;
+                SessionMgr::Instance()->RecoveryHPDelete(_Magic_it->first);
+            }
+            continue;
+        }
+
+
+        if(t_roleInfo->Magic + Magic_it->second.Magic < t_roleInfo->MaxMagic)
+            t_roleInfo->Magic += Magic_it->second.Magic;
+        else
+            t_roleInfo->Magic = t_roleInfo->MaxMagic;
+
+        hf_uint32 roleid = (*smap)[Magic_it->first].m_roleid;
+        STR_RoleAttribute t_roleAttr(roleid, t_roleInfo->HP, t_roleInfo->Magic);
+        Magic_it->first->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+        sess->SendHPToViewRole(&t_roleAttr);
+
+        Magic_it->second.Count -= 1;
+        if(Magic_it->second.Count >= 1)
+        {
+            Magic_it->second.Timep = currentTime + 1;
+            Magic_it++;
+        }
+        else
+        {
+            _umap_recoveryMagic::iterator _Magic_it = Magic_it;
+            Magic_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_Magic_it->first);
+        }
+    }
+}
+
+//角色延时恢复血量，魔法值
+void GameAttack::RoleRecoveryHPMagic(SessionMgr::SessionPointer smap, hf_double currentTime)
+{
+//    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    umap_recoveryHPMagic t_recoveryHPMagic = SessionMgr::Instance()->GetRecoveryHPMagic();
+    for(_umap_recoveryHPMagic::iterator HPMagic_it = t_recoveryHPMagic->begin(); HPMagic_it != t_recoveryHPMagic->end();)
+    {
+        if(HPMagic_it->second.Timep >= currentTime) //时间没到
+        {
+            HPMagic_it++;
+            continue;
+        }
+        Session* sess = &(*smap)[HPMagic_it->first];
+        if(sess == NULL) //玩家退出游戏
+        {
+            _umap_recoveryHPMagic::iterator _HPMagic_it = HPMagic_it;
+            HPMagic_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_HPMagic_it->first);
+            continue;
+        }
+        STR_RoleInfo* t_roleInfo = &(*smap)[HPMagic_it->first].m_roleInfo;
+
+        if(t_roleInfo->HP == 0) //玩家已经死亡
+        {
+            _umap_recoveryHPMagic::iterator _HPMagic_it = HPMagic_it;
+            HPMagic_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_HPMagic_it->first);
+            continue;
+        }
+
+        if(t_roleInfo->HP == t_roleInfo->MaxHP && t_roleInfo->Magic == t_roleInfo->MaxMagic) //血量和魔法值都是满的，不可以使用
+        {
+            HPMagic_it->second.Count -= 1;
+            if(HPMagic_it->second.Count >= 1)
+            {
+                HPMagic_it->second.Timep = currentTime + 1;
+                HPMagic_it++;
+            }
+            else
+            {
+                _umap_recoveryHPMagic::iterator _HPMagic_it = HPMagic_it;
+                HPMagic_it++;
+                SessionMgr::Instance()->RecoveryHPDelete(_HPMagic_it->first);
+            }
+            continue;
+        }
+
+        if(t_roleInfo->HP < t_roleInfo->MaxHP) //血量不满
+        {
+            if(t_roleInfo->HP + HPMagic_it->second.HP < t_roleInfo->MaxHP)
+                t_roleInfo->HP += HPMagic_it->second.HP;
+            else
+                t_roleInfo->HP = t_roleInfo->MaxHP;
+        }
+        if(t_roleInfo->Magic < t_roleInfo->MaxMagic) //魔法值不满
+        {
+            if(t_roleInfo->Magic + HPMagic_it->second.Magic < t_roleInfo->MaxMagic)
+                t_roleInfo->Magic += HPMagic_it->second.Magic;
+            else
+                t_roleInfo->Magic = t_roleInfo->MaxMagic;
+        }
+
+        hf_uint32 roleid = (*smap)[HPMagic_it->first].m_roleid;
+        STR_RoleAttribute t_roleAttr(roleid, t_roleInfo->HP, t_roleInfo->Magic);
+        HPMagic_it->first->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+        sess->SendHPToViewRole(&t_roleAttr);
+
+        HPMagic_it->second.Count -= 1;
+        if(HPMagic_it->second.Count >= 1)
+        {
+            HPMagic_it->second.Timep = currentTime + 1;
+            HPMagic_it++;
+        }
+        else
+        {
+            _umap_recoveryHPMagic::iterator _HPMagic_it = HPMagic_it;
+            HPMagic_it++;
+            SessionMgr::Instance()->RecoveryHPDelete(_HPMagic_it->first);
+        }
+    }
+}
 
 //查询所有技能信息
 void GameAttack::QuerySkillInfo()
@@ -1106,12 +1335,34 @@ void GameAttack::AimRole(TCPConnection::Pointer conn, STR_PackSkillInfo* skillIn
             t_damageData.Flag = RESIST;
         }
 
-//        cout << "damage:" << t_damageData.Damage << endl;
-//        STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
-//        conn->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
-//        it->second->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));
 
-//        Server::GetInstance()->GetMonster()->SendSkillEffectToMonsterViewRole(&t_skillEffect);
+        cout << "damage:" << t_damageData.Damage << endl;
+        STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
+        cout << "施法效果:aimid = " << t_skillEffect.AimID << ",roleid = " << t_skillEffect.RoleID << "," << t_skillEffect.SkillID << endl;
+
+        cout << "受到攻击的玩家,roleid:" << it->first << endl;
+        it->second->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
+        ((*smap)[it->second]).SendSkillEffectToViewRole(&t_skillEffect);
+
+        conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
+        //发送玩家血量
+        if(t_AimInfo->HP > t_damageData.Damage)
+        {
+            t_AimInfo->HP -= t_damageData.Damage;
+        }
+        else
+        {
+            t_AimInfo->HP = 0;
+        }
+
+        //给被攻击者可视范围内的玩家发送血量信息
+        hf_uint32 roleid = (*smap)[it->second].m_roleid;
+        STR_RoleAttribute t_roleAttr(roleid, t_AimInfo->HP);
+        printf("RoleID:%d,HP%d \n",t_roleAttr.RoleID,t_roleAttr.HP);
+
+        it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
+        ((*smap)[it->second]).SendHPToViewRole(&t_roleAttr);
     }
     else   //延时类技能
     {

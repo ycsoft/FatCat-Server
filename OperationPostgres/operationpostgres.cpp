@@ -59,11 +59,11 @@ void OperationPostgres::UpdatePostgresData()
         if(m_UpdateEquAttr->pop(t_updateEquAttr))
         {
             if(t_updateEquAttr.Operate == PostUpdate)
-                PlayerLogin::UpdatePlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
+                PlayerLogin::UpdatePlayerEquAttr(&t_updateEquAttr.EquAttr);
             else if(t_updateEquAttr.Operate == PostInsert)
                 PlayerLogin::InsertPlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
             else if(t_updateEquAttr.Operate == PostDelete)
-                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.RoleID, t_updateEquAttr.EquAttr.EquID);
+                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.EquAttr.EquID);
         }
 
 
@@ -170,7 +170,7 @@ void OperationPostgres::PopUpdateEquAttr()
         {
             if(t_updateEquAttr.Operate == PostUpdate)
             {
-                PlayerLogin::UpdatePlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
+                PlayerLogin::UpdatePlayerEquAttr(&t_updateEquAttr.EquAttr);
             }
             else if(t_updateEquAttr.Operate == PostInsert)
             {
@@ -178,7 +178,7 @@ void OperationPostgres::PopUpdateEquAttr()
             }
             else if(t_updateEquAttr.Operate == PostDelete)
             {
-                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.RoleID, t_updateEquAttr.EquAttr.EquID);
+                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.EquAttr.EquID);
             }
         }
         else

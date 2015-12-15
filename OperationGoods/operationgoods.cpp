@@ -395,7 +395,7 @@ void OperationGoods::PickUpGoods(TCPConnection::Pointer conn, STR_PickGoods* pic
 void OperationGoods::QueryGoodsPrice()
 {
     StringBuilder       sbd;
-    sbd << "select goodsid,buyprice,sellprice from t_equipmentprice;";
+    sbd << "select typeid,buyprice,sellprice from t_equipmentattr;";
     DiskDBManager *db = Server::GetInstance()->getDiskDB();
     hf_int32 count = db->GetGoodsPrice(m_goodsPrice,sbd.str());
     if ( count < 0 )
@@ -442,7 +442,7 @@ void OperationGoods::QueryEquAttr()
 {
     DiskDBManager *db = Server::GetInstance()->getDiskDB();
     StringBuilder       sbd;
-    sbd << "select * from t_equipmentAttribute;";
+    sbd << "select * from t_equipmentAttr;";
     hf_int32 count = db->GetEquAttr(m_equAttr, sbd.str());
     if ( count < 0 )
     {
@@ -1286,7 +1286,7 @@ void OperationGoods::WearBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid, h
 
     it->second.goods.Position = 0;  //将位置置为0，表示穿在身上
 
-    switch(it->second.equAttr.bodyPos)
+    switch(it->second.equAttr.BodyPos)
     {
     case BodyPos_Head:
     {
@@ -1490,7 +1490,7 @@ void OperationGoods::TakeOffBodyEqu(TCPConnection::Pointer conn, hf_uint32 equid
 
     STR_BodyEquipment* bodyEqu = &(*smap)[conn].m_BodyEqu;
 
-    switch(t_playerEqu->equAttr.bodyPos)
+    switch(t_playerEqu->equAttr.BodyPos)
     {
     case BodyPos_Head:
     {
@@ -1653,6 +1653,10 @@ void OperationGoods::UseBagGoods(TCPConnection::Pointer conn, hf_uint32 goodsid,
 
     STR_Consumable* t_consum = &(*m_consumableAttr)[goodsid];
     STR_RoleInfo*  t_roleInfo = &(*smap)[conn].m_roleInfo;
+    if(t_roleInfo->HP == 0) //角色死亡，不可以使用消耗品
+    {
+        return;
+    }
     switch(t_consum->Type)
     {
     case MomentMagic:
@@ -1681,7 +1685,7 @@ void OperationGoods::UseBagGoods(TCPConnection::Pointer conn, hf_uint32 goodsid,
     }
     case SecondMagic:
     {
-        STR_RecoveryMagic t_magic(currentTime + 1, t_consum->Magic, t_consum->ContinueTime - 1);
+        STR_RecoveryMagic t_magic(currentTime + 1, t_consum->PersecondMagic, t_consum->ContinueTime - 1);
         SessionMgr::Instance()->RecoveryMagicAdd(conn, t_magic);
         if(t_roleInfo->Magic == t_roleInfo->MaxMagic) //魔法值是满的
         {
@@ -1695,7 +1699,8 @@ void OperationGoods::UseBagGoods(TCPConnection::Pointer conn, hf_uint32 goodsid,
     }
     case SecondHP:
     {
-        STR_RecoveryHP t_hp(currentTime + 1, t_consum->HP, t_consum->ContinueTime - 1 );
+        STR_RecoveryHP t_hp(currentTime + 1, t_consum->PersecondHP, t_consum->ContinueTime - 1 );
+        printf("t_hp:%u\n", t_hp.HP);
         SessionMgr::Instance()->RecoveryHPAdd(conn, t_hp);
         if(t_roleInfo->HP == t_roleInfo->MaxHP) //血量是满的
         {
@@ -1731,7 +1736,7 @@ void OperationGoods::UseBagGoods(TCPConnection::Pointer conn, hf_uint32 goodsid,
     }
     case SecondHPMagic:
     {
-        STR_RecoveryHPMagic t_hpMagic(currentTime + 1, t_consum->HP, t_consum->Magic, t_consum->ContinueTime - 1 );
+        STR_RecoveryHPMagic t_hpMagic(currentTime + 1, t_consum->PersecondHP, t_consum->PersecondMagic, t_consum->ContinueTime - 1 );
         SessionMgr::Instance()->RecoveryHPMagicAdd(conn, t_hpMagic);
         if(t_roleInfo->HP == t_roleInfo->MaxHP && t_roleInfo->Magic == t_roleInfo->MaxMagic) //血量和魔法值都是满的，不可以使用
         {

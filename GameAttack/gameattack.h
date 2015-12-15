@@ -7,6 +7,7 @@
 #include "Monster/monsterstruct.h"
 #include "Game/rolestruct.h"
 
+#include "Game/session.hpp"
 /**
  * @brief The GameAttack class
  * 主要完成玩家与玩家，玩家与怪物之间的攻击。
@@ -20,6 +21,12 @@ public:
 
     //角色延时类技能伤害
     void RoleSkillAttack();
+
+    //角色延时恢复血量，魔法值
+    void RoleRecoveryHP(SessionMgr::SessionPointer smap, hf_double currentTime);
+    void RoleRecoveryMagic(SessionMgr::SessionPointer smap, hf_double currentTime);
+    void RoleRecoveryHPMagic(SessionMgr::SessionPointer smap, hf_double currentTime);
+
     //删除过了时间的掉落物品
     void DeleteOverTimeGoods();
 

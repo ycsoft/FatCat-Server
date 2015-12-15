@@ -53,8 +53,11 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
 //    PlayerLogin::UpdatePlayerExp(&PlayerExp);  //更新玩家经验
 //    SaveRoleTaskProcess(conn);    //保存玩家任务进度
 //    SaveRoleBagGoods(conn);       //保存玩家背包里的物品
-//    SaveRoleEquAttr(conn);        //保存玩家装备属性
 //    SaveRoleMoney(conn);          //保存玩家金币
+
+
+    SaveRoleEquDurability(conn);     //将玩家装备当前耐久度更新到数据库
+
 
     FriendOffline(conn);          //发送下线通知给好友
     SaveRoleNotPickGoods(conn);   //保存玩家未捡取的掉落物品
@@ -799,48 +802,22 @@ void PlayerLogin::SaveRoleBagGoods(TCPConnection::Pointer conn)
     }
 }
 
-//将玩家装备属性写进数据库
-void PlayerLogin::SaveRoleEquAttr(TCPConnection::Pointer conn)
+//将玩家装备当前耐久度更新到数据库
+void PlayerLogin::SaveRoleEquDurability(TCPConnection::Pointer conn)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-    umap_roleEqu roleEqu = (*smap)[conn].m_playerEqu;
+    umap_roleEqu roleEqu = (*smap)[conn].m_playerEqu;    
     StringBuilder sbd;
-    hf_uint32 roleid = (*smap)[conn].m_roleid;
-
-    sbd << "delete from t_playerequattr where roleid = " << roleid << ";";
-
-     Logger::GetLogger()->Debug(sbd.str());
-    if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
-    {
-        Logger::GetLogger()->Error("清除玩家装备属性信息失败");
-    }
-
-    sbd.Clear();
-    sbd << "insert into t_playerequattr values(";
-    hf_uint32 count = roleEqu->size();
-    if(count == 0)
-    {
-        return;
-    }
-    hf_uint32 i = 0;
     for(_umap_roleEqu::iterator it = roleEqu->begin(); it != roleEqu->end(); it++)
     {
-        sbd << roleid << "," << it->second.equAttr.EquID << "," << it->second.equAttr.TypeID << "," << it->second.equAttr.PhysicalAttack << "," << it->second.equAttr.PhysicalDefense << "," << it->second.equAttr.MagicAttack << "," << it->second.equAttr.MagicDefense << "," << it->second.equAttr.HP << "," << it->second.equAttr.Magic << "," << it->second.equAttr.Durability << ")";
-        if(count == i+1)
+        sbd.Clear();
+        sbd << "update t_playerequattr set durability=" << it->second.equAttr.Durability << " where equid=" << it->second.equAttr.EquID << ";";
+        Logger::GetLogger()->Debug(sbd.str());
+        if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
         {
-            sbd << ";";
+            Logger::GetLogger()->Error("玩家装备属性写入数据库失败");
         }
-        else
-        {
-            sbd << ",(";
-            i++;
-        }
-    }
-    Logger::GetLogger()->Debug(sbd.str());
-    if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
-    {
-        Logger::GetLogger()->Error("玩家装备属性写入数据库失败");
-    }
+    }   
 }
 
 //将玩家金钱写进数据库
@@ -1145,10 +1122,10 @@ void PlayerLogin::DeletePlayerGoods(hf_uint32 roleid, hf_uint16 pos)
 }
 
 //更新玩家装备属性
-void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEquAttr)
+void PlayerLogin::UpdatePlayerEquAttr(STR_EquipmentAttr* equ)
 {
     StringBuilder sbd;
-    sbd << "update t_playerequattr set physicalattack = " << upEquAttr->PhysicalAttack << ",physicaldefense = " << upEquAttr->PhysicalDefense << ",magicattack = " << upEquAttr->MagicAttack << ",magicdefense = " << upEquAttr->MagicDefense << ",addhp = " << upEquAttr->HP << ",addmagic = " << upEquAttr->Magic << ",durability = " << upEquAttr->Durability << " where equid = " << upEquAttr->EquID << " and roleid = " << roleid << ";";
+    sbd << "update t_playerequattr set crithurt=" << equ->CritHurt << ",crithurt_reduction=" << equ->CritHurt_Reduction << ",addhp=" << equ->HP << ",addmagic=" << equ->Magic << ",physicaldefense=" << equ->PhysicalDefense << ",magicdefense=" << equ->MagicDefense << ",physicalattack=" << equ->PhysicalAttack << ",magicattack=" << equ->MagicAttack << ",rigorous=" << equ->Rigorous << ",will=" << equ->Will << ",wise=" << equ->Wise << ",mentality=" << equ->Mentality << ",physical_fitness=" << equ->Physical_fitness << "strengthenlevel=" << equ->StrengthenLevel << " where equid = " << equ->EquID << ";";
      Logger::GetLogger()->Debug(sbd.str());
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
@@ -1157,11 +1134,12 @@ void PlayerLogin::UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEqu
     }
 }
 
-//新装备更新属性
-void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEquAttr)
+//新装备插入属性
+void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* equ)
 {
     StringBuilder sbd;
-    sbd << "insert into t_playerequattr values(" << roleid << "," << insEquAttr->EquID << "," << insEquAttr->TypeID << "," << insEquAttr->PhysicalAttack << "," << insEquAttr->PhysicalDefense << "," << insEquAttr->MagicAttack << "," << insEquAttr->MagicDefense << "," << insEquAttr->HP << "," << insEquAttr->Magic << "," << insEquAttr->Durability << ");";
+    sbd << "insert into t_playerequattr values(" << roleid << "," << equ->EquID << "," << equ->TypeID << "," << equ->CritHurt << "," << equ->Dodge_Rate << "," << equ->Hit_Rate << "," << equ->Resist_Rate << "," << equ->Caster_Speed << "," << equ->Move_Speed << "," << equ->Hurt_Speed << "," << equ->RecoveryLife_Percentage << "," << equ->RecoveryLife_value << "," << equ->RecoveryMagic_Percentage << "," << equ->RecoveryMagic_value << "," << equ->MagicHurt_Reduction << "," << equ->PhysicalHurt_Reduction << "," << equ->CritHurt << "," << equ->CritHurt_Reduction << "," << equ->HP << "," << equ->Magic << "," << equ->PhysicalDefense << "," << equ->MagicDefense << "," << equ->PhysicalAttack << "," << equ->MagicAttack << "," << equ->Rigorous << "," << equ->Will << "," << equ->Wise << "," << equ->Mentality << "," << equ->Physical_fitness << "," << equ->JobID << "," << equ->BodyPos << "," << equ->Grade << "," << equ->Level << "," << equ->StrengthenLevel << "," << equ->MaxDurability << "," << equ->Durability << ");";
+
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
@@ -1170,10 +1148,10 @@ void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEq
 }
 
 //删除玩家背包装备属性
-void PlayerLogin::DeletePlayerEquAttr(hf_uint32 roleid, hf_uint32 equid)
+void PlayerLogin::DeletePlayerEquAttr(hf_uint32 equid)
 {
     StringBuilder sbd;
-    sbd << "delete from t_playerequattr where roleid = " << roleid << " and equid = " << equid << ";";
+    sbd << "delete from t_playerequattr where equid = " << equid << ";";
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
@@ -1400,23 +1378,23 @@ void PlayerLogin::FriendOffline(TCPConnection::Pointer conn)
 void PlayerLogin::QueryRoleJobAttribute()
 {
     StringBuilder sbd;
-    sbd << "select * from t_roleattribute where job = 0;";
+    sbd << "select * from t_roleattribute where job=" << CommonJob << ";";
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_common, sbd.str()) != CommonGradeCount)
     {
-        Logger::GetLogger()->Error("查询销售职业属性失败");
+        Logger::GetLogger()->Error("查询普通职业属性失败");
     }
     sbd.Clear();
-    sbd << "select * from t_roleattribute where job = 1;";
+    sbd << "select * from t_roleattribute where job=" << SaleJob << ";";
     Logger::GetLogger()->Debug(sbd.str());
     STR_RoleJobAttribute* t_sales = m_sales + ChangeProfessionGrade;
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_sales, sbd.str()) != OtherGradeCount)
     {
-        Logger::GetLogger()->Error("查询普通职业属性失败");
+        Logger::GetLogger()->Error("查询销售职业属性失败");
     }
 
     sbd.Clear();
-    sbd << "select * from t_roleattribute where job = 2;";
+    sbd << "select * from t_roleattribute where job=" << TechnologyJob << ";";
     Logger::GetLogger()->Debug(sbd.str());
     STR_RoleJobAttribute* t_technology = m_technology + ChangeProfessionGrade;
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_technology, sbd.str()) != OtherGradeCount)
@@ -1425,7 +1403,7 @@ void PlayerLogin::QueryRoleJobAttribute()
     }
 
     sbd.Clear();
-    sbd << "select * from t_roleattribute where job = 3;";
+    sbd << "select * from t_roleattribute where job=" << AdministrationJob << ";";
     Logger::GetLogger()->Debug(sbd.str());
     STR_RoleJobAttribute* t_administration = m_administration + ChangeProfessionGrade;
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_administration, sbd.str()) != OtherGradeCount)

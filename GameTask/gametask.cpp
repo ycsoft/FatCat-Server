@@ -831,7 +831,7 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
     //发送玩家所在地图上的任务
     for(_umap_taskProfile::iterator it = m_taskProfile->begin(); it != m_taskProfile->end(); it++)
     {
-        cout << "任务编号：" << it->first << endl;
+//        cout << "任务编号：" << it->first << endl;
         _umap_taskProcess::iterator iter = playerAcceptTask->find(it->first);
         //是否已经完成过了，暂时判断完成了就不再发送，以后根据任务是否可重复接取判断
         if(iter != playerAcceptTask->end()) //已接取

@@ -499,26 +499,30 @@ typedef struct _STR_EquipmentAttr
     hf_uint32 RecoveryMagic_value;      //每秒恢复魔法值
     hf_float  MagicHurt_Reduction;      //法术伤害减免
     hf_float  PhysicalHurt_Reduction;   //物理伤害减免
-    hf_float  CritHurt;                 //暴击伤害
-    hf_float  CritHurt_Reduction;       //暴击伤害减免
 
-    hf_uint16 HP;                       //附加血量
-    hf_uint16 Magic;                    //附加魔法值
-    hf_uint16 PhysicalDefense;          //物理防御
-    hf_uint16 MagicDefense;             //魔法防御
-    hf_uint16 PhysicalAttack;           //物理攻击
-    hf_uint16 MagicAttack;              //魔法攻击
-    hf_uint16 Rigorous;                 //严谨
-    hf_uint16 Will;                     //机变
-    hf_uint16 Wise;                     //睿智
-    hf_uint16 Mentality;                //心态
-    hf_uint16 Physical_fitness;         //体能
+    hf_float  CritHurt;                 //暴击伤害          变
+    hf_float  CritHurt_Reduction;       //暴击伤害减免      变
 
-    hf_uint8  bodyPos;                  //装备身体部位
+    hf_uint16 HP;                       //附加血量          变
+    hf_uint16 Magic;                    //附加魔法值        变
+    hf_uint16 PhysicalDefense;          //物理防御          变
+    hf_uint16 MagicDefense;             //魔法防御          变
+    hf_uint16 PhysicalAttack;           //物理攻击          变
+    hf_uint16 MagicAttack;              //魔法攻击          变
+
+    hf_uint16 Rigorous;                 //严谨    有可能变
+    hf_uint16 Will;                     //机变    有可能变
+    hf_uint16 Wise;                     //睿智    有可能变
+    hf_uint16 Mentality;                //心态    有可能变
+    hf_uint16 Physical_fitness;         //体能    有可能变
+
+    hf_uint8  JobID;                    //职业ID
+    hf_uint8  BodyPos;                  //装备身体部位
     hf_uint8  Grade;                    //装备品级
     hf_uint8  Level;                    //装备等级
-    hf_uint8  StrengthenLevel;          //强化等级
-    hf_uint8  Durability;               //耐久度
+    hf_uint8  StrengthenLevel;          //强化等级         变
+    hf_uint8  MaxDurability;            //耐久度上限
+    hf_uint8  Durability;               //当前耐久度       变
 }STR_EquipmentAttr;
 
 typedef struct _STR_PackEquipmentAttr
@@ -1241,8 +1245,9 @@ typedef struct _STR_RoleInfo
     _STR_RoleInfo& operator=(_STR_RoleInfo& role)
     {
         MaxHP = role.MaxHP;
-        hf_uint32 hp = role.HP;
-        HP = hp;
+//        hf_uint32 hp = role.HP;
+//        HP = hp;
+        HP = role.HP;
         MaxMagic = role.MaxMagic;
         Magic = role.Magic;
         PhysicalDefense = role.PhysicalDefense;
@@ -1280,8 +1285,9 @@ typedef struct _STR_RoleInfo
     _STR_RoleInfo(_STR_RoleInfo& role)
     {
         MaxHP = role.MaxHP;
-        hf_uint32 hp = role.HP;
-        HP = hp;
+//        hf_uint32 hp = role.HP;
+//        HP = hp;
+        HP = role.HP;
         MaxMagic = role.MaxMagic;
         Magic = role.Magic;
         PhysicalDefense = role.PhysicalDefense;
@@ -1315,7 +1321,8 @@ typedef struct _STR_RoleInfo
     }
 
     hf_uint32 MaxHP;                 //最大生命值
-    boost::atomic_uint32_t HP;       //当前生命值
+//    boost::atomic_uint32_t HP;       //当前生命值
+    hf_uint32 HP;
     hf_uint32 MaxMagic;              //最大法力值
     hf_uint32 Magic;                 //当前法力值
     hf_uint32 PhysicalDefense;       //物理防御值

@@ -50,11 +50,11 @@ public:
     //删除玩家背包物品
     static void DeletePlayerGoods(hf_uint32 roleid, hf_uint16 Pos);
     //更新玩家装备属性
-    static void UpdatePlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* upEquAttr);
+    static void UpdatePlayerEquAttr(STR_EquipmentAttr* upEquAttr);
     //新装备更新属性
     static void InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* insEquAttr);
     //删除玩家背包装备属性
-    static void DeletePlayerEquAttr(hf_uint32 roleid, hf_uint32 equid);
+    static void DeletePlayerEquAttr(hf_uint32 equid);
     //更新玩家任务进度
     static void UpdatePlayerTask(hf_uint32 roleid, STR_TaskProcess* upTask);
     //插入新任务
@@ -101,8 +101,8 @@ public:
     void SaveRoleTaskProcess(TCPConnection::Pointer conn);
     //将玩家背包里的物品写进数据库
     void SaveRoleBagGoods(TCPConnection::Pointer conn);
-    //将玩家装备属性写进数据库
-    void SaveRoleEquAttr(TCPConnection::Pointer conn);
+    //将玩家装备当前耐久度更新到数据库
+    void SaveRoleEquDurability(TCPConnection::Pointer conn);
     //将玩家金钱写进数据库
     void SaveRoleMoney(TCPConnection::Pointer conn);
     //将下线消息通知给可视范围内的玩家
