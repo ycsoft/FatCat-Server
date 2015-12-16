@@ -98,6 +98,8 @@ typedef boost::shared_ptr<_umap_roleGoods> umap_roleGoods;
 typedef boost::unordered_map<hf_uint32, STR_PlayerEqu> _umap_roleEqu;
 typedef boost::shared_ptr<_umap_roleEqu> umap_roleEqu;
 
+typedef boost::unordered_map<hf_uint32, vector<hf_uint32> > umap_arrangeBag;
+
 ////玩家装备包 <装备ID，属性>
 //typedef boost::unordered_map<hf_uint32, STR_Equipment> _umap_roleEquAttr;
 //typedef boost::shared_ptr<_umap_roleEquAttr>umap_roleEquAttr;

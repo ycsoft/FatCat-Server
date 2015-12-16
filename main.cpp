@@ -46,9 +46,6 @@ int main()
 //    LOG_NOTICE("notice");
 //    LOG_DEBUG("hello log4c!");
 
-
-
-
     //数据库初始化
 //     Logger::GetLogger()->log_open("mycat");
      Logger::GetLogger()->Info("Init DB ........");

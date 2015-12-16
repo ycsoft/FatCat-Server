@@ -239,7 +239,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         srv->RunTask(boost::bind(&OperationGoods::SellGoods, t_operationGoods, conn, t_sell));
         break;
     }
-    case FLAG_ArrangeBagGoods:
+    case FLAG_ArrangeBagGoods:   //整理背包物品
     {
         srv->RunTask(boost::bind(&OperationGoods::ArrangeBagGoods, t_operationGoods, conn));
         break;

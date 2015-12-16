@@ -248,7 +248,7 @@ bool GameTask::TaskFinishGoodsReward(TCPConnection::Pointer conn, STR_FinishTask
             PosCount = PosCount + good_it->Count/GOODSMAXCOUNT + 1;
         }
     }
-    if(OperationGoods::UseEmptyPos(conn, PosCount) > 0) //空格子不够
+    if(OperationGoods::JudgeEmptyPos(conn, PosCount) > 0) //空格子不够
     {
         STR_PackFinishTaskResult t_taskResult;
         t_taskResult.TaskID = finishTask->TaskID;

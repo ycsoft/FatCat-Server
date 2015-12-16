@@ -119,7 +119,7 @@ hf_int32 DiskDBManager::GetPlayerUserId(STR_PlayerLoginUserId* user,const char *
     }
 }
 
-hf_int32 DiskDBManager::GetPlayerRoleList(ResRoleList* RoleList,const char *str)
+hf_int32 DiskDBManager::GetPlayerRoleList(ResRoleList* RoleList, const char *str)
 {
     m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);

@@ -140,7 +140,7 @@
 #define   HurtSpeed                       1.00   //攻击速度
 #define   MaxSmallUniverse                100    //最大小宇宙
 
-#define   CommonJob                       4     //基本职业
+#define   CommonJob                       0     //基本职业
 #define   SaleJob                         1     //销售职业
 #define   TechnologyJob                   2     //技术职业
 #define   AdministrationJob               3     //行政职业

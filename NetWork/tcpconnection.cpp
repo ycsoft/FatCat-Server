@@ -79,17 +79,17 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec,size_
             end += sizeof(STR_PackHead);            
             memcpy(&head, m_buf + start, sizeof(STR_PackHead));
 
-            if(end < currentIndex &&
+            if(end <= currentIndex &&
                     start + sizeof(STR_PackHead) + head.Len <= currentIndex)
             {
                 memcpy(m_pack.data, m_buf + start, sizeof(STR_PackHead) + head.Len);
-                //未登录角色
+
                if(JudgePlayerLogin(shared_from_this(), head.Flag))
                {
                    m_pack.roleid = (*smap)[shared_from_this()].m_roleid;
                    Server::GetInstance()->PushPackage(m_pack);
                }
-               else
+               else //未登录角色
                {
                    CommandParseLogin(shared_from_this(), m_pack.data);
                }

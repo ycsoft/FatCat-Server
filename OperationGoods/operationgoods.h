@@ -53,7 +53,8 @@ public:
     static void ReleasePos(TCPConnection::Pointer conn, hf_uint16 pos);  //释放位置
     static hf_uint8 GetEmptyPosCount(TCPConnection::Pointer conn);       //得到空位置总数
     static hf_uint8 GetEmptyPos(TCPConnection::Pointer conn);            //查找空位置
-    static hf_uint8 UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count);
+
+    static hf_uint8 JudgeEmptyPos(TCPConnection::Pointer conn, hf_uint8 count); //判断空位值能否放下
 
     //给新捡的装备属性 附初值
     void SetEquAttr(STR_EquipmentAttr* equAttr, hf_uint32 typeID);

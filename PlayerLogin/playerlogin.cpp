@@ -28,6 +28,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     hf_int32 roleid = ((*smap)[conn].m_roleid);
     if(roleid < 100000000) //没登录角色
     {
+        Logger::GetLogger()->Debug("没有登录角色");
         return;
     }
     //将玩家当前数据写进数据库,(位置，任务进度等)
@@ -1105,7 +1106,7 @@ void PlayerLogin::InsertPlayerGoods(hf_uint32 roleid, STR_Goods* insGoods)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家背包物品信息失败");
+        Logger::GetLogger()->Error("玩家背包插入新物品信息失败");
     }
 }
 

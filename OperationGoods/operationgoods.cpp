@@ -83,7 +83,7 @@ hf_uint8 OperationGoods::GetEmptyPos(TCPConnection::Pointer conn)
 
 
 //判断能否放下
-hf_uint8 OperationGoods::UseEmptyPos(TCPConnection::Pointer conn, hf_uint8 count)
+hf_uint8 OperationGoods::JudgeEmptyPos(TCPConnection::Pointer conn, hf_uint8 count)
 {
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     for(hf_int32 j = 1; j <= BAGCAPACITY; j++)   //找空位置
@@ -1139,6 +1139,9 @@ void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
     {
         Logger::GetLogger()->Debug("delete player goods fail");
     }
+
+    hf_char playerPosition[BAGCAPACITY] = { 0 };
+    memcpy(playerPosition, (*smap)[conn].m_goodsPosition, BAGCAPACITY);
     memset((*smap)[conn].m_goodsPosition, 0, BAGCAPACITY);
 
     hf_uint8 useBagPosition = 1;
@@ -1147,30 +1150,40 @@ void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
     STR_PackHead t_packHead;
     t_packHead.Flag = FLAG_BagGoods;
     hf_char* buff = (hf_char*)Server::GetInstance()->malloc();
+    hf_char bagBuff[BAGCAPACITY] = { 0 };
     for(_umap_roleEqu::iterator equ_it = playerEqu->begin(); equ_it != playerEqu->end(); equ_it++)
     {
-        equ_it->second.goods.Count = 0;
-        equ_it->second.goods.Source = Source_Bag;
+        if(bagBuff[equ_it->second.goods.Position] == POS_NONEMPTY)
+        {
+            continue;
+        }
+
+        equ_it->second.goods.Position = useBagPosition;
+        UsePos(conn, useBagPosition);
+        bagBuff[useBagPosition] = POS_NONEMPTY;
+        useBagPosition++;
+        t_post->PushUpdateGoods(roleid, &equ_it->second.goods, PostInsert);      
         memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &equ_it->second.goods, sizeof(STR_Goods));
         i++;
 
-        equ_it->second.goods.Position = useBagPosition;
-        equ_it->second.goods.Count = 1;
-        useBagPosition++;
-        t_post->PushUpdateGoods(roleid, &equ_it->second.goods, PostInsert);
-        memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &equ_it->second.goods, sizeof(STR_Goods));
-        if(i == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_Goods) + 2)
+        _umap_roleEqu::iterator second_it = equ_it;
+        second_it++;
+        for(;second_it != playerEqu->end();second_it++)
         {
-            t_packHead.Len = sizeof(STR_Goods)*i;
-            memcpy(buff, &t_packHead, sizeof(STR_PackHead));
-            conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
-            i = 0;
-        }
-        else
-        {
+            if(second_it->second.goods.TypeID != equ_it->second.goods.TypeID)
+            {
+                continue;
+            }
+            second_it->second.goods.Position = useBagPosition;
+            UsePos(conn, useBagPosition);
+            bagBuff[useBagPosition] = POS_NONEMPTY;
+            useBagPosition++;
+            t_post->PushUpdateGoods(roleid, &second_it->second.goods, PostInsert);
+            memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &second_it->second.goods, sizeof(STR_Goods));
             i++;
         }
     }
+
 
     hf_uint16 count = 0;
     umap_roleGoods playerGoods = (*smap)[conn].m_playerGoods;
@@ -1178,87 +1191,78 @@ void OperationGoods::ArrangeBagGoods(TCPConnection::Pointer conn)
     {
         vector<STR_Goods>::iterator start_it = goods_it->second.begin();
         vector<STR_Goods>::iterator end_it = goods_it->second.end();
-
+        vector<STR_Goods>::iterator _end_it = end_it;
         while(1)
         {
             if(start_it == end_it)
             {
                 break;
             }
-            if(start_it == --end_it)
+            _end_it = end_it;
+            --_end_it;
+            if(start_it == _end_it)
             {
                 count = start_it->Count;
-                start_it->Count = 0;
                 start_it->Source = Source_Bag;
-                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
-                i++;
 
                 start_it->Count = count;
                 start_it->Position = useBagPosition;
+                UsePos(conn, useBagPosition);
+                bagBuff[useBagPosition] = POS_NONEMPTY;
                 useBagPosition++;
                 t_post->PushUpdateGoods(roleid, &(*start_it), PostInsert);
                 memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
-                if(i == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_Goods) + 2)
-                {
-                    t_packHead.Len = sizeof(STR_Goods)*i;
-                    i = 0;
-                    conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
-                }
-                else
-                {
-                    i++;
-                }
+                i++;
                 break;
             }
             else
             {
                 count = start_it->Count;
-                start_it->Count = 0;
                 start_it->Source = Source_Bag;
-                memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
-                i++;
-                if(count + end_it->Count > GOODSMAXCOUNT)
+                if(count + _end_it->Count > GOODSMAXCOUNT)
                 {
                     start_it->Count = GOODSMAXCOUNT;
-                    end_it->Count = end_it->Count + count - GOODSMAXCOUNT;
+                    _end_it->Count = _end_it->Count + count - GOODSMAXCOUNT;
                 }
                 else
                 {
-                    start_it->Count = count + end_it->Count;
-                    end_it->Count = 0;
-                    end_it->Source = Source_Bag;
-
-                    memcpy(buff + sizeof(STR_PackHead) + useBagPosition*sizeof(STR_Goods), &end_it, sizeof(STR_Goods));
-                    i++;
-                    vector<STR_Goods>::iterator _end_it = end_it;
-                    end_it--;
+                    start_it->Count = count + _end_it->Count;
                     goods_it->second.erase(_end_it);
                 }
                 start_it->Position = useBagPosition;
+                UsePos(conn, useBagPosition);
+                bagBuff[useBagPosition] = POS_NONEMPTY;
                 useBagPosition++;
                 t_post->PushUpdateGoods(roleid, &(*start_it), PostInsert);
                 memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &(*start_it), sizeof(STR_Goods));
-                if(i == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_Goods) + 2)
-                {
-                    t_packHead.Len = sizeof(STR_Goods)*i;
-                    memcpy(buff, &t_packHead, sizeof(STR_PackHead));
-                    conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
-                    i = 0;
-                }
-                else
-                {
-                    i++;
-                }
+                i++;
                 start_it++;
             }
         }
     }
-    if(i != 0)
+
+    STR_Goods goods;
+    goods.Count = 0;
+    for(hf_uint8 k = useBagPosition; k < BAGCAPACITY; k++)
     {
+        if(bagBuff[k] == playerPosition[k])
+            continue;
+        goods.Position = k;
+        memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_Goods), &goods, sizeof(STR_Goods));
+        i++;
+    }
+    for(hf_uint8 k = 0; k < i; k++)
+    {
+        memcpy(&goods, buff + sizeof(STR_PackHead) + sizeof(STR_Goods)*k, sizeof(STR_Goods));
+        printf("goodsID:%u,Count:%u,Position:%u\n",goods.GoodsID, goods.Count, goods.Position);
+    }
+    if(i != 0)
+    {      
         t_packHead.Len = sizeof(STR_Goods)*i;
         memcpy(buff, &t_packHead, sizeof(STR_PackHead));
         conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
     }
+    Server::GetInstance()->free(buff);
 }
 
 //换装
