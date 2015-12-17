@@ -52,13 +52,13 @@ public:
     int   Write_all( void *buff, int size );
 
 
-    void CallBack_Read_Some(const boost::system::error_code &code,size_t size);
+    void CallBack_Read_Some(const boost::system::error_code &code,hf_uint16 size);
 
 
-    void CallBack_Write( const boost::system::error_code &code, size_t transfferd);
+    void CallBack_Write( const boost::system::error_code &code, hf_uint16 transfferd);
 
-    //判断玩家是否登录角色
-    bool JudgePlayerLogin(/*SessionMgr::SessionPointer smap, */TCPConnection::Pointer conn, hf_uint8 flag);
+    //判断玩家是否登录角色  返回值 0表示异常Flag忽略，1登录，2打包
+    hf_uint8 JudgePlayerLogin(/*SessionMgr::SessionPointer smap, *//*TCPConnection::Pointer conn, */hf_uint8 flag);
 
     /**
      * @brief Start
@@ -69,14 +69,24 @@ public:
      * @return
      */
     tcp::socket&        socket()   { return m_socket;}
+    hf_uint8 GetPlayerLoginStatus()
+    {
+        return m_LoginStatus;
+    }
+
+    void ChangePlayerLoginStatus(hf_uint8 status)
+    {
+        m_LoginStatus = status;
+    }
 
     boost::mutex          m_write_lock;
     boost::mutex          m_read_lock;
 
+
 private:
     TCPConnection(boost::asio::io_service &io);
 
-    hf_uint32 currentIndex;
+    hf_uint16 m_dataPos;   //接收到或者未处理的数据在m_buf里的位置
     hf_char                 m_buf[TCP_BUFFER_SIZE];
     STR_Package             m_pack;
 
@@ -85,7 +95,8 @@ private:
     tcp::socket             m_socket;
 
     //发送缓冲区
-    char                    m_send_buf[TCP_BUFFER_SIZE];
+    hf_char                 m_send_buf[TCP_BUFFER_SIZE];
+    hf_uint8                m_LoginStatus;  //0表示未登录用户，1表示已经登录用户，未登录角色， 2表示已经登录角色
     //
     //设置读写锁，保证通过网络传输的包的完整性。
     //一旦发生异常，及时将锁释放，否则会造成死锁

@@ -320,6 +320,7 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
 
             t_PackResult.result = RESULT_SUCCESS;
             conn->Write_all(&t_PackResult, sizeof(STR_PackResult));
+            conn->ChangePlayerLoginStatus(PlayerLoginUser);
 
             printf("用户登录成功:%s\n", reg->userName);
             SessionMgr::Instance()->SaveSession(conn, reg->userName);
@@ -368,6 +369,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
     {
         t_packResult.result = RESULT_SUCCESS;
         conn->Write_all(&t_packResult, sizeof(STR_PackResult));
+        conn->ChangePlayerLoginStatus(PlayerLoginRole);
         Logger::GetLogger()->Debug("Login Role Success");
 
         (*smap)[conn].m_roleid = roleid;
@@ -667,6 +669,8 @@ void PlayerLogin::SendRoleEquAttr(TCPConnection::Pointer conn, hf_uint32 RoleID)
         hf_int32 i = 0;
         for(_umap_roleEqu::iterator it = playerEqu->begin(); it != playerEqu->end(); it++)
         {
+            STR_EquipmentAttr* equattr = &it->second.equAttr;
+            printf("equID=%d\n", equattr->EquID);
             memcpy(buff + sizeof(STR_PackHead) + i*sizeof(STR_EquipmentAttr), &(it->second.equAttr), sizeof(STR_EquipmentAttr));
             i++;
         }
@@ -1139,7 +1143,7 @@ void PlayerLogin::UpdatePlayerEquAttr(STR_EquipmentAttr* equ)
 void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* equ)
 {
     StringBuilder sbd;
-    sbd << "insert into t_playerequattr values(" << roleid << "," << equ->EquID << "," << equ->TypeID << "," << equ->CritHurt << "," << equ->Dodge_Rate << "," << equ->Hit_Rate << "," << equ->Resist_Rate << "," << equ->Caster_Speed << "," << equ->Move_Speed << "," << equ->Hurt_Speed << "," << equ->RecoveryLife_Percentage << "," << equ->RecoveryLife_value << "," << equ->RecoveryMagic_Percentage << "," << equ->RecoveryMagic_value << "," << equ->MagicHurt_Reduction << "," << equ->PhysicalHurt_Reduction << "," << equ->CritHurt << "," << equ->CritHurt_Reduction << "," << equ->HP << "," << equ->Magic << "," << equ->PhysicalDefense << "," << equ->MagicDefense << "," << equ->PhysicalAttack << "," << equ->MagicAttack << "," << equ->Rigorous << "," << equ->Will << "," << equ->Wise << "," << equ->Mentality << "," << equ->Physical_fitness << "," << equ->JobID << "," << equ->BodyPos << "," << equ->Grade << "," << equ->Level << "," << equ->StrengthenLevel << "," << equ->MaxDurability << "," << equ->Durability << ");";
+    sbd << "insert into t_playerequattr values(" << roleid << "," << equ->EquID << "," << equ->TypeID << "," << equ->CritHurt << "," << equ->Dodge_Rate << "," << equ->Hit_Rate << "," << equ->Resist_Rate << "," << equ->Caster_Speed << "," << equ->Move_Speed << "," << equ->Hurt_Speed << "," << equ->RecoveryLife_Percentage << "," << equ->RecoveryLife_value << "," << equ->RecoveryMagic_Percentage << "," << equ->RecoveryMagic_value << "," << equ->MagicHurt_Reduction << "," << equ->PhysicalHurt_Reduction << "," << equ->CritHurt << "," << equ->CritHurt_Reduction << "," << equ->Magic_Pass << "," << equ->Physical_Pass << "," << equ->SuitSkillID << "," << equ->HP << "," << equ->Magic << "," << equ->PhysicalDefense << "," << equ->MagicDefense << "," << equ->PhysicalAttack << "," << equ->MagicAttack << "," << equ->Rigorous << "," << equ->Will << "," << equ->Wise << "," << equ->Mentality << "," << equ->Physical_fitness << "," << equ->JobID << "," << equ->BodyPos << "," << equ->Grade << "," << equ->Level << "," << equ->StrengthenLevel << "," << equ->MaxDurability << "," << equ->Durability << ");";
 
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)

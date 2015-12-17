@@ -5,7 +5,7 @@
 #include "OperationGoods/operationgoods.h"
 #include "utils/stringbuilder.hpp"
 #include "Game/session.hpp"
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "gametask.h"
 #include "server.h"
 

@@ -8,7 +8,7 @@
 #include "server.h"
 
 #include "Game/userposition.hpp"
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "NetWork/tcpconnection.h"
 #include "PlayerLogin/playerlogin.h"
 

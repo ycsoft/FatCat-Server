@@ -7,7 +7,7 @@
 
 
 #include "Game/cmdtypes.h"
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "utils/stringbuilder.hpp"
 #include "Game/getdefinevalue.h"
 #include "server.h"
@@ -1028,24 +1028,27 @@ hf_int32 DiskDBManager::GetPlayerEqu(umap_roleEqu playerEqu, const hf_char* str)
             t_equAttr.PhysicalHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 15));
             t_equAttr.CritHurt = atof(PQgetvalue(t_PGresult, i, 16));
             t_equAttr.CritHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 17));
-            t_equAttr.HP = atoi(PQgetvalue(t_PGresult, i, 18));
-            t_equAttr.Magic = atoi(PQgetvalue(t_PGresult, i, 19));
-            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 20));
-            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 21));
-            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 22));
-            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 23));
-            t_equAttr.Rigorous = atoi(PQgetvalue(t_PGresult, i, 24));
-            t_equAttr.Will = atoi(PQgetvalue(t_PGresult, i, 25));
-            t_equAttr.Wise = atoi(PQgetvalue(t_PGresult, i, 26));
-            t_equAttr.Mentality = atoi(PQgetvalue(t_PGresult, i, 27));
-            t_equAttr.Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 28));
-            t_equAttr.JobID = atoi(PQgetvalue(t_PGresult, i, 29));
-            t_equAttr.BodyPos = atoi(PQgetvalue(t_PGresult, i, 30));
-            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 31));
-            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 32));
-            t_equAttr.StrengthenLevel = atoi(PQgetvalue(t_PGresult, i, 33));
-            t_equAttr.MaxDurability = atoi(PQgetvalue(t_PGresult, i, 34));
-            t_equAttr.Durability = atoi(PQgetvalue(t_PGresult, i, 35));
+            t_equAttr.Magic_Pass = atof(PQgetvalue(t_PGresult, i, 18));
+            t_equAttr.Physical_Pass = atof(PQgetvalue(t_PGresult, i, 19));
+            t_equAttr.SuitSkillID = atoi(PQgetvalue(t_PGresult, i, 20));
+            t_equAttr.HP = atoi(PQgetvalue(t_PGresult, i, 21));
+            t_equAttr.Magic = atoi(PQgetvalue(t_PGresult, i, 22));
+            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 23));
+            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 24));
+            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 25));
+            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 26));
+            t_equAttr.Rigorous = atoi(PQgetvalue(t_PGresult, i, 27));
+            t_equAttr.Will = atoi(PQgetvalue(t_PGresult, i, 28));
+            t_equAttr.Wise = atoi(PQgetvalue(t_PGresult, i, 29));
+            t_equAttr.Mentality = atoi(PQgetvalue(t_PGresult, i, 30));
+            t_equAttr.Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 31));
+            t_equAttr.JobID = atoi(PQgetvalue(t_PGresult, i, 32));
+            t_equAttr.BodyPos = atoi(PQgetvalue(t_PGresult, i, 33));
+            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 34));
+            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 35));
+            t_equAttr.StrengthenLevel = atoi(PQgetvalue(t_PGresult, i, 36));
+            t_equAttr.MaxDurability = atoi(PQgetvalue(t_PGresult, i, 37));
+            t_equAttr.Durability = atoi(PQgetvalue(t_PGresult, i, 38));
 
             memcpy(&((*playerEqu)[t_equAttr.EquID].equAttr), &t_equAttr, sizeof(STR_EquipmentAttr));
         }
@@ -1218,23 +1221,26 @@ hf_int32 DiskDBManager::GetEquAttr(umap_equAttr* equAttr, const hf_char* str)
             t_equAttr.PhysicalHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 14));
             t_equAttr.CritHurt = atof(PQgetvalue(t_PGresult, i, 15));
             t_equAttr.CritHurt_Reduction = atof(PQgetvalue(t_PGresult, i, 16));
-            t_equAttr.HP = atoi(PQgetvalue(t_PGresult, i, 17));
-            t_equAttr.Magic = atoi(PQgetvalue(t_PGresult, i, 18));
-            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 19));
-            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 20));
-            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 21));
-            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 22));
-            t_equAttr.Rigorous = atoi(PQgetvalue(t_PGresult, i, 23));
-            t_equAttr.Will = atoi(PQgetvalue(t_PGresult, i, 24));
-            t_equAttr.Wise = atoi(PQgetvalue(t_PGresult, i, 25));
-            t_equAttr.Mentality = atoi(PQgetvalue(t_PGresult, i, 26));
-            t_equAttr.Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 27));
-            t_equAttr.JobID = atoi(PQgetvalue(t_PGresult, i ,28));
-            t_equAttr.BodyPos = atoi(PQgetvalue(t_PGresult, i, 29));
-            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 30));
-            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 31));
-            t_equAttr.StrengthenLevel = atoi(PQgetvalue(t_PGresult, i, 32));
-            t_equAttr.MaxDurability = atoi(PQgetvalue(t_PGresult, i, 33));
+            t_equAttr.Magic_Pass = atof(PQgetvalue(t_PGresult,i, 17));
+            t_equAttr.Physical_Pass = atof(PQgetvalue(t_PGresult,i, 18));
+            t_equAttr.SuitSkillID = atoi(PQgetvalue(t_PGresult,i, 19));
+            t_equAttr.HP = atoi(PQgetvalue(t_PGresult, i, 20));
+            t_equAttr.Magic = atoi(PQgetvalue(t_PGresult, i, 21));
+            t_equAttr.PhysicalDefense = atoi(PQgetvalue(t_PGresult, i, 22));
+            t_equAttr.MagicDefense = atoi(PQgetvalue(t_PGresult, i, 23));
+            t_equAttr.PhysicalAttack = atoi(PQgetvalue(t_PGresult, i, 24));
+            t_equAttr.MagicAttack = atoi(PQgetvalue(t_PGresult, i, 25));
+            t_equAttr.Rigorous = atoi(PQgetvalue(t_PGresult, i, 26));
+            t_equAttr.Will = atoi(PQgetvalue(t_PGresult, i, 27));
+            t_equAttr.Wise = atoi(PQgetvalue(t_PGresult, i, 28));
+            t_equAttr.Mentality = atoi(PQgetvalue(t_PGresult, i, 29));
+            t_equAttr.Physical_fitness = atoi(PQgetvalue(t_PGresult, i, 30));
+            t_equAttr.JobID = atoi(PQgetvalue(t_PGresult, i ,31));
+            t_equAttr.BodyPos = atoi(PQgetvalue(t_PGresult, i, 32));
+            t_equAttr.Grade = atoi(PQgetvalue(t_PGresult, i, 33));
+            t_equAttr.Level = atoi(PQgetvalue(t_PGresult, i, 34));
+            t_equAttr.StrengthenLevel = atoi(PQgetvalue(t_PGresult, i, 35));
+            t_equAttr.MaxDurability = atoi(PQgetvalue(t_PGresult, i, 36));
             t_equAttr.Durability = t_equAttr.MaxDurability;
 
             (*equAttr)[t_equAttr.TypeID] = t_equAttr;

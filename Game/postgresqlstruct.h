@@ -502,6 +502,9 @@ typedef struct _STR_EquipmentAttr
 
     hf_float  CritHurt;                 //暴击伤害          变
     hf_float  CritHurt_Reduction;       //暴击伤害减免      变
+    hf_float  Magic_Pass;               //法透
+    hf_float  Physical_Pass;            //物透
+    hf_uint32 SuitSkillID;              //套装技能ID
 
     hf_uint16 HP;                       //附加血量          变
     hf_uint16 Magic;                    //附加魔法值        变

@@ -12,7 +12,7 @@
 
 #include "Game/postgresqlstruct.h"
 #include "NetWork/tcpconnection.h"
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "Game/cmdtypes.h"
 
 #include "Game/rolestruct.h"

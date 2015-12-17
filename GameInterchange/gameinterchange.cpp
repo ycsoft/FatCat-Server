@@ -1,7 +1,7 @@
 #include "gameinterchange.h"
 #include "memManage/diskdbmanager.h"
 #include "utils/stringbuilder.hpp"
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "server.h"
 #include "OperationPostgres/operationpostgres.h"
 #include "GameTask/gametask.h"

@@ -17,7 +17,7 @@
 #include <boost/unordered_map.hpp>
 
 #include "server.h"
-#include "Game/log.hpp"
+#include "Game/log.h"
 
 //#include "fileOperation/fileoperation.h"
 //#include "Game/log.hpp"
@@ -47,7 +47,7 @@ int main()
 //    LOG_DEBUG("hello log4c!");
 
     //数据库初始化
-//     Logger::GetLogger()->log_open("mycat");
+     Logger::GetLogger()->log_open("mycat");
      Logger::GetLogger()->Info("Init DB ........");
      Server::GetInstance()->InitDB();
      Logger::GetLogger()->Debug("Init DB Finished!");

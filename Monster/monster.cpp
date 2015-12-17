@@ -2,7 +2,7 @@
 #include "memManage/diskdbmanager.h"
 #include "utils/stringbuilder.hpp"
 #include "Game/session.hpp"
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "monster.h"
 #include "server.h"
 #include "GameAttack/gameattack.h"

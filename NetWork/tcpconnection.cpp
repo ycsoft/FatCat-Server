@@ -9,11 +9,11 @@
 
 #include "Game/session.hpp"
 
-//#include "Game/log.hpp"
+//#include "Game/log.h"
 
 
 TCPConnection::TCPConnection(boost::asio::io_service &io)
-    :m_socket(io),currentIndex(0)
+    :m_socket(io),m_dataPos(0),m_LoginStatus(PlayerNotLoginUser)
 {
 
 }
@@ -56,62 +56,69 @@ int TCPConnection::Write_all(void *buff, int size)
 
 void TCPConnection::ReadSome()
 {
-        m_socket.async_read_some(boost::asio::buffer(m_buf + currentIndex,TCP_BUFFER_SIZE - currentIndex),
+        m_socket.async_read_some(boost::asio::buffer(m_buf + m_dataPos,TCP_BUFFER_SIZE - m_dataPos),
                                 boost::bind(&TCPConnection::CallBack_Read_Some,
                                             shared_from_this(),
                                             boost::asio::placeholders::error(),
                                             boost::asio::placeholders::bytes_transferred()));
 }
 
-void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec,size_t size)
+void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_uint16 size)
 {
     if ( !ec )
-     {
+    {
 //        cout << "size = " << size << endl;
-        currentIndex += size;
-        hf_uint32 start = 0;
-        hf_uint32 end = 0;
-        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-
+        m_dataPos += size;
+        hf_uint16 currentPos = 0;
         STR_PackHead head;
-        while(start < currentIndex)
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+        while(currentPos < m_dataPos)
         {
-            end += sizeof(STR_PackHead);            
-            memcpy(&head, m_buf + start, sizeof(STR_PackHead));
-
-            if(end <= currentIndex &&
-                    start + sizeof(STR_PackHead) + head.Len <= currentIndex)
+            if(m_dataPos < sizeof(STR_PackHead))
             {
-                memcpy(m_pack.data, m_buf + start, sizeof(STR_PackHead) + head.Len);
-
-               if(JudgePlayerLogin(shared_from_this(), head.Flag))
-               {
+                cout << "有未处理的长度小于头的数据" << endl;
+                break;
+            }
+            memcpy(&head, m_buf + currentPos, sizeof(STR_PackHead));
+            if(currentPos + sizeof(STR_PackHead) + head.Len == m_dataPos) //最后一个包
+            {
+                memcpy(m_pack.data, m_buf + currentPos, sizeof(STR_PackHead) + head.Len);
+                hf_uint8 value = JudgePlayerLogin(head.Flag);
+                if(value == 2)
+                {
                    m_pack.roleid = (*smap)[shared_from_this()].m_roleid;
                    Server::GetInstance()->PushPackage(m_pack);
-               }
-               else //未登录角色
-               {
-                   CommandParseLogin(shared_from_this(), m_pack.data);
-               }
-
-                start += sizeof(STR_PackHead) + head.Len;
-                if(start == currentIndex)
-                {
-                    currentIndex = 0;
-                    break;
                 }
-                end = start;
+                else if(value == 1)//未登录角色
+                {
+                   CommandParseLogin(shared_from_this(), m_pack.data);
+                }
+                m_dataPos = 0;
+                break;
             }
-            else
+            else if(currentPos + sizeof(STR_PackHead) + head.Len < m_dataPos)  //未处理的数据长度多于一个包
+            {
+                memcpy(m_pack.data, m_buf + currentPos, sizeof(STR_PackHead) + head.Len);
+                hf_uint8 value = JudgePlayerLogin(head.Flag);
+                if(value == 2)
+                {
+                   m_pack.roleid = (*smap)[shared_from_this()].m_roleid;
+                   Server::GetInstance()->PushPackage(m_pack);
+                }
+                else if(value == 1)//未登录角色
+                {
+                   CommandParseLogin(shared_from_this(), m_pack.data);
+                }
+                currentPos += sizeof(STR_PackHead) + head.Len;
+                continue;
+            }
+            else //不够一个包的长度
             {
                 cout << "有未处理完的数据" << endl;
+                printf("当前位置：currentPos = %d, m_dataPos = %d,head.Len = %d\n",currentPos, m_dataPos, head.Len);
                 hf_char buff[TCP_BUFFER_SIZE] = { 0 };
-                memcpy(buff, m_buf+start,currentIndex - start);
+                memcpy(buff, m_buf + currentPos, m_dataPos - currentPos);
                 memcpy(m_buf, buff, TCP_BUFFER_SIZE);
-//                memcpy(m_buf,m_buf+start,currentIndex - start);
-//                memset(m_buf + currentIndex - start,0,TCP_BUFFER_SIZE + start - currentIndex);
-                currentIndex -= start;
-                break;
             }
         }
         ReadSome();
@@ -127,7 +134,7 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec,size_
 }
 
 
-void TCPConnection::CallBack_Write(const boost::system::error_code &code, size_t transfferd)
+void TCPConnection::CallBack_Write(const boost::system::error_code &code, hf_uint16 transfferd)
 {
     m_write_lock.unlock();
     if ( code ||  transfferd == 0 )
@@ -138,25 +145,26 @@ void TCPConnection::CallBack_Write(const boost::system::error_code &code, size_t
 }
 
 //判断玩家是否登录角色
-bool TCPConnection::JudgePlayerLogin(/*SessionMgr::SessionPointer smap,*/ TCPConnection::Pointer conn, hf_uint8 flag)
+hf_uint8 TCPConnection::JudgePlayerLogin(hf_uint8 flag)
 {
-    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-    Session* sess = &(*smap)[conn];
-    if(sess == NULL)//未登录用户名，只能登录或注册用户
+    if(m_LoginStatus == PlayerNotLoginUser) //未登录用户名，只能登录或注册用户
     {
-        if(flag != FLAG_PlayerLoginUserId && flag != FLAG_PlayerRegisterUserId)
-            return false;
+        if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+            return 1;
+        else
+            return 0;
     }
-
-    //已经登录用户不能登录或注册用户，只能退出用户后再登录或注册用户
-    if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
-        return false;
-    if(sess->m_roleid == 0) //未登录角色，只能登录或注册或删除角色
+    else if(m_LoginStatus == PlayerLoginUser)//未登录角色，只能登录或注册或删除角色
     {
         if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
-            return false;
+            return 1;
+        else
+            return 0;
     }
-    return true;
+    else
+    {
+        return 2;
+    }
 }
 
 

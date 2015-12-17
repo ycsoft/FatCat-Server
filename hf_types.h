@@ -198,6 +198,10 @@
 #define MomentHPMagic         5      //瞬间恢复生命魔法值
 #define SecondHPMagic         6      //每秒恢复生命魔法值
 
+#define PlayerNotLoginUser   0      //玩家没有登录用户
+#define PlayerLoginUser      1      //玩家已经登录用户
+#define PlayerLoginRole      2      //玩家已经登录角色
+
 namespace hf_types{
 
 typedef unsigned int            hf_uint32;
@@ -209,6 +213,7 @@ typedef hf_byte                 hf_uint8;
 typedef char                    hf_char;
 typedef float                   hf_float;
 typedef double                  hf_double;
+typedef bool                    hf_bool;
 
 /**
  *

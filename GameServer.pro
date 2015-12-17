@@ -32,7 +32,7 @@ SOURCES += main.cpp \
     GameChat/gamechat.cpp \
     fileOperation/fileoperation.cpp \
     PlayerTrading/playertrading.cpp \
-#    Game/log.cpp \
+    Game/log.cpp \
 
 
 
@@ -76,7 +76,7 @@ HEADERS += \
     Game/rolestruct.h \
     fileOperation/fileoperation.h \
     PlayerTrading/playertrading.h \
-    Game/log.hpp \
+    Game/log.h \
 #    Game/log.h
 
 

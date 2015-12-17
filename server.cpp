@@ -5,7 +5,7 @@
 #include "memManage/diskdbmanager.h"
 #include "memManage/memdbmanager.h"
 
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "Monster/monster.h"
 #include "PlayerLogin/playerlogin.h"
 #include "GameTask/gametask.h"

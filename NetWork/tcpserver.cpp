@@ -5,7 +5,7 @@
 #include "hf_types.h"
 #include "server.h"
 
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "GameAttack/gameattack.h"
 #include "Monster/monster.h"
 #include "OperationPostgres/operationpostgres.h"
@@ -60,7 +60,8 @@ void TCPServer::CallBack_Accept(TCPConnection::Pointer conn, const boost::system
         boost::asio::ip::tcp::no_delay  nodelay(true);
         conn->socket().set_option(nodelay);
 
-        Server::GetInstance()->RunTask(boost::bind(&TCPConnection::Start,conn));
+        conn->Start();
+//        Server::GetInstance()->RunTask(boost::bind(&TCPConnection::Start,conn));
     }
     StartListen();
 }
