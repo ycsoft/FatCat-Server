@@ -1,10 +1,10 @@
-#include "memdbmanager.h"
-#include <stdlib.h>
-#include "diskdbmanager.h"
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
+#include <stdlib.h>
 
+#include "memdbmanager.h"
+#include "diskdbmanager.h"
 
 MemDBManager::MemDBManager()
 {

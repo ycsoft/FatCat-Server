@@ -1,11 +1,11 @@
+#include <boost/lockfree/queue.hpp>
+
+#include "./../utils/stringbuilder.hpp"
+#include "./../memManage/diskdbmanager.h"
+#include "./../server.h"
+#include "./../Game/session.hpp"
+
 #include "teamfriend.h"
-#include "utils/stringbuilder.hpp"
-#include "memManage/diskdbmanager.h"
-#include "server.h"
-#include "Game/session.hpp"
-
-
-#include "boost/lockfree/queue.hpp"
 
 TeamFriend::TeamFriend()
 {
@@ -226,7 +226,6 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
          STR_PackHead t_packHead;
          t_packHead.Flag = FLAG_AddFriend;
          t_packHead.Len = t_row*sizeof(STR_AddFriend);
-         cout << "离线好友请求:" << t_row << endl;
          hf_int32 i = 0;
          for(vector<STR_AddFriend>::iterator it = addFriend.begin(); it != addFriend.end(); it++)
          {

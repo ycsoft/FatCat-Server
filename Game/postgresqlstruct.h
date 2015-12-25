@@ -3,10 +3,10 @@
 
 #include <string.h>
 #include <vector>
-#include <boost/thread/mutex.hpp>
-#include <boost/atomic.hpp>
+//#include <boost/thread/mutex.hpp>
+//#include <boost/atomic.hpp>
 
-#include "hf_types.h"
+#include "./../hf_types.h"
 #include "packheadflag.h"
 
 using namespace std;
@@ -1244,88 +1244,8 @@ typedef struct _STR_RoleInfo
     {
 
     }
-
-    _STR_RoleInfo& operator=(_STR_RoleInfo& role)
-    {
-        MaxHP = role.MaxHP;
-//        hf_uint32 hp = role.HP;
-//        HP = hp;
-        HP = role.HP;
-        MaxMagic = role.MaxMagic;
-        Magic = role.Magic;
-        PhysicalDefense = role.PhysicalDefense;
-        MagicDefense = role.MagicDefense;
-        PhysicalAttack = role.PhysicalAttack;
-        MagicAttack = role.MagicAttack;
-        Crit_Rate = role.Crit_Rate;
-        Dodge_Rate = role.Dodge_Rate;
-        Hit_Rate = role.Hit_Rate;
-        Resist_Rate = role.Resist_Rate;
-        Caster_Speed = role.Caster_Speed;
-        Move_Speed = role.Move_Speed;
-        Hurt_Speed = role.Hurt_Speed;
-        Small_Universe = role.Small_Universe;
-        maxSmall_Universe = role.maxSmall_Universe;
-        RecoveryLife_Percentage = role.RecoveryLife_Percentage;
-        RecoveryLife_value = role.RecoveryLife_value;
-        RecoveryMagic_Percentage = role.RecoveryMagic_Percentage;
-        RecoveryMagic_value = role.RecoveryMagic_value;
-        MagicHurt_Reduction = role.MagicHurt_Reduction;
-        PhysicalHurt_Reduction = role.PhysicalHurt_Reduction;
-        CritHurt = role.CritHurt;
-        CritHurt_Reduction = role.CritHurt_Reduction;
-        Magic_Pass = role.Magic_Pass;
-        Physical_Pass = role.Physical_Pass;
-        Rigorous = role.Rigorous;
-        Will = role.Will;
-        Wise = role.Wise;
-        Mentality = role.Mentality;
-        Physical_fitness = role.Physical_fitness;
-
-        return *this;
-    }
-
-    _STR_RoleInfo(_STR_RoleInfo& role)
-    {
-        MaxHP = role.MaxHP;
-//        hf_uint32 hp = role.HP;
-//        HP = hp;
-        HP = role.HP;
-        MaxMagic = role.MaxMagic;
-        Magic = role.Magic;
-        PhysicalDefense = role.PhysicalDefense;
-        MagicDefense = role.MagicDefense;
-        PhysicalAttack = role.PhysicalAttack;
-        MagicAttack = role.MagicAttack;
-        Crit_Rate = role.Crit_Rate;
-        Dodge_Rate = role.Dodge_Rate;
-        Hit_Rate = role.Hit_Rate;
-        Resist_Rate = role.Resist_Rate;
-        Caster_Speed = role.Caster_Speed;
-        Move_Speed = role.Move_Speed;
-        Hurt_Speed = role.Hurt_Speed;
-        Small_Universe = role.Small_Universe;
-        maxSmall_Universe = role.maxSmall_Universe;
-        RecoveryLife_Percentage = role.RecoveryLife_Percentage;
-        RecoveryLife_value = role.RecoveryLife_value;
-        RecoveryMagic_Percentage = role.RecoveryMagic_Percentage;
-        RecoveryMagic_value = role.RecoveryMagic_value;
-        MagicHurt_Reduction = role.MagicHurt_Reduction;
-        PhysicalHurt_Reduction = role.PhysicalHurt_Reduction;
-        CritHurt = role.CritHurt;
-        CritHurt_Reduction = role.CritHurt_Reduction;
-        Magic_Pass = role.Magic_Pass;
-        Physical_Pass = role.Physical_Pass;
-        Rigorous = role.Rigorous;
-        Will = role.Will;
-        Wise = role.Wise;
-        Mentality = role.Mentality;
-        Physical_fitness = role.Physical_fitness;
-    }
-
-    hf_uint32 MaxHP;                 //最大生命值
-//    boost::atomic_uint32_t HP;       //当前生命值
-    hf_uint32 HP;
+    hf_uint32 MaxHP;                 //最大生命值   
+    hf_uint32 HP;                    //当前生命值
     hf_uint32 MaxMagic;              //最大法力值
     hf_uint32 Magic;                 //当前法力值
     hf_uint32 PhysicalDefense;       //物理防御值
@@ -1898,33 +1818,54 @@ enum TaskExeMode
 
 
 //请求
-typedef struct _STR_RequestOper
+typedef struct _STR_PackRequestOper
 {
+    _STR_PackRequestOper()
+    {
+        bzero(&head,sizeof(_STR_PackRequestOper));
+        head.Flag =  FLAG_OperRequest;
+        head.Len = sizeof(_STR_PackRequestOper)-sizeof(STR_PackHead);
+    }
+
+    _STR_PackRequestOper(hf_uint32 _RoleID, hf_uint8 _OperType)
+    {
+        bzero(&head,sizeof(_STR_PackRequestOper));
+        head.Flag =  FLAG_OperRequest;
+        head.Len = sizeof(_STR_PackRequestOper)-sizeof(STR_PackHead);
+        RoleID = _RoleID;
+        OperType = _OperType;
+    }
+
     STR_PackHead head;
     hf_uint32    RoleID;
-    hf_uint8     operType;
-    _STR_RequestOper()
-    {
-        bzero(&head,sizeof(_STR_RequestOper));
-        head.Flag =  FLAG_OperRequest;
-        head.Len = sizeof(_STR_RequestOper)-sizeof(STR_PackHead);
-    }
-}STR_RequestOper;
+    hf_uint8     OperType;
+}STR_PackRequestOper;
 
 //请求返回结果
-typedef struct _STR_RequestReply
-{
+typedef struct _STR_PackRequestReply
+{    
+    _STR_PackRequestReply()
+    {
+        bzero(&head,sizeof(_STR_PackRequestReply));
+        head.Flag =  FLAG_OperResult;
+        head.Len = sizeof(_STR_PackRequestReply)-sizeof(STR_PackHead);
+    }
+    _STR_PackRequestReply(hf_uint32 _RoleID, hf_uint8 _OperType, hf_uint8 _OperResult)
+    {
+        bzero(&head,sizeof(_STR_PackRequestReply));
+        head.Flag =  FLAG_OperResult;
+        head.Len = sizeof(_STR_PackRequestReply)-sizeof(STR_PackHead);
+
+        RoleID = _RoleID;
+        OperType = _OperType;
+        OperResult = _OperResult;
+    }
+
     STR_PackHead head;
     hf_uint32    RoleID;
-    hf_uint8     operType;
-    hf_uint8     operResult;
-    _STR_RequestReply()
-    {
-        bzero(&head,sizeof(_STR_RequestOper));
-        head.Flag =  FLAG_OperResult;
-        head.Len = sizeof(_STR_RequestReply)-sizeof(STR_PackHead);
-    }
-}STR_RequestReply;
+    hf_uint8     OperType;
+    hf_uint8     OperResult;
+}STR_PackRequestReply;
 
 
 

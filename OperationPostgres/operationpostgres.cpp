@@ -1,5 +1,5 @@
 #include "operationpostgres.h"
-#include "PlayerLogin/playerlogin.h"
+#include "./../PlayerLogin/playerlogin.h"
 
 OperationPostgres::OperationPostgres():
     m_UpdateMoney(new boost::lockfree::queue<UpdateMoney>(100)),

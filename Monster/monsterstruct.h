@@ -1,9 +1,11 @@
 ﻿#ifndef MONSTERSTRUCT_H
 #define MONSTERSTRUCT_H
 
-#include "Game/postgresqlstruct.h"
 #include <boost/unordered_map.hpp>
-#include "NetWork/tcpconnection.h"
+
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../Game/log.h"
 
 typedef struct _STR_MonsterInfo
 {
@@ -132,7 +134,7 @@ public:
         m_mtx.lock();
         monsterStatus = !monsterStatus;
         monster.HP = monster.MaxHP;
-        cout << "怪物回到起始追击点，血量加满:" << monster.HP << endl;
+        Logger::GetLogger()->Debug("monster Back to the initial point hp:%u", monster.HP);
         if(monster.ActID == Action_Run)
         {
             monster.MoveRate /= 2;
@@ -271,7 +273,6 @@ public:
     void ChangeMonsterDirect(hf_float dx, hf_float dz)
     {
         m_mtx.lock ();
-        cout << "改变前怪物方向:" << monster.Direct << endl;
         monster.Direct = CalculationDirect (dx, dz);
         monster.Target_x = monster.Current_x;
         monster.Target_y = monster.Current_y;
@@ -281,7 +282,6 @@ public:
 //    void ChangeMonsterDirect(hf_float direct)
 //    {
 //        m_mtx.lock ();
-//        cout << "改变前怪物方向:" << monster.Direct << endl;
 //        monster.Direct = direct;
 //        monster.Target_x = monster.Current_x;
 //        monster.Target_y = monster.Current_y;

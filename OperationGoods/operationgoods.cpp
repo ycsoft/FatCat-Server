@@ -1,13 +1,13 @@
-#include "operationgoods.h"
-#include "memManage/diskdbmanager.h"
-#include "GameTask/gametask.h"
-#include "utils/stringbuilder.hpp"
-#include "Game/session.hpp"
-#include "PlayerLogin/playerlogin.h"
-#include "GameAttack/gameattack.h"
-#include "OperationPostgres/operationpostgres.h"
-#include "server.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../GameTask/gametask.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Game/session.hpp"
+#include "./../PlayerLogin/playerlogin.h"
+#include "./../GameAttack/gameattack.h"
+#include "./../OperationPostgres/operationpostgres.h"
+#include "./../server.h"
 
+#include "operationgoods.h"
 
 
 hf_uint32 OperationGoods::m_equipmentID = EquipMentID;
@@ -756,7 +756,7 @@ void OperationGoods::BuyGoods(TCPConnection::Pointer conn, STR_BuyGoods* buyGood
     }
     if(price_it->second.BuyPrice == 0)   //不可买物品
     {
-        Logger::GetLogger()->Debug("此物品不可购买");
+        Logger::GetLogger()->Debug("this goods can not buy");
         Server::GetInstance()->free(buyGoods);
         return;
     }

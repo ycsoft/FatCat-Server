@@ -73,7 +73,6 @@ HEADERS += \
     Game/cmdparse.h \
     Monster/monsterstruct.h \
     GameChat/gamechat.h \
-    Game/rolestruct.h \
     fileOperation/fileoperation.h \
     PlayerTrading/playertrading.h \
     Game/log.h \
@@ -84,10 +83,10 @@ HEADERS += \
 
 
 INCLUDEPATH += /home/hf02/soft/boost_1_58_0
-INCLUDEPATH += /home/hf02/soft/threadpool-0_2_5-src/threadpool
+INCLUDEPATH += /home/hf02/soft/threadpool-0_2_5-src/threadpool/boost
 
 
-LIBS+= /home/hf02/soft/hiredis-master/libhiredis.a
+LIBS += /home/hf02/soft/hiredis-master/libhiredis.a
 LIBS += /usr/lib64/libpq.so
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_system.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_thread.a

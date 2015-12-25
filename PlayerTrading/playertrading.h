@@ -1,7 +1,8 @@
 #ifndef PLAYERTRADING_H
 #define PLAYERTRADING_H
 
-#include "NetWork/tcpconnection.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../Game/postgresqlstruct.h"
 
 class PlayerTrading
 {
@@ -9,8 +10,8 @@ public:
     PlayerTrading();
     ~PlayerTrading();
 
-    void RequestTrade(TCPConnection::Pointer conn);     //请求交易
-    void RequestReply(TCPConnection::Pointer conn);     //请求答复
+    void RequestTrade(TCPConnection::Pointer conn, STR_PackRequestOper* oper);     //请求交易
+    void RequestReply(TCPConnection::Pointer conn, STR_PackRequestReply* oper);     //请求答复
 
     void TradeGoods(TCPConnection::Pointer conn);       //交易物品  增加或取消
     void TradeMoney(TCPConnection::Pointer conn);       //交易金钱  增加或取消

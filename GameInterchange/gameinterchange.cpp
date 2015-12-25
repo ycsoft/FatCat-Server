@@ -1,10 +1,10 @@
 #include "gameinterchange.h"
-#include "memManage/diskdbmanager.h"
-#include "utils/stringbuilder.hpp"
-#include "Game/log.h"
-#include "server.h"
-#include "OperationPostgres/operationpostgres.h"
-#include "GameTask/gametask.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Game/log.h"
+#include "./../server.h"
+#include "./../OperationPostgres/operationpostgres.h"
+#include "./../GameTask/gametask.h"
 
 #define Result_Accept 1        //接受交易
 #define Result_Reject 2         //拒绝交易

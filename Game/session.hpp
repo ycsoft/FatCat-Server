@@ -10,12 +10,10 @@
 
 #include <cstdio>
 
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
-#include "Game/log.h"
-#include "Game/cmdtypes.h"
-
-#include "Game/rolestruct.h"
+#include "postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "log.h"
+#include "cmdtypes.h"
 
 using boost::asio::ip::tcp;
 
@@ -108,11 +106,48 @@ public:
 
     }
 
+    Session(const Session& sess)
+    {
+        printf("nihao\n\n");
+
+        m_usrid = sess.m_usrid;
+        m_roleid = sess.m_roleid;
+        m_publicCoolTime = sess.m_publicCoolTime;
+        m_skillUseTime = sess.m_skillUseTime;
+        memcpy(&m_roleInfo, &sess.m_roleInfo, sizeof(STR_RoleInfo));
+//        m_roleInfo = sess.m_roleInfo;
+        memcpy(&m_roleExp, &sess.m_roleExp, sizeof(STR_PackRoleExperience));
+//        m_roleExp = sess.m_roleExp;
+        memcpy(&m_RoleBaseInfo, &sess.m_RoleBaseInfo, sizeof(STR_RoleBasicInfo));
+//        m_RoleBaseInfo = sess.m_RoleBaseInfo;
+        memcpy(&m_BodyEqu, &sess.m_BodyEqu, sizeof(STR_BodyEquipment));
+//        m_BodyEqu = sess.m_BodyEqu;
+        m_playerAcceptTask = sess.m_playerAcceptTask;
+        m_friendList = sess.m_friendList;
+        m_viewRole = sess.m_viewRole;
+        m_viewMonster = sess.m_viewMonster;
+        m_skillTime = sess.m_skillTime;
+        m_playerGoods = sess.m_playerGoods;
+        m_playerEqu = sess.m_playerEqu;
+        m_playerMoney = sess.m_playerMoney;
+        m_completeTask = sess.m_completeTask;
+        memcpy(&m_position, &sess.m_position, sizeof(STR_PackPlayerPosition));
+//        m_position = sess.m_position;
+        m_lootGoods = sess.m_lootGoods;
+        m_lootPosition = sess.m_lootPosition;
+        m_interchage = sess.m_interchage;
+        memcpy(m_goodsPosition, sess.m_goodsPosition, BAGCAPACITY);
+        memcpy(&m_StartPos, &sess.m_StartPos, sizeof(STR_PlayerStartPos));
+//        m_StartPos = sess.m_StartPos;
+        m_taskGoods = sess.m_taskGoods;
+        m_commonAttackTime = sess.m_commonAttackTime;
+        m_tradeStatus = sess.m_tradeStatus;
+    }
+
     void SendSkillEffectToViewRole(STR_PackSkillAimEffect* effect)
     {
         for(_umap_roleSock::iterator it = m_viewRole->begin(); it != m_viewRole->end(); it++)
         {
-            cout << "给发送了施法效果:" << it->first << endl;
             it->second->Write_all(effect, sizeof(STR_PackSkillAimEffect));
         }
     }
@@ -121,7 +156,6 @@ public:
     {
         for(_umap_roleSock::iterator it = m_viewRole->begin(); it != m_viewRole->end(); it++)
         {
-            cout << "给发送了血量信息:" << it->first << endl;
             it->second->Write_all(attr, sizeof(STR_RoleAttribute));
         }
     }
@@ -154,6 +188,7 @@ public:
     STR_PlayerStartPos      m_StartPos;          //保存玩家刷新数据起始点
     umap_taskGoods          m_taskGoods;         //保存玩家任务物品
     hf_double               m_commonAttackTime;  //下一次普通攻击的时间
+    hf_uint8                m_tradeStatus;       //玩家交易状态，0表示未进入交易状态，1表示进入交易过程，未锁定，2表示已锁定，未交易确认，3表示交易确认
 
 };
 
@@ -167,49 +202,59 @@ public:
     typedef boost::shared_ptr<SessionMap>           SessionPointer;
     typedef boost::shared_ptr<SessionMgr>            Pointer;
 
-    typedef boost::unordered_map<tcp::socket*, TCPConnection::Pointer > sockMap;
+//    typedef boost::unordered_map<tcp::socket*, TCPConnection::Pointer > sockMap;
 
     typedef boost::unordered_map<string,TCPConnection::Pointer> _umap_nickSock;
     typedef boost::shared_ptr<_umap_nickSock> umap_nickSock;
 
 
 
-    sockMap     m_sockMap;
+//    sockMap     m_sockMap;
 
-    void    SaveSession(TCPConnection::Pointer sock,Session& ss)
-    {
-           SessionMgr::SessionMap *ssmap = m_sessions.get();
-            (*ssmap)[sock] = ss;
-    }
+//    void    SaveSession(TCPConnection::Pointer sock,Session ss)
+//    {
+//        (*m_sessions)[sock] = ss;
+////           SessionMgr::SessionMap *ssmap = m_sessions.get();
+////            (*ssmap)[sock] = ss;
+//    }
      void    SaveSession(TCPConnection::Pointer sock,char *name)
      {
-         Session s;
-         sprintf(&(s.m_usrid[0]),name);
-         s.m_roleid = 0;
+//         Session s;
+//         sprintf(&(s.m_usrid[0]),name);
+//         s.m_roleid = 0;
+
 //        SessionMgr::SessionMap *ssmap = m_sessions.get();
 
-        SessionsAdd(sock, s);
+        m_sessionsMtx.lock();
+        memcpy(&(*m_sessions)[sock].m_usrid[0], name, 32);
+        (*m_sessions)[sock].m_roleid = 0;
+        m_sessionsMtx.unlock();
+//        SessionsAdd(sock, s);
 //         (*ssmap)[sock] = s;
      }
 
      void SaveSession(TCPConnection::Pointer sock, STR_PackPlayerPosition* playerPosition)
      {
-          SessionMgr::SessionMap* ssmap = m_sessions.get();
-          memcpy(&(*ssmap)[sock].m_position, playerPosition, sizeof(STR_PackPlayerPosition));
+         memcpy(&(*m_sessions)[sock].m_position, playerPosition, sizeof(STR_PackPlayerPosition));
+//          SessionMgr::SessionMap* ssmap = m_sessions.get();
+//          memcpy(&(*ssmap)[sock].m_position, playerPosition, sizeof(STR_PackPlayerPosition));
      }
 
      void SaveSession(TCPConnection::Pointer conn, hf_int32 roleid)
      {
-        SessionMgr::SessionMap *ssmap = m_sessions.get();
-         (*ssmap)[conn].m_roleid = roleid;
+         (*m_sessions)[conn].m_roleid = roleid;
+         (*m_roleSock)[roleid] = conn;
+//        SessionMgr::SessionMap *ssmap = m_sessions.get();
+//         (*ssmap)[conn].m_roleid = roleid;
 
-        (*m_roleSock)[roleid] = conn;
+//        (*m_roleSock)[roleid] = conn;
      }
 
      void SaveSession(TCPConnection::Pointer sock, STR_RoleInfo* roleInfo)
      {
-         SessionMgr::SessionMap *ssmap = m_sessions.get();
-         memcpy(&(*ssmap)[sock].m_roleInfo, roleInfo, sizeof(STR_RoleInfo));
+         memcpy(&(*m_sessions)[sock].m_roleInfo, roleInfo, sizeof(STR_RoleInfo));
+//         SessionMgr::SessionMap *ssmap = m_sessions.get();
+//         memcpy(&(*ssmap)[sock].m_roleInfo, roleInfo, sizeof(STR_RoleInfo));
      }
 
 
@@ -221,7 +266,7 @@ public:
 
     char *GetUserBySock(TCPConnection::Pointer sk )
     {
-        return    &   (*(m_sessions.get()))[sk].m_usrid[0];
+        return    &   (*(m_sessions))[sk].m_usrid[0];
     }
 
     ~SessionMgr()               {}
@@ -270,15 +315,15 @@ public:
         return m_recoveryHPMagic;
     }
 
-    void SessionsAdd(TCPConnection::Pointer conn, Session s)
-    {
-        m_sessionsMtx.lock();
-//        cout << conn->socket().native_handle() << endl;
-        cout << "m_sessions add start:" << m_sessions->size() << endl;
-        (*m_sessions)[conn] = s;
-        cout << "m_sessions add end:" << m_sessions->size() << endl;
-        m_sessionsMtx.unlock();
-    }
+//    void SessionsAdd(TCPConnection::Pointer conn, Session& s)
+//    {
+//        m_sessionsMtx.lock();
+////        cout << conn->socket().native_handle() << endl;
+//        cout << "m_sessions add start:" << m_sessions->size() << endl;
+//        (*m_sessions)[conn] = s;
+//        cout << "m_sessions add end:" << m_sessions->size() << endl;
+//        m_sessionsMtx.unlock();
+//    }
 
     void SessionsErase(TCPConnection::Pointer conn)
     {

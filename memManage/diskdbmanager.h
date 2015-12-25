@@ -5,8 +5,7 @@
 #include <boost/container/vector.hpp>
 
 #include "idbmanager.h"
-#include "Game/postgresqlstruct.h"
-#include "Game/rolestruct.h"
+#include "./../Game/postgresqlstruct.h"
 
 /**
  * @brief The DiskDbManager class

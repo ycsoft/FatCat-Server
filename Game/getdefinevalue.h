@@ -1,7 +1,7 @@
 #ifndef GETDEFINEVALUE_HPP
 #define GETDEFINEVALUE_HPP
-#include "Game/levelexperience.h"
-#include "hf_types.h"
+#include "levelexperience.h"
+#include "./../hf_types.h"
 
 using namespace hf_types;
 //得到伤害减免系数

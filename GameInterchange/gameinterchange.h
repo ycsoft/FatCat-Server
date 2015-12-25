@@ -1,9 +1,9 @@
 #ifndef GAMEINTERCHANGE_H
 #define GAMEINTERCHANGE_H
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
-#include "Game/cmdtypes.h"
-#include "Game/session.hpp"
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../Game/cmdtypes.h"
+#include "./../Game/session.hpp"
 
 #define Interchange_Change 1
 #define Interchange_Lock 2

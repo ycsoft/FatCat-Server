@@ -1,16 +1,10 @@
-﻿
+﻿#include "./../server.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../PlayerLogin/playerlogin.h"
+#include "./../Game/cmdparse.h"
+#include "./../Game/session.hpp"
 
-#include "server.h"
 #include "tcpconnection.h"
-#include "Game/postgresqlstruct.h"
-#include "PlayerLogin/playerlogin.h"
-
-#include "Game/cmdparse.h"
-
-#include "Game/session.hpp"
-
-//#include "Game/log.h"
-
 
 TCPConnection::TCPConnection(boost::asio::io_service &io)
     :m_socket(io),m_dataPos(0),m_LoginStatus(PlayerNotLoginUser)
@@ -35,12 +29,12 @@ int TCPConnection::Write_all(void *buff, int size)
     {
         STR_PackHead t_packHead;
         memcpy(&t_packHead, buff, sizeof(STR_PackHead));
-        cout << "发送数据大于1024,长度为:" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
+        Logger::GetLogger()->Error("send data :%u,flag:%u,len:%u\n",size, t_packHead.Flag, t_packHead.Len);
         return 0;
     }
 //    STR_PackHead t_packHead;
 //    memcpy(&t_packHead, buff, sizeof(STR_PackHead));
-//    cout << "发送数据长度为:" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
+//    Logger::GetLogger()->Error("send data :%u,flag:%u,len:%u\n",size, t_packHead.Flag, t_packHead.Len);
 
     m_write_lock.lock();
 
@@ -67,7 +61,8 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_u
 {
     if ( !ec )
     {
-//        cout << "size = " << size << endl;
+//        Logger::GetLogger()->Debug("size:%u",size);
+
         m_dataPos += size;
         hf_uint16 currentPos = 0;
         STR_PackHead head;
@@ -76,7 +71,7 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_u
         {
             if(m_dataPos < sizeof(STR_PackHead))
             {
-                cout << "有未处理的长度小于头的数据" << endl;
+                Logger::GetLogger()->Debug("datalen:%u",m_dataPos);
                 break;
             }
             memcpy(&head, m_buf + currentPos, sizeof(STR_PackHead));
@@ -114,11 +109,12 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_u
             }
             else //不够一个包的长度
             {
-                cout << "有未处理完的数据" << endl;
-                printf("当前位置：currentPos = %d, m_dataPos = %d,head.Len = %d\n",currentPos, m_dataPos, head.Len);
+                Logger::GetLogger()->Debug("you wei jie xi de bao currentPos:%u,m_dataPos:%u,head.len:%u,head.flag:%u",currentPos,m_dataPos,head.Len, head.Flag);
                 hf_char buff[TCP_BUFFER_SIZE] = { 0 };
                 memcpy(buff, m_buf + currentPos, m_dataPos - currentPos);
                 memcpy(m_buf, buff, TCP_BUFFER_SIZE);
+                m_dataPos -= currentPos;
+                break;
             }
         }
         ReadSome();

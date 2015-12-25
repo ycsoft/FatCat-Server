@@ -1,7 +1,7 @@
 #ifndef OPERATIONPOSTGRES_H
 #define OPERATIONPOSTGRES_H
 
-#include "Game/postgresqlstruct.h"
+#include "./../Game/postgresqlstruct.h"
 #include <boost/lockfree/queue.hpp>
 
 class OperationPostgres

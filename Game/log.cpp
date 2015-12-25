@@ -1,6 +1,6 @@
 #include <log4c.h>
 #include <assert.h>
-#include "Game/log.h"
+#include "log.h"
 
 
 static log4c_category_t *log_category = NULL;

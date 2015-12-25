@@ -8,10 +8,10 @@
 
 #include <boost/unordered_map.hpp>
 
-#include "hf_types.h"
+#include "./../hf_types.h"
 #include "postgresqlstruct.h"
-#include "Monster/monsterstruct.h"
-#include "NetWork/tcpconnection.h"
+#include "./../Monster/monsterstruct.h"
+#include "./../NetWork/tcpconnection.h"
 using namespace std;
 using namespace hf_types;
 

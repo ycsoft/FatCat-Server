@@ -1,9 +1,9 @@
 #ifndef GAMETASK_H
 #define GAMETASK_H
 
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
-#include "Game/cmdtypes.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../Game/cmdtypes.h"
 
 /**
  * @brief The GameTask class

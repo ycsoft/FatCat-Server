@@ -1,14 +1,13 @@
-
 #include<iostream>
 
-#include "tcpserver.h"
-#include "hf_types.h"
-#include "server.h"
+#include "./../hf_types.h"
+#include "./../server.h"
+#include "./../Game/log.h"
+#include "./../GameAttack/gameattack.h"
+#include "./../Monster/monster.h"
+#include "./../OperationPostgres/operationpostgres.h"
 
-#include "Game/log.h"
-#include "GameAttack/gameattack.h"
-#include "Monster/monster.h"
-#include "OperationPostgres/operationpostgres.h"
+#include "tcpserver.h"
 
 using namespace std;
 
@@ -43,17 +42,15 @@ void TCPServer::CallBack_Accept(TCPConnection::Pointer conn, const boost::system
 {
     if ( ! ec)
     {
-        cout << "Client Connected" << endl;
-//        Logger4c::GetLogger4c()->Debug("Client Connected");
-
+        Logger::GetLogger()->Debug("Client Connected");
 //        int fd = conn->socket().native_handle();
 //        if(setSockKeepAlive(fd))
 //        {
-//            printf("%d 设置心跳包成功\n", fd);
+//            Logger::GetLogger()->Debug("set xintiao success,%d",fd);
 //        }
 //        else
 //        {
-//            printf("%d 设置心跳包失败\n", fd);
+//            Logger::GetLogger()->Debug("set xintiao error,%d",fd);
 //        }
 
         //set nodelay option

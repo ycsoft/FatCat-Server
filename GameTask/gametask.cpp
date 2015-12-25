@@ -1,13 +1,13 @@
-#include "OperationPostgres/operationpostgres.h"
-#include "PlayerLogin/playerlogin.h"
-#include "memManage/diskdbmanager.h"
-#include "Game/getdefinevalue.h"
-#include "OperationGoods/operationgoods.h"
-#include "utils/stringbuilder.hpp"
-#include "Game/session.hpp"
-#include "Game/log.h"
+#include "./../OperationPostgres/operationpostgres.h"
+#include "./../PlayerLogin/playerlogin.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../Game/getdefinevalue.h"
+#include "./../OperationGoods/operationgoods.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Game/session.hpp"
+#include "./../Game/log.h"
 #include "gametask.h"
-#include "server.h"
+#include "./../server.h"
 
 
 #define RESULT_SUCCESS         1      //成功
@@ -670,7 +670,6 @@ void GameTask::TaskReward(TCPConnection::Pointer conn, hf_uint32 taskid)
 
 void GameTask::AskTaskExeDialog(TCPConnection::Pointer conn, STR_AskTaskExeDlg* exeDlg)
 {
-    printf("请求任务对话, taskid:%u,aimid:%u\n", exeDlg->TaskID,exeDlg->AimID);
     umap_exeDialogue::iterator it = (*m_exeDialogue).find(exeDlg->TaskID);
     if(it == m_exeDialogue->end())
     {
@@ -831,7 +830,6 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
     //发送玩家所在地图上的任务
     for(_umap_taskProfile::iterator it = m_taskProfile->begin(); it != m_taskProfile->end(); it++)
     {
-//        cout << "任务编号：" << it->first << endl;
         _umap_taskProcess::iterator iter = playerAcceptTask->find(it->first);
         //是否已经完成过了，暂时判断完成了就不再发送，以后根据任务是否可重复接取判断
         if(iter != playerAcceptTask->end()) //已接取

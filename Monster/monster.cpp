@@ -1,13 +1,13 @@
 ﻿#include <cmath>
-#include "memManage/diskdbmanager.h"
-#include "utils/stringbuilder.hpp"
-#include "Game/session.hpp"
-#include "Game/log.h"
-#include "monster.h"
-#include "server.h"
-#include "GameAttack/gameattack.h"
-#include "Game/getdefinevalue.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Game/session.hpp"
+#include "./../Game/log.h"
+#include "./../server.h"
+#include "./../GameAttack/gameattack.h"
+#include "./../Game/getdefinevalue.h"
 
+#include "monster.h"
 
 hf_uint8 Monster::JudgeDisAndDirect(STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_PosDis* t_posDis)
 {
@@ -105,7 +105,6 @@ hf_float Monster::caculateDistanceWithRole( STR_PackPlayerPosition *usr,  STR_Mo
 //计算玩家与怪物之间的距离
 hf_float    Monster::caculateDistanceWithMonster( STR_PackPlayerPosition *usr,  STR_MonsterInfo *monster, hf_double currentTime, STR_MonsterBasicInfo* monsterBasicInfo)
 {
-//    cout << "memcpy怪物坐标来源,x:" << monster->monster.Current_x << ",y:" << monster->monster.Current_y << ",z:" << monster->monster.Current_z << endl;
     memcpy(monsterBasicInfo, &monster->monster, sizeof(STR_MonsterBasicInfo));
 
     if(monsterBasicInfo->Current_x == monsterBasicInfo->Target_x &&
@@ -176,8 +175,6 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
             hf_uint32 roleid = (*smap)[conn].m_roleid;
 
             (*t_roleSock)[roleid] = 0;
-
-//            cout << "新进入玩家可视范围的怪," << t_monsterBasicInfo.MonsterID << ",x:" << t_monsterBasicInfo.Current_x << ",y:" << t_monsterBasicInfo.Current_y << ",z:" << t_monsterBasicInfo.Current_z << endl;
             memcpy(comebuff + sizeof(STR_PackHead) + sizeof(STR_MonsterBasicInfo)*pushcount, &t_monsterBasicInfo, sizeof(STR_MonsterBasicInfo));
             pushcount++;
 
@@ -260,7 +257,7 @@ void Monster::CreateMonster()
     _umap_viewRole t_roleSock;
     hf_double currentTime = GetCurrentTime();
 
-    printf("生成怪物时间:%f\n", currentTime);
+    printf("spawns monster time:%f\n", currentTime);
     srand(time(NULL));
     for(umap_monsterSpawns::iterator it = m_monsterSpawns->begin(); it != m_monsterSpawns->end(); it++)
     {
@@ -309,7 +306,7 @@ void Monster::CreateMonster()
             //给怪物可视范围内的玩家初始化为空_umap_roleSock
             (*m_monsterViewRole)[t_monsterInfo.monster.MonsterID] = t_roleSock;
 
-             cout << "生成的怪物坐标:" << t_monsterInfo.monster.MonsterID << ",c_x:" << t_monsterInfo.monster.Current_x << ",c_z:" << t_monsterInfo.monster.Current_z << ",t_x:" << t_monsterInfo.monster.Target_x << ",t_z" << t_monsterInfo.monster.Target_z << endl;
+             cout << "spawns monster pos:" << t_monsterInfo.monster.MonsterID << ",c_x:" << t_monsterInfo.monster.Current_x << ",c_z:" << t_monsterInfo.monster.Current_z << ",t_x:" << t_monsterInfo.monster.Target_x << ",t_z" << t_monsterInfo.monster.Target_z << endl;
 
         }
     }
@@ -449,16 +446,11 @@ void Monster::Monsteractivity()
                 {
                     //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
                     SearchNewAim(&it->second, currentTime, t_startDis, roleid);
-//                    it->second.ChangeHatredRoleid(0);
-//                    cout << "玩家死亡，怪物仇恨目标为0：" << it->second.hatredRoleid << endl;
-//                    it->second.MoveToStartPos(currentTime, t_startDis);
-//                    SendMonsterToViewRole(&it->second.monster);
                     continue;
                 }
 
                 //计算与玩家之间的距离
                 STR_PackPlayerPosition*  t_playerPos = &(*smap)[role_it->second].m_position;
-//                cout << "玩家位置x:" << t_playerPos->Pos_x << ",z:" << t_playerPos->Pos_z << endl;
                 hf_float dx = t_playerPos->Pos_x - t_monster->Current_x;
                 hf_float dz = t_playerPos->Pos_z - t_monster->Current_z;
 
@@ -477,15 +469,11 @@ void Monster::Monsteractivity()
 //                {
                 if(cosDirect < SQRT3DIV2)
                 {
-                    cout << "1玩家方向:" << t_playerPos->Direct << endl;
-//                    it->second.ChangeMonsterDirect(0 - t_playerPos->Direct);
                     it->second.ChangeMonsterDirect(dx, dz);
-                    cout << "改变后怪物方向，:" << it->second.monster.Direct << endl;
                     STR_PackMonsterDirect t_monsterDirect(it->second.monster.MonsterID, it->second.monster.Direct);
                     SendMonsterDirectToViewRole(&t_monsterDirect);
 
                     cosDirect = (dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct))/sqrt(dx*dx + dz*dz);
-//                    printf("新的角度计算值:%f\n\n", cosDirect);
                 }
 
                 //攻击玩家
@@ -655,7 +643,6 @@ void Monster::SendMonsterToViewRole(STR_MonsterBasicInfo* monster)
         if(iter != t_roleSock->end())
         {
             iter->second->Write_all(&t_monster, sizeof(STR_PackMonsterBasicInfo));
-//            cout << "22222:" << t_monster.monster.MonsterID << endl;
         }
     }
 }
@@ -742,7 +729,7 @@ void  Monster::SearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_
     hf_uint32 roleid = 0;
     _umap_viewRole* viewRole = &(*m_monsterViewRole)[monster->monster.MonsterID];
 
-    printf("怪物打死一个玩家重新查找玩家,可视范围内的玩家数量:%d\n",viewRole->size());
+    Logger::GetLogger()->Debug("monster kill role,view role size %u",viewRole->size());
     for(_umap_viewRole::iterator it = viewRole->begin(); it != viewRole->end(); it++)
     {
         if(it->first == hatredID)

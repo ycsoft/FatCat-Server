@@ -1,7 +1,7 @@
 #ifndef GAMECHAT_H
 #define GAMECHAT_H
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
 
 class GameChat
 {

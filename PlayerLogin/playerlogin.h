@@ -1,10 +1,9 @@
 #ifndef PLAYERLOGIN_H
 #define PLAYERLOGIN_H
 
-#include "NetWork/tcpconnection.h"
-#include "Game/postgresqlstruct.h"
-#include "Game/cmdtypes.h"
-#include "Game/rolestruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../Game/cmdtypes.h"
 
 class PlayerLogin
 {

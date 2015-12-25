@@ -202,6 +202,29 @@
 #define PlayerLoginUser      1      //玩家已经登录用户
 #define PlayerLoginRole      2      //玩家已经登录角色
 
+
+#define AskTrading           1      //请求交易
+#define AskCancelTrading     2      //取消交易
+#define AskLockTrading       3      //锁定交易
+#define AskCancelLock        4      //取消锁定
+#define AskConfirmTrading    5      //确认交易
+#define AskAddGoods          6      //增加物品
+#define AskCancelGoods       7      //取消物品
+#define AskAddMoney          8      //增加金钱
+#define AskCancelMoney       9      //取消金钱
+
+
+
+
+
+//玩家交易状态
+#define NotTrading           0      //未进入交易状态
+#define TradingProcess       1      //表示进入交易过程，未锁定
+#define LockTrading          2      //表示已锁定，未交易确认
+#define ConfirmTrading       3      //表示已确认交易
+
+
+
 namespace hf_types{
 
 typedef unsigned int            hf_uint32;

@@ -1,8 +1,8 @@
-#include "Game/userposition.hpp"
-#include "OperationGoods/operationgoods.h"
-#include "playerlogin.h"
-#include "server.h"
+#include "./../Game/userposition.hpp"
+#include "./../OperationGoods/operationgoods.h"
+#include "./../server.h"
 
+#include "playerlogin.h"
 
 PlayerLogin::PlayerLogin()
 {
@@ -28,7 +28,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     hf_int32 roleid = ((*smap)[conn].m_roleid);
     if(roleid < 100000000) //没登录角色
     {
-        Logger::GetLogger()->Debug("没有登录角色");
+        Logger::GetLogger()->Debug("not login role");
         return;
     }
     //将玩家当前数据写进数据库,(位置，任务进度等)
@@ -39,7 +39,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(srv->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家位置信息失败");
+        Logger::GetLogger()->Error("update player position error");
     }
 
 
@@ -85,7 +85,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     }
     //////////////////////////////////////////////////
 
-    Logger::GetLogger()->Debug("退出成功");
+    Logger::GetLogger()->Debug("player exit success");
 }
 
 //用户下线删除保存的对应的<nick, sock>
@@ -196,7 +196,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
     {
         t_packResult.result = RESULT_SUCCESS;
         conn->Write_all(&t_packResult, sizeof(t_packResult));
-        Logger::GetLogger()->Debug("角色注册成功");
+        Logger::GetLogger()->Debug("role register success");
 
         sbd.Clear();
         sbd << "select nick,roleid,profession,level,sex,figure,figurecolor,face,eye,hair,haircolor,modeid,skirtid from t_playerrolelist where nick ='" << nickbuff <<"';";
@@ -218,7 +218,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
         {
-            Logger::GetLogger()->Error("写入玩家初始位置失败");
+            Logger::GetLogger()->Error("insert player init pos error");
         }
 
         //写入玩家初始属性
@@ -228,7 +228,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
         {
-            Logger::GetLogger()->Error("写入玩家初始属性失败");
+            Logger::GetLogger()->Error("insert player init attr error");
         }
 
         //写入初始金钱
@@ -238,7 +238,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
         {
-            Logger::GetLogger()->Error("写入玩家初始金钱失败");
+            Logger::GetLogger()->Error("insert player init money error");
         }
 
         //写入玩家初始装备
@@ -248,7 +248,7 @@ void PlayerLogin::RegisterRole(TCPConnection::Pointer conn, STR_PlayerRegisterRo
         t_row = srv->getDiskDB()->Set(sbd.str());
         if(t_row != 1)
         {
-            Logger::GetLogger()->Error("写入玩家初始装备失败");
+            Logger::GetLogger()->Error("insert player init bodyequipment");
         }
 
     }
@@ -322,7 +322,7 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
             conn->Write_all(&t_PackResult, sizeof(STR_PackResult));
             conn->ChangePlayerLoginStatus(PlayerLoginUser);
 
-            printf("用户登录成功:%s\n", reg->userName);
+            Logger::GetLogger()->Debug("user login success:%s",reg->userName);
             SessionMgr::Instance()->SaveSession(conn, reg->userName);
             SessionMgr::Instance()->NameSockAdd(reg->userName, conn);
             //发送角色列表
@@ -384,7 +384,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         t_row = srv->getDiskDB()->GetRoleBodyEqu(&(*smap)[conn].m_BodyEqu, sbd.str());
         if(t_row == -1)
         {
-            Logger::GetLogger()->Error("查询角色身上所穿戴装备失败");
+            Logger::GetLogger()->Error("queue role bodyEqu error");
         }
 
         //查询角色属性，发送给玩家
@@ -403,7 +403,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
             t_row = srv->getDiskDB()->Set(sbd.str());
             if(t_row != 1)
             {
-                Logger::GetLogger()->Error("删除角色属性信息失败");
+                Logger::GetLogger()->Error("delete jole attribute error");
             }
         }
         else if(t_row == 0) //服务器挂了，没有将玩家的属性信息写入数据库，需要重新计算角色属性值
@@ -433,7 +433,7 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
         srv->GetGameTask()->SendPlayerTaskProcess(conn);   //玩家任务进度
         srv->GetGameTask()->SendPlayerViewTask(conn);      //玩家可接任务        
         srv->GetTeamFriend()->SendAskAddFriend(conn);      //离线的添加好友请求
-        printf("登录数据发送完成\n");
+        Logger::GetLogger()->Debug("%u login data send success", roleid);
 
 
         //test
@@ -525,7 +525,7 @@ void PlayerLogin::SendRoleList(TCPConnection::Pointer conn, hf_char* userID)
             memcpy(buff, &t_packHead, sizeof(STR_PackHead));
             conn->Write_all(buff, sizeof(STR_PackHead) + t_packHead.Len);
         }
-        printf("角色列表发送成功:namebuff = %s\n", namebuff);
+        Logger::GetLogger()->Debug("role list send success:name%s",namebuff);
         srv->free(buff);
     }   
 }
@@ -750,7 +750,7 @@ void PlayerLogin::GetPlayerCompleteTask(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->GetPlayerCompleteTask(completeTask, sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("查询玩家已经完成的信息失败");
+        Logger::GetLogger()->Error("queue palyer complete task error");
     }
 }
 
@@ -766,7 +766,7 @@ void PlayerLogin::SaveRoleBagGoods(TCPConnection::Pointer conn)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("清除玩家背包物品信息失败");
+        Logger::GetLogger()->Error("delete player bag goods error");
     }
 
     sbd.Clear();
@@ -803,7 +803,7 @@ void PlayerLogin::SaveRoleBagGoods(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("玩家背包物品写入数据库失败");
+        Logger::GetLogger()->Error("player bag goods insert error");
     }
 }
 
@@ -820,7 +820,7 @@ void PlayerLogin::SaveRoleEquDurability(TCPConnection::Pointer conn)
         Logger::GetLogger()->Debug(sbd.str());
         if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
         {
-            Logger::GetLogger()->Error("玩家装备属性写入数据库失败");
+            Logger::GetLogger()->Error("player equipment attr insert error");
         }
     }   
 }
@@ -838,7 +838,7 @@ void PlayerLogin::SaveRoleMoney(TCPConnection::Pointer conn)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("清除玩家金钱信息失败");
+        Logger::GetLogger()->Error("delete player money error");
     }
 
     sbd.Clear();
@@ -865,7 +865,7 @@ void PlayerLogin::SaveRoleMoney(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("玩家金币写入数据库失败");
+        Logger::GetLogger()->Error("insert player money error");
     }
 }
 
@@ -883,7 +883,7 @@ void PlayerLogin::SaveRoleTaskProcess(TCPConnection::Pointer conn)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("清除玩家任务进度信息失败");
+        Logger::GetLogger()->Error("delete player task process error");
     }
 
     sbd.Clear();
@@ -917,7 +917,7 @@ void PlayerLogin::SaveRoleTaskProcess(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家任务进度信息失败");
+        Logger::GetLogger()->Error("insert player task process error");
     }
 }
 
@@ -938,7 +938,6 @@ void PlayerLogin::SendOffLineToViewRole(TCPConnection::Pointer conn)
          _umap_roleSock::iterator iter = it;
          it++;
         (*smap)[conn].m_viewRole->erase((*smap)[iter->second].m_roleid);
-         Logger::GetLogger()->Debug("删除OK");
     }
 }
 
@@ -958,7 +957,7 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("清除玩家未捡取物品信息失败");
+        Logger::GetLogger()->Error("delete player not pickgoods error");
         return;
     }
 
@@ -997,7 +996,7 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家未捡取物品信息失败");
+        Logger::GetLogger()->Error("insert player not pick goods error");
     }
 
 
@@ -1006,7 +1005,7 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
    if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
    {
-       Logger::GetLogger()->Error("清除玩家未捡取物品位置信息失败");
+       Logger::GetLogger()->Error("delete player not pick goods pos error");
    }
     count = t_lootPosition->size();
     if(count == 0)
@@ -1034,7 +1033,7 @@ void PlayerLogin::SaveRoleNotPickGoods(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家未捡取物品位置信息失败");
+        Logger::GetLogger()->Error("insert player not pick goods pos error");
     }    
 }
 
@@ -1049,7 +1048,7 @@ void PlayerLogin::SaveRoleInfo(TCPConnection::Pointer conn)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) != 1)
     {
-        Logger::GetLogger()->Error("写入角色属性失败");
+        Logger::GetLogger()->Error("insert player roleinfo error");
     }
 }
 
@@ -1061,7 +1060,7 @@ void PlayerLogin::UpdatePlayerMoney(UpdateMoney* upMoney)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家金钱信息失败");
+        Logger::GetLogger()->Error("update player money error");
     }
 }
 
@@ -1073,7 +1072,7 @@ void PlayerLogin::UpdatePlayerLevel(UpdateLevel* upLevel)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家等级信息失败");
+        Logger::GetLogger()->Error("update player level error");
     }
 }
 
@@ -1085,7 +1084,7 @@ void PlayerLogin::UpdatePlayerExp(UpdateExp* upExp)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("更新玩家经验信息失败");
+        Logger::GetLogger()->Error("update player experience error");
     }
 }
 
@@ -1098,7 +1097,7 @@ void PlayerLogin::UpdatePlayerGoods(hf_uint32 roleid, STR_Goods* upGoods)
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
     {
-        Logger::GetLogger()->Error("更新玩家背包物品信息失败");
+        Logger::GetLogger()->Error("update player bag goods error");
     }
 }
 
@@ -1110,7 +1109,7 @@ void PlayerLogin::InsertPlayerGoods(hf_uint32 roleid, STR_Goods* insGoods)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("玩家背包插入新物品信息失败");
+        Logger::GetLogger()->Error("player bag insert goods error");
     }
 }
 
@@ -1122,7 +1121,7 @@ void PlayerLogin::DeletePlayerGoods(hf_uint32 roleid, hf_uint16 pos)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("玩家背包删除物品失败");
+        Logger::GetLogger()->Error("player bag delete goods error");
     }
 }
 
@@ -1135,7 +1134,7 @@ void PlayerLogin::UpdatePlayerEquAttr(STR_EquipmentAttr* equ)
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
     {
-        Logger::GetLogger()->Error("更新玩家装备属性失败");
+        Logger::GetLogger()->Error("update player equattr error");
     }
 }
 
@@ -1148,7 +1147,7 @@ void PlayerLogin::InsertPlayerEquAttr(hf_uint32 roleid, STR_EquipmentAttr* equ)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("写入玩家装备属性失败");
+        Logger::GetLogger()->Error("insert player equattr error");
     }
 }
 
@@ -1160,7 +1159,7 @@ void PlayerLogin::DeletePlayerEquAttr(hf_uint32 equid)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("删除玩家背包装备属性失败");
+        Logger::GetLogger()->Error("delete player equattr error");
     }
 }
 
@@ -1173,7 +1172,7 @@ void PlayerLogin::UpdatePlayerTask(hf_uint32 roleid, STR_TaskProcess* upTask)
      hf_int32 t_value = Server::GetInstance()->getDiskDB()->Set(sbd.str());
     if(t_value == -1)
     {
-        Logger::GetLogger()->Error("更新玩家任务进度失败");
+        Logger::GetLogger()->Error("update player taskprocess error");
     }
 }
 
@@ -1185,7 +1184,7 @@ void PlayerLogin::InsertPlayerTask(hf_uint32 roleid, STR_TaskProcess* insTask)
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("插入新任务失败");
+        Logger::GetLogger()->Error("insert new taskprocess error");
     }
 }
 
@@ -1197,7 +1196,7 @@ void PlayerLogin::DeletePlayerTask(hf_uint32 roleid, hf_uint32 taskid)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("删除玩家任务失败");
+        Logger::GetLogger()->Error("delete player task error");
     }
 }
 
@@ -1208,7 +1207,7 @@ void PlayerLogin::InsertPlayerCompleteTask(hf_uint32 roleid, hf_uint32 taskid)
      Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->Set(sbd.str()) == -1)
     {
-        Logger::GetLogger()->Error("插入玩家完成任务失败");
+        Logger::GetLogger()->Error("insert player comeletetask error");
     }
 }
 
@@ -1334,7 +1333,6 @@ void PlayerLogin::SendRoleExperence(TCPConnection::Pointer conn)
         Logger::GetLogger()->Error("select role experience error");
         return;
     }
-    printf("发送给玩家的经验值：%d,%d,%d\n", exp->CurrentExp, exp->UpgradeExp, exp->Level);
     conn->Write_all(exp, sizeof(STR_PackRoleExperience));
 }
 
@@ -1387,7 +1385,7 @@ void PlayerLogin::QueryRoleJobAttribute()
     Logger::GetLogger()->Debug(sbd.str());
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(m_common, sbd.str()) != CommonGradeCount)
     {
-        Logger::GetLogger()->Error("查询普通职业属性失败");
+        Logger::GetLogger()->Error("queue common roleattribute error");
     }
     sbd.Clear();
     sbd << "select * from t_roleattribute where job=" << SaleJob << ";";
@@ -1395,7 +1393,7 @@ void PlayerLogin::QueryRoleJobAttribute()
     STR_RoleJobAttribute* t_sales = m_sales + ChangeProfessionGrade;
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_sales, sbd.str()) != OtherGradeCount)
     {
-        Logger::GetLogger()->Error("查询销售职业属性失败");
+        Logger::GetLogger()->Error("queue sale roleattribute error");
     }
 
     sbd.Clear();
@@ -1404,7 +1402,7 @@ void PlayerLogin::QueryRoleJobAttribute()
     STR_RoleJobAttribute* t_technology = m_technology + ChangeProfessionGrade;
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_technology, sbd.str()) != OtherGradeCount)
     {
-        Logger::GetLogger()->Error("查询技术职业属性失败");
+        Logger::GetLogger()->Error("queue technology roleattribute error");
     }
 
     sbd.Clear();
@@ -1413,7 +1411,7 @@ void PlayerLogin::QueryRoleJobAttribute()
     STR_RoleJobAttribute* t_administration = m_administration + ChangeProfessionGrade;
     if(Server::GetInstance()->getDiskDB()->GetJobAttribute(t_administration, sbd.str()) != OtherGradeCount)
     {
-        Logger::GetLogger()->Error("查询行政职业属性失败");
+        Logger::GetLogger()->Error("queue administ roleattribute error");
     }
 }
 
@@ -1538,8 +1536,7 @@ void PlayerLogin::PlayerRelive(TCPConnection::Pointer conn, hf_uint16 mode)
     STR_RoleInfo* t_roleInfo = &(*smap)[conn].m_roleInfo;
     mode = 0;
     t_roleInfo->HP = t_roleInfo->MaxHP;
-    cout << "玩家 " << (*smap)[conn].m_roleid << " 复活," << t_roleInfo->HP << endl;
-
+    Logger::GetLogger()->Debug("player:%u spawns %u\n",(*smap)[conn].m_roleid, t_roleInfo->HP);
 
     STR_RoleAttribute t_roleAttr((*smap)[conn].m_roleid, t_roleInfo->HP);
     conn->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));

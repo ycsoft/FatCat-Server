@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <boost/threadpool.hpp>
+#include <threadpool.hpp>
 #include <boost/bind.hpp>
 #include <boost/pool/pool.hpp>
 #include <boost/lockfree/queue.hpp>

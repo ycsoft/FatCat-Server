@@ -1,5 +1,5 @@
 #include "fileoperation.h"
-#include "Monster/monsterstruct.h"
+#include "./../Monster/monsterstruct.h"
 
 #include <unistd.h>
 #include <sys/types.h>

@@ -9,8 +9,7 @@
 //{
 //#endif
 
-#include "log4c.h"
-
+#include <log4c.h>
 //#ifdef __cplusplus
 //}
 //#endif

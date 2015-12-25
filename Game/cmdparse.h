@@ -1,7 +1,7 @@
 #ifndef CMDPARSE_H
 #define CMDPARSE_H
 
-#include "NetWork/tcpconnection.h"
+#include "./../NetWork/tcpconnection.h"
 
 
 void CommandParse(TCPConnection::Pointer conn, void* reg);

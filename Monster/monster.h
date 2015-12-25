@@ -1,11 +1,12 @@
 #ifndef MONSTER_H
 #define MONSTER_H
 
-#include "Game/cmdtypes.h"
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
 #include <boost/thread/mutex.hpp>
-#include "server.h"
+
+#include "./../Game/cmdtypes.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../server.h"
 #include "monsterstruct.h"
 
 #define   KB           1024

@@ -1,13 +1,12 @@
 #ifndef GAMEATTACK_H
 #define GAMEATTACK_H
 
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
-#include "Game/cmdtypes.h"
-#include "Monster/monsterstruct.h"
-#include "Game/rolestruct.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../Game/cmdtypes.h"
+#include "./../Monster/monsterstruct.h"
 
-#include "Game/session.hpp"
+#include "./../Game/session.hpp"
 /**
  * @brief The GameAttack class
  * 主要完成玩家与玩家，玩家与怪物之间的攻击。

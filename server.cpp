@@ -68,12 +68,12 @@ void Server::InitDB()
 
     memset(&Diskcon, 0, sizeof(Diskcon));
     memset(&MemCon, 0, sizeof(MemCon));
-    Diskcon.ip = "127.0.0.1";
+    Diskcon.ip = "139.196.165.107";
 //    Diskcon.ip = "10.183.100.13";
-    Diskcon.port = "5432";
-    Diskcon.dbName = "my_database";
-    Diskcon.user = "postgres";
-    Diskcon.password = "postgres";
+    Diskcon.port = "5433";
+    Diskcon.dbName = "game";
+    Diskcon.user = "game";
+    Diskcon.password = "houfang2015";
 
     MemCon.ip = "127.0.0.1";
     MemCon.port = "6379";
@@ -83,10 +83,10 @@ void Server::InitDB()
         Logger::GetLogger()->Debug("Connect postgres error");
    }
 
-//   if(!m_MemDB->Connect(MemCon))
-//   {
-//       Logger::GetLogger()->Debug("Connect redis errorr");
-//   }
+   if(!m_MemDB->Connect(MemCon))
+   {
+       Logger::GetLogger()->Debug("Connect redis errorr");
+   }
 
    m_monster->CreateMonster();
    m_monster->QueryMonsterLoot();

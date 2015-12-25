@@ -109,5 +109,16 @@
 
 #define FLAG_WantToChange 1
 
+#define FLAG_TradeOper             150      //交易操作
+#define FLAG_TradeOperResult       151      //交易操作结果
+#define FLAG_TradeOperMoney        152      //交易金钱
+#define FLAG_TradeOperGoods        153      //交易物品
+
+
+
+
+
+
+
 #endif // PACKHEADFLAG_H
 

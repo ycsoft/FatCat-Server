@@ -5,7 +5,7 @@
 #include <hiredis.h>
 #include <libpq-fe.h>
 
-#include "Game/cmdtypes.h"
+#include "./../Game/cmdtypes.h"
 
 using namespace std;
 

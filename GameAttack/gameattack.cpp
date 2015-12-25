@@ -1,13 +1,13 @@
-#include "OperationPostgres/operationpostgres.h"
-#include "GameTask/gametask.h"
-#include "memManage/diskdbmanager.h"
-#include "Game/getdefinevalue.h"
-#include "GameTask/gametask.h"
-#include "Monster/monster.h"
-#include "Game/session.hpp"
+#include "./../OperationPostgres/operationpostgres.h"
+#include "./../GameTask/gametask.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../Game/getdefinevalue.h"
+#include "./../GameTask/gametask.h"
+#include "./../Monster/monster.h"
+#include "./../Game/session.hpp"
 #include "gameattack.h"
-#include "server.h"
-#include "PlayerLogin/playerlogin.h"
+#include "./../server.h"
+#include "./../PlayerLogin/playerlogin.h"
 
 GameAttack::GameAttack()
     :m_attackRole(new _umap_roleAttackAim)
@@ -41,7 +41,7 @@ void GameAttack::AttackAim(TCPConnection::Pointer conn, STR_PackUserAttackAim* t
         umap_skillInfo::iterator it = m_skillInfo->find(t_attack->SkillID);
         if(it == m_skillInfo->end())
         {
-            Logger::GetLogger()->Debug("没有这个技能");
+            Logger::GetLogger()->Debug("not this skill");
             srv->free(t_attack);
             return;
         }
@@ -141,7 +141,6 @@ void GameAttack::CommonAttackRole(TCPConnection::Pointer conn, STR_PackUserAttac
     if(dx*cos(t_AttacketPos->Direct) + dz*sin(t_AttacketPos->Direct) < 0)
     {
         t_damageData.Flag = OPPOSITE_DIRECT;
-//        printf("方向相反，攻击不上\n");
         conn->Write_all(&t_damageData, sizeof(STR_PackDamageData));
         return;
     }
@@ -320,9 +319,7 @@ void GameAttack::SendRoleHpToViewRole(TCPConnection::Pointer conn, STR_RoleAttri
     umap_roleSock t_viewRole = (*smap)[conn].m_viewRole;
     for(_umap_roleSock::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
     {
-        printf("周围玩家roleid:%u\n", it->first);
         it->second->Write_all(roleAttr, sizeof(STR_RoleAttribute));
-        printf("RoleID:%d,HP%d \n",roleAttr->RoleID,roleAttr->HP);
     }
 }
 
@@ -416,7 +413,7 @@ void GameAttack::RoleViewDeleteMonster(hf_uint32 monsterID)
             _umap_playerViewMonster::iterator iter = t_viewMonster->find(monsterID);
             if(iter == t_viewMonster->end())
             {
-                Logger::GetLogger()->Error("怪物看到玩家，玩家没有看到怪");
+                Logger::GetLogger()->Error("monster view player,player not view monster");
                 continue;
             }
             t_viewMonster->erase(iter);
@@ -454,7 +451,7 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
         return;
     }
 
-    cout << "攻击前：" << monster->hatredRoleid  << "monsterID:" << monster->monster.MonsterID << endl;
+    Logger::GetLogger()->Debug("attack before monsterid:%u hatredroleid:%u\n",monster->monster.MonsterID, monster->hatredRoleid);
 
     ((*monsterViewRole)[t_monsterBt.MonsterID])[roleid] += damage->Damage;
     hf_uint32 t_hatredValue = ((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
@@ -462,8 +459,7 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
     printf("roleid:%d,hatredvalue:%d\n", roleid, t_hatredValue);
     if(monster->hatredRoleid != roleid)
     {
-        cout << "改变仇恨对象" << endl;
-        printf("原来仇恨对象:%u,仇恨值:%u\n",monster->hatredRoleid, ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid]);
+        Logger::GetLogger()->Debug("change hatredRole:change before role:%u,value:%u\n",monster->hatredRoleid, ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid]);
         if(monster->hatredRoleid != 0)
         {
             if(t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
@@ -472,11 +468,10 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
                 {
                     monster->ChangeAimTimeAndPos(roleid, timep, posDis);
                     Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
-
                 }
                 else
                 {
-                    cout << "时间小于0.002秒" << endl;
+                    Logger::GetLogger()->Debug("wating time less than 0.002 second\n");
                     monster->ChangeHatredRoleid(roleid);
                 }
             }
@@ -491,12 +486,12 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
             }
             else
             {
-                cout << "时间小于0.002秒" << endl;
+                Logger::GetLogger()->Debug("wating time less than 0.002 second\n");
                 monster->ChangeHatredRoleid(roleid);
             }
         }
     }
-    cout << "攻击后仇恨对象:" << monster->hatredRoleid << endl;
+    Logger::GetLogger()->Debug("attack later monsterid:%u hatredroleid:%u\n",monster->monster.MonsterID, monster->hatredRoleid);
 }
 
 
@@ -514,7 +509,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         STR_PackRewardExperience t_RewardExp;
         t_RewardExp.ID = monster->monster.MonsterID;
         t_RewardExp.Experience = GetRewardExperience(monster->monster.Level);
-        cout << "怪物奖励经验:" << t_RewardExp.ID << "," << t_RewardExp.Experience << endl;
+        Logger::GetLogger()->Debug("monster reward:monsterID:%u,experiense:%u",t_RewardExp.ID, t_RewardExp.Experience);
         conn->Write_all(&t_RewardExp, sizeof(STR_PackRewardExperience));
 
         STR_PackRoleExperience* t_RoleExp = &(*smap)[conn].m_roleExp;
@@ -554,7 +549,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         t_lootGoods.Count = GetRewardMoney(monster->monster.Level);;
         //暂时只取奖励的金钱，后面会加一些计算公式，计算后奖励的金钱可能为0
 
-        cout << "怪物掉落金钱:" << monster->monster.MonsterID << "," << t_lootGoods.Count << endl;
+        Logger::GetLogger()->Debug("monster loot money:monsterid:%u,count:%u",monster->monster.MonsterID, t_lootGoods.Count);
         if(t_lootGoods.Count > 0)
         {
             t_lootGoods.LootGoodsID = Money_1;
@@ -576,7 +571,7 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
                 t_lootGoods.LootGoodsID = vec->LootGoodsID;
                 t_lootGoods.Count = vec->Count;
                 memcpy(buff + sizeof(STR_PackHead) + sizeof(STR_LootGoodsPos) + i* sizeof(STR_LootGoods), &t_lootGoods, sizeof(STR_LootGoods));
-                cout << "掉落物品:" << t_lootGoods.LootGoodsID << ",数量:" << t_lootGoods.Count << endl;
+                Logger::GetLogger()->Debug("loot goodsid:%u,count:%u\n",t_lootGoods.LootGoodsID, t_lootGoods.Count);
                 i++;
 
                 _umap_lootGoods::iterator it = lootGoods->find(monster->monster.MonsterID*10); //保存掉落物品
@@ -596,8 +591,6 @@ void GameAttack::MonsterDeath(TCPConnection::Pointer conn, STR_MonsterInfo* mons
         STR_PackHead t_packHead;
         t_packHead.Flag = FLAG_LootGoods;
         t_packHead.Len = sizeof(STR_LootGoodsPos) + i*sizeof(STR_LootGoods);
-        cout << "掉落物品,长度：" << t_packHead.Len << endl;
-
         STR_LootGoodsPos t_PacklootGoods;
         t_PacklootGoods.Pos_x = monster->monster.Current_x;
         t_PacklootGoods.Pos_y = monster->monster.Current_y;
@@ -811,7 +804,6 @@ void GameAttack::RoleRecoveryHP(SessionMgr::SessionPointer smap, hf_double curre
             continue;
         }
         STR_RoleInfo* t_roleInfo = &(*smap)[HP_it->first].m_roleInfo;
-//        printf("未恢复前玩家血量：%u\n", t_roleInfo->HP);
         if(t_roleInfo->HP == t_roleInfo->MaxHP)
         {
             HP_it->second.Count -= 1;
@@ -1338,9 +1330,8 @@ void GameAttack::AimRole(TCPConnection::Pointer conn, STR_PackSkillInfo* skillIn
 
         cout << "damage:" << t_damageData.Damage << endl;
         STR_PackSkillAimEffect t_skillEffect(t_damageData.AimID,skillInfo->SkillID,t_damageData.AttackID);
-        cout << "施法效果:aimid = " << t_skillEffect.AimID << ",roleid = " << t_skillEffect.RoleID << "," << t_skillEffect.SkillID << endl;
+        Logger::GetLogger()->Debug("aimdid:%u,roleid:%u,skillid:%u",t_skillEffect.AimID,t_skillEffect.RoleID,t_skillEffect.SkillID);
 
-        cout << "受到攻击的玩家,roleid:" << it->first << endl;
         it->second->Write_all(&t_skillEffect, sizeof(STR_PackSkillAimEffect));  //发送施法效果
         ((*smap)[it->second]).SendSkillEffectToViewRole(&t_skillEffect);
 

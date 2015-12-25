@@ -1,8 +1,8 @@
 #ifndef TEAMFRIEND_H
 #define TEAMFRIEND_H
 
-#include "Game/postgresqlstruct.h"
-#include "NetWork/tcpconnection.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../NetWork/tcpconnection.h"
 
 class TeamFriend
 {

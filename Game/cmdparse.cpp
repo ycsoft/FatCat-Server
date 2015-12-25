@@ -5,21 +5,18 @@
 
 #include "postgresqlstruct.h"
 #include "cmdtypes.h"
-#include "server.h"
+#include "./../server.h"
 
-#include "Game/userposition.hpp"
-#include "Game/log.h"
-#include "NetWork/tcpconnection.h"
-#include "PlayerLogin/playerlogin.h"
-
-#include "GameTask/gametask.h"
-#include "TeamFriend/teamfriend.h"
-#include "GameAttack/gameattack.h"
-#include "GameInterchange/gameinterchange.h"
-#include "OperationGoods/operationgoods.h"
-#include "Game/cmdparse.h"
-#include "GameChat/gamechat.h"
-
+#include "userposition.hpp"
+#include "log.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../PlayerLogin/playerlogin.h"
+#include "./../GameTask/gametask.h"
+#include "./../TeamFriend/teamfriend.h"
+#include "./../GameAttack/gameattack.h"
+#include "./../GameInterchange/gameinterchange.h"
+#include "./../OperationGoods/operationgoods.h"
+#include "./../GameChat/gamechat.h"
 #include "cmdparse.h"
 
 void CommandParse(TCPConnection::Pointer conn , void *reg)
@@ -71,8 +68,6 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     {
         STR_PackPlayerPosition* reg = (STR_PackPlayerPosition*)srv->malloc();
         memcpy(reg, buf, len + sizeof(STR_PackHead));
-//        printf("接受到的玩家位置玩家方向：direct = %f,x=%f,y=%f,z=%f\n",reg->Direct, reg->Pos_x, reg->Pos_y, reg->Pos_z);
-
         srv->RunTask(boost::bind(UserPosition::PlayerMove, conn, reg));
         break;
     }
@@ -269,10 +264,33 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     case FLAG_Chat:   //聊天 test
     {
         STR_PackRecvChat* t_chat = (STR_PackRecvChat*)srv->malloc();
-        memcpy(t_chat, buf, len +sizeof(STR_PackHead));
+        memcpy(t_chat, buf, len + sizeof(STR_PackHead));
         srv->RunTask(boost::bind(&GameChat::Chat, t_gameChat, conn, t_chat));
         break;
     }
+
+//    case FLAG_TradeOper:
+//    {
+//        STR_PackRequestOper* t_oper = (STR_PackRequestOper*)srv->malloc();
+//        memcpy(t_oper, buf, len + sizeof(STR_PackHead));
+
+//        break;
+//    }
+//    case FLAG_TradeOperResult:
+//    {
+
+//        break;
+//    }
+//    case FLAG_TradeOperGoods:
+//    {
+
+//        break;
+//    }
+//    case FLAG_TradeOperMoney:
+//    {
+
+//        break;
+//    }
     case FLAG_OperRequest:
     {
         operationRequest* t_operReq = (operationRequest*)srv->malloc();
@@ -355,7 +373,7 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     default:
     {
         Logger::GetLogger()->Info("Unkown pack");
-        printf("flag:%d, len:%d\n", head->Flag, head->Len);
+        Logger::GetLogger()->Error("flag:%d, len:%d\n", head->Flag, head->Len);
         break;
     }
     }
@@ -413,7 +431,7 @@ void CommandParseLogin(TCPConnection::Pointer conn, void* reg)
     default:
     {
         Logger::GetLogger()->Info("Unkown pack");
-        printf("flag:%d, len:%d\n", head->Flag, head->Len);
+        Logger::GetLogger()->Error("flag:%d, len:%d\n", head->Flag, head->Len);
         break;
     }
     }

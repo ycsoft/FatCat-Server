@@ -1,6 +1,6 @@
 #include "gamechat.h"
-#include "Game/session.hpp"
-#include "server.h"
+#include "./../Game/session.hpp"
+#include "./../server.h"
 
 GameChat::GameChat()
 {

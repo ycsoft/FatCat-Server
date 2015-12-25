@@ -1,4 +1,3 @@
-#include "diskdbmanager.h"
 #include <string.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -6,12 +5,14 @@
 #include <boost/thread/mutex.hpp>
 
 
-#include "Game/cmdtypes.h"
-#include "Game/log.h"
-#include "utils/stringbuilder.hpp"
-#include "Game/getdefinevalue.h"
-#include "server.h"
-#include "Monster/monster.h"
+#include "./../Game/cmdtypes.h"
+#include "./../Game/log.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Game/getdefinevalue.h"
+#include "./../server.h"
+#include "./../Monster/monster.h"
+
+#include "diskdbmanager.h"
 
 using namespace std;
 //static boost::mutex     mtx;

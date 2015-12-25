@@ -4,18 +4,18 @@
 #include <boost/asio.hpp>
 
 
-#include "transfer.hpp"
+//#include "transfer.hpp"
 #include "postgresqlstruct.h"
-#include "server.h"
+#include "./../server.h"
 #include "session.hpp"
-#include "memManage/diskdbmanager.h"
-#include "utils/stringbuilder.hpp"
-#include "Monster/monster.h"
-#include "NetWork/tcpconnection.h"
-#include "GameAttack/gameattack.h"
-#include "GameTask/gametask.h"
-#include "TeamFriend/teamfriend.h"
-#include "PlayerLogin/playerlogin.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Monster/monster.h"
+#include "./../NetWork/tcpconnection.h"
+#include "./../GameAttack/gameattack.h"
+#include "./../GameTask/gametask.h"
+#include "./../TeamFriend/teamfriend.h"
+#include "./../PlayerLogin/playerlogin.h"
 
 using boost::asio::ip::tcp;
 
@@ -63,7 +63,6 @@ public:
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         memcpy(&((*smap)[conn].m_position), pos, sizeof(STR_PackPlayerPosition));
         conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
-//        printf("发送给玩家的位置玩家方向：direct = %f,x=%f,y=%f,z=%f\n",pos->Direct, pos->Pos_x, pos->Pos_y, pos->Pos_z);
         //给可视范围内的玩家发送位置
         BroadCastUserPosition(conn, pos);
         STR_PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
@@ -178,7 +177,6 @@ public:
         umap_roleSock  viewRole = (*smap)[conn].m_viewRole;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
-//            cout << "发送玩家位置给周围玩家" << endl;
             it->second->Write_all(&OtherPos, sizeof(STR_PackOtherPlayerPosition));
         }
     }
@@ -194,7 +192,6 @@ public:
 //        cout << "roleid:" << playerDirect.roleid << ",direct:" << playerDirect.direct << endl;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
-//            cout << "发送玩家方向给周围玩家" << endl;
             it->second->Write_all(&playerDirect, sizeof(STR_PackOtherPlayerDirect));
         }
     }
@@ -210,7 +207,6 @@ public:
 //        cout << "roleid:" << playerAction.roleid << ",action:" << playerAction.action << endl;
         for(_umap_roleSock::iterator it = viewRole->begin(); it != viewRole->end(); it++)
         {
-//            cout << "发送玩家动作给周围玩家" << endl;
             it->second->Write_all(&playerAction, sizeof(STR_PackOtherPlayerAction));
         }
     }
