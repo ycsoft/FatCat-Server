@@ -15,7 +15,7 @@
         <category name="mycat" priority="debug" appender="stdout"/>
 
         <!-- default appenders ===================================== -->
-        <appender name="stdout" type="stream" layout="basic"/>
+        <appender name="stdout" type="stream" layout="dated"/>
         <appender name="stderr" type="stream" layout="dated"/>
         <appender name="syslog" type="syslog" layout="basic"/>
 

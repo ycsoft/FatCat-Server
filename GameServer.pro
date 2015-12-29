@@ -93,7 +93,7 @@ LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_thread.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_log.a
 
 LIBS += /usr/local/lib/liblog4c.a
-QMAKE_LFLAGS += -pthread
+#QMAKE_LFLAGS += -pthread
 
 #DISTFILES += \
 #    Game/log4crc

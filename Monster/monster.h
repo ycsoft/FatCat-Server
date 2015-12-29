@@ -116,7 +116,8 @@ public:
     hf_float CalculationPursuitDistance(STR_MonsterInfo* monsterInfo);
 
     //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
-    void  SearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_float startDis, hf_uint32 roleid);
+    void  SearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_float startDis, hf_uint32 hatredID);
+    void DeleteOldSearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_float startDis, hf_uint32 hatredID);
 
     //返回当前时间
     hf_double GetCurrentTime()

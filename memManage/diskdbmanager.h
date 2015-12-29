@@ -17,6 +17,7 @@ public:
     DiskDBManager();
     ~DiskDBManager();
     bool Connect(Configuration con);
+    bool Connect();
     bool Disconnect();
     /**
      * @brief Set 改变数据库内容

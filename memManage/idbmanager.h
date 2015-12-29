@@ -19,6 +19,7 @@ public:
     IDBManager();
     ~IDBManager();
     virtual bool Connect(Configuration con) = 0;
+    virtual bool Connect() = 0;
     virtual bool Disconnect() = 0;
     virtual hf_int32 Set(const char* str,...) = 0;
     virtual void* Get(const char* str) = 0;

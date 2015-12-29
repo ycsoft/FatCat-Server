@@ -460,26 +460,9 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
     if(monster->hatredRoleid != roleid)
     {
         Logger::GetLogger()->Debug("change hatredRole:change before role:%u,value:%u\n",monster->hatredRoleid, ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid]);
-        if(monster->hatredRoleid != 0)
+        if((monster->hatredRoleid != 0 && t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid]) || monster->hatredRoleid == 0)
         {
-            if(t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid])
-            {
-                if(monster->aimTime - timep > 0.002) //时间大于0.002秒时，重新确定时间和位置点
-                {
-                    monster->ChangeAimTimeAndPos(roleid, timep, posDis);
-                    Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
-                }
-                else
-                {
-                    Logger::GetLogger()->Debug("wating time less than 0.002 second\n");
-                    monster->ChangeHatredRoleid(roleid);
-                }
-            }
-        }
-        else
-        {
-            double timep = GetCurrentTime();
-            if(monster->aimTime - timep > 0.002)
+            if(monster->aimTime - timep > 0.002) //时间大于0.002秒时，重新确定时间和位置点
             {
                 monster->ChangeAimTimeAndPos(roleid, timep, posDis);
                 Server::GetInstance()->GetMonster()->SendMonsterToViewRole(&monster->monster);
@@ -489,7 +472,7 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
                 Logger::GetLogger()->Debug("wating time less than 0.002 second\n");
                 monster->ChangeHatredRoleid(roleid);
             }
-        }
+        }        
     }
     Logger::GetLogger()->Debug("attack later monsterid:%u hatredroleid:%u\n",monster->monster.MonsterID, monster->hatredRoleid);
 }

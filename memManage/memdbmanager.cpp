@@ -29,6 +29,11 @@ bool MemDBManager::Connect(Configuration con)
         return true;
 }
 
+bool MemDBManager::Connect()
+{
+
+}
+
 bool MemDBManager::Disconnect()
 {
     redisFree(m_redis);

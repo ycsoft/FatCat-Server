@@ -366,7 +366,6 @@ void Monster::Monsteractivity()
             {
                 cout << "monster hp 0: " << it->second.monster.MonsterID << endl;
                 it->second.MonsterSpawns(t_monsterSpawns, currentTime);
-//                MonsterSpawns(&it->second, t_monsterSpawns, currentTime); //怪物复活
                 //查找怪物周围的玩家,给玩家发送新生成的怪物
                 _umap_roleSock t_monsterViewRole;
                 memcpy(buff + sizeof(STR_PackHead), &it->second.monster, sizeof(STR_MonsterBasicInfo));
@@ -403,10 +402,9 @@ void Monster::Monsteractivity()
                 continue;
             }
 
-//            printf("t_monsterPos:%f,%f,%f\n",t_monster->Current_x, t_monster->Current_y, t_monster->Current_z);
+
             //计算怪物是否超过追击距离
             hf_float t_startDis = CalculationPursuitDistance(&it->second);
-//            printf("离开追击点的距离：%lf\n", t_startDis);
             if(t_startDis >= MonsterPursuitDis) //超过追击距离，返回起始点
             {
                 it->second.MoveToStartPos(currentTime, t_startDis);
@@ -415,28 +413,11 @@ void Monster::Monsteractivity()
             }
 
             hf_uint32 roleid = it->second.hatredRoleid;
-            _umap_roleSock::iterator role_it = t_roleSock->find(it->second.hatredRoleid);
-
-
-//            if ( t_roleSock->size() == 0)
-//            {
-//                cout<<"No Online User!"<<endl;
-//                umap_roleSock t_role = SessionMgr::Instance()->GetRoleSock();
-//                int sz =t_role->size();
-//                cout<<t_role->size()<<endl;
-//                continue;
-//            }else{
-//                _umap_roleSock::iterator r_it = t_roleSock->begin();
-//                cout<<r_it->first<<endl;
-//            }
+            _umap_roleSock::iterator role_it = t_roleSock->find(roleid);
             if(role_it == t_roleSock->end()) //确定新目标 玩家已经退出游戏,暂时让其自由活动
             {
                 //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
-                SearchNewAim(&it->second, currentTime, t_startDis, roleid);
-
-//                it->second.ChangeHatredRoleid(0);
-//                it->second.MoveToStartPos(currentTime, t_startDis);
-//                SendMonsterToViewRole(&it->second.monster);
+                DeleteOldSearchNewAim(&it->second, currentTime, t_startDis, roleid);
                 continue;
             }
             else
@@ -445,7 +426,7 @@ void Monster::Monsteractivity()
                 if(((*smap)[role_it->second].m_roleInfo.HP) == 0)
                 {
                     //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
-                    SearchNewAim(&it->second, currentTime, t_startDis, roleid);
+                    DeleteOldSearchNewAim(&it->second, currentTime, t_startDis, roleid);
                     continue;
                 }
 
@@ -455,7 +436,6 @@ void Monster::Monsteractivity()
                 hf_float dz = t_playerPos->Pos_z - t_monster->Current_z;
 
                 hf_float dis = sqrt(dx*dx + dz*dz);
-//                cout << "怪物与玩家的距离:" << dis << endl << endl;
                 if(dis > MonsterAttackView)
                 {
                     it->second.ChangeMonsterPos(currentTime, dis, dx, dz);
@@ -464,9 +444,6 @@ void Monster::Monsteractivity()
                 }
 
                 hf_float cosDirect = (dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct))/sqrt(dx*dx + dz*dz);
-//                printf("角度计算值:%f\n", cosDirect);
-//                if((dx*cos(it->second.monster.Direct) + dz*sin(it->second.monster.Direct)/sqrt(dx*dx + dz*dz) < SQRT3DIV2))  //夹角大于30度
-//                {
                 if(cosDirect < SQRT3DIV2)
                 {
                     it->second.ChangeMonsterDirect(dx, dz);
@@ -477,7 +454,6 @@ void Monster::Monsteractivity()
                 }
 
                 //攻击玩家
-//                hf_uint32 roleid = role_it->first;
                 t_damageData.AimID = roleid;
                 t_damageData.AttackID = t_monster->MonsterID;
 
@@ -502,9 +478,7 @@ void Monster::Monsteractivity()
                     continue;
                 }
 
-
                 hf_uint8 t_level = (*smap)[role_it->second].m_roleExp.Level;
-
                 //物理攻击
                 hf_uint32 reductionValue = GetDamage_reduction(t_level);
                 if(reductionValue >= t_AimInfo->PhysicalDefense)
@@ -512,7 +486,6 @@ void Monster::Monsteractivity()
                 else
                     t_damageData.Damage = monsterAttackInfo->PhysicalAttack* reductionValue/t_AimInfo->PhysicalDefense;
                 t_damageData.TypeID = PhyAttackSkillID;
-
 
                 if(monsterAttackInfo->Crit_Rate*100 >= rand()%100)//暴击
                 {
@@ -547,11 +520,7 @@ void Monster::Monsteractivity()
 
                     role_it->second->Write_all(&t_roleAttr, sizeof(STR_RoleAttribute));
                     Server::GetInstance()->GetGameAttack()->SendRoleHpToViewRole(role_it->second, &t_roleAttr);
-
                     SearchNewAim(&it->second, currentTime, t_startDis, roleid);
-//                    it->second.ChangeHatredRoleid(0);
-//                    it->second.MoveToStartPos(currentTime, t_startDis);
-//                    SendMonsterToViewRole(&it->second.monster);
                 }
             }           
         }
@@ -733,14 +702,55 @@ void  Monster::SearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_
     for(_umap_viewRole::iterator it = viewRole->begin(); it != viewRole->end(); it++)
     {
         if(it->first == hatredID)
+        {
+            it->second = 0;
             continue;
+        }
         if(it->second != 0 && it->second > hatredValue)
         {
             roleid = it->first;
+            hatredValue = it->second;
         }
     }
     if(roleid != 0)
     {
+        printf("old roleid: %u, new roleid %u\n", hatredID, roleid);
+        monster->ChangeHatredRoleid(roleid);
+    }
+    else
+    {
+        monster->MoveToStartPos(currentTime, startDis);
+        SendMonsterToViewRole(&monster->monster);
+    }
+}
+
+void Monster::DeleteOldSearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_float startDis, hf_uint32 hatredID)
+{
+    hf_uint32 hatredValue = 0;
+    hf_uint32 roleid = 0;
+    _umap_viewRole* viewRole = &(*m_monsterViewRole)[monster->monster.MonsterID];
+
+    Logger::GetLogger()->Debug("monster kill role,view role size %u",viewRole->size());
+    for(_umap_viewRole::iterator it = viewRole->begin(); it != viewRole->end();)
+    {
+        if(it->first == hatredID)
+        {
+            _umap_viewRole::iterator _it = it;
+            it++;
+            viewRole->erase(_it);
+            it->second = 0;
+            continue;
+        }
+        if(it->second != 0 && it->second > hatredValue)
+        {
+            roleid = it->first;
+            hatredValue = it->second;
+        }
+        it++;
+    }
+    if(roleid != 0)
+    {
+        printf("old roleid: %u, new roleid %u\n", hatredID, roleid);
         monster->ChangeHatredRoleid(roleid);
     }
     else

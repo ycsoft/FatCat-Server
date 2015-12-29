@@ -19,7 +19,7 @@
 #include "server.h"
 #include "Game/log.h"
 
-//#include "fileOperation/fileoperation.h"
+#include "fileOperation/fileoperation.h"
 //#include "Game/log.hpp"
 
 //using namespace std;
@@ -32,12 +32,12 @@
 
 //const int maxlength = 10000;
 
-
+#include <boost/smart_ptr/make_unique.hpp>
 int main()
 {
 //    fileOperation file;
-//    file.ReadFile ("/home/hf02/桌面/heightmap.raw");
-//    file.ReadFile("/home/hf02/桌面/aaaaaaaaaaaaaa");
+//    file.ReadFile ("/home/hf02/桌面/heightmap.raw", MAP1);
+//    file.ReadFile("/home/hf02/桌面/aaaaaaaaaaaaaa", MAP2);
 
 //    log4c::GetLog4c()->log_open("mycat");
 //    LOG_TRACE("trace");

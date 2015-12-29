@@ -28,8 +28,23 @@ DiskDBManager::~DiskDBManager()
 
 bool DiskDBManager::Connect(Configuration con)
 {
-//    PGconn *PQconnectdb(const char *conninfo);
     m_PGconn = PQsetdbLogin(con.ip, con.port, NULL, NULL,con.dbName, con.user, con.password);
+    if(PQstatus(m_PGconn) != CONNECTION_OK)
+    {
+        printf("PQconnectdb error\n");
+        return false;
+    }
+    else
+        return true;
+}
+
+bool DiskDBManager::Connect()
+{
+
+//    m_PGconn = PQconnectdb("hostaddr = 127.0.0.1 port = 5432 dbname = my_database user = postgres password = postgres connect_timeout = 1");
+
+    m_PGconn = PQconnectdb("hostaddr = 139.196.165.107 port = 5433 dbname = game user = game password = houfang2015 connect_timeout = 1");
+
     if(PQstatus(m_PGconn) != CONNECTION_OK)
     {
         printf("PQconnectdb error\n");
@@ -92,6 +107,7 @@ hf_int32 DiskDBManager::GetSqlResult(const hf_char* str)
 //得到玩家的登录信息
 hf_int32 DiskDBManager::GetPlayerUserId(STR_PlayerLoginUserId* user,const char *str)
 {
+    printf("GetPlayerUserID:%s\n",str);
     m_mtx.lock();
     PGresult* t_PGresult = PQexec(m_PGconn, str);
     m_mtx.unlock();
@@ -105,7 +121,7 @@ hf_int32 DiskDBManager::GetPlayerUserId(STR_PlayerLoginUserId* user,const char *
 
     if(t_ExecStatusType != PGRES_TUPLES_OK) // PGRES_TUPLES_OK表示成功执行一个返回数据的查询查询
     {
-        printf("PQexec error\n");
+        printf("PQexec error:%d\n", t_ExecStatusType);
         return -1;
     }
     else

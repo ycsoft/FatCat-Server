@@ -75,6 +75,14 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_u
                 break;
             }
             memcpy(&head, m_buf + currentPos, sizeof(STR_PackHead));
+            if(head.Len > 100)
+            {
+                Logger::GetLogger()->Debug("Client head Disconnected");
+                Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
+                SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+                SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
+                SessionMgr::Instance()->SessionsErase(shared_from_this());
+            }
             if(currentPos + sizeof(STR_PackHead) + head.Len == m_dataPos) //最后一个包
             {
                 memcpy(m_pack.data, m_buf + currentPos, sizeof(STR_PackHead) + head.Len);

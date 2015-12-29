@@ -1,5 +1,7 @@
 #include "operationpostgres.h"
 #include "./../PlayerLogin/playerlogin.h"
+#include "./../server.h"
+#include "./../memManage/diskdbmanager.h"
 
 OperationPostgres::OperationPostgres():
     m_UpdateMoney(new boost::lockfree::queue<UpdateMoney>(100)),
@@ -34,6 +36,7 @@ void OperationPostgres::UpdatePostgresData()
     UpdateEquAttr t_updateEquAttr;
     UpdateTask t_updateTask;
     UpdateCompleteTask t_comTask;
+    hf_uint32 connectTime = 0;
     while(1)
     {
         if(m_UpdateMoney->pop(t_updateMoney))
@@ -66,7 +69,6 @@ void OperationPostgres::UpdatePostgresData()
                 PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.EquAttr.EquID);
         }
 
-
         if(m_UpdateTask->pop(t_updateTask))
         {
             if(t_updateTask.Operate == PostUpdate)
@@ -80,7 +82,16 @@ void OperationPostgres::UpdatePostgresData()
         if(m_UpdateCompleteTask->pop(t_comTask))
             PlayerLogin::InsertPlayerCompleteTask(t_comTask.RoleID, t_comTask.TaskID);
 
+
         usleep(1000);
+        if(connectTime++ == 300000)
+        {
+            if(Server::GetInstance()->getDiskDB()->GetSqlResult("select * from t_skillinfo where skillid = 0") == -1)
+            {
+                printf("postgres break off\n");
+            }
+            connectTime = 0;
+        }
     }
 }
 

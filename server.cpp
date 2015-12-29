@@ -63,26 +63,30 @@ Server::~Server()
 
 void Server::InitDB()
 {
-    Configuration Diskcon;
+//    Configuration Diskcon;
     Configuration MemCon;
 
-    memset(&Diskcon, 0, sizeof(Diskcon));
+//    memset(&Diskcon, 0, sizeof(Diskcon));
     memset(&MemCon, 0, sizeof(MemCon));
-    Diskcon.ip = "139.196.165.107";
+//    Diskcon.ip = "139.196.165.107";
 //    Diskcon.ip = "10.183.100.13";
-    Diskcon.port = "5433";
-    Diskcon.dbName = "game";
-    Diskcon.user = "game";
-    Diskcon.password = "houfang2015";
+//    Diskcon.port = "5433";
+//    Diskcon.dbName = "game";
+//    Diskcon.user = "game";
+//    Diskcon.password = "houfang2015";
 
     MemCon.ip = "127.0.0.1";
     MemCon.port = "6379";
 
-   if(!m_DiskDB->Connect(Diskcon))
-   {
-        Logger::GetLogger()->Debug("Connect postgres error");
-   }
+//   if(!m_DiskDB->Connect(Diskcon))
+//   {
+//        Logger::GetLogger()->Debug("Connect postgres error");
+//   }
 
+   if(!m_DiskDB->Connect())
+   {
+       Logger::GetLogger()->Debug("Connect postgres error");
+   }
    if(!m_MemDB->Connect(MemCon))
    {
        Logger::GetLogger()->Debug("Connect redis errorr");
