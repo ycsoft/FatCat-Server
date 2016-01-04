@@ -348,8 +348,9 @@ void PlayerLogin::LoginUserId(TCPConnection::Pointer conn, STR_PlayerLoginUserId
 
             t_PackResult.result = RESULT_SUCCESS;
             conn->Write_all(&t_PackResult, sizeof(STR_PackResult));
+            conn->LockLoginStatus();
             conn->ChangePlayerLoginStatus(PlayerLoginUser);
-
+            conn->UnlockLoginStatus();
             Logger::GetLogger()->Debug("%s:%s user login success:%s",typeid(this).name(), __FUNCTION__,reg->userName);
             SessionMgr::Instance()->SessionsAdd(conn, reg->userName);
             SessionMgr::Instance()->NameSockAdd(reg->userName, conn);
@@ -397,7 +398,9 @@ void PlayerLogin::LoginRole(TCPConnection::Pointer conn, hf_uint32 roleid)
     {
         t_packResult.result = RESULT_SUCCESS;
         conn->Write_all(&t_packResult, sizeof(STR_PackResult));
+        conn->LockLoginStatus();
         conn->ChangePlayerLoginStatus(PlayerLoginRole);
+        conn->UnlockLoginStatus();
         Logger::GetLogger()->Debug("Login Role Success");
 
         (*smap)[conn].m_roleid = roleid;
