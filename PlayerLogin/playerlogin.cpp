@@ -22,6 +22,9 @@ PlayerLogin::~PlayerLogin()
 
 void PlayerLogin::ReturnRoleListSaveData(TCPConnection::Pointer conn)
 {
+    conn->LockLoginStatus();
+    conn->ChangePlayerLoginStatus(PlayerNotLoginUser);
+    conn->UnlockLoginStatus();
     Server *srv = Server::GetInstance();
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     hf_int32 roleid = ((*smap)[conn].m_roleid);
@@ -52,6 +55,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
 {
     Server *srv = Server::GetInstance();
     SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+    conn->LockLoginStatus();
     hf_uint8 t_loginState = conn->GetPlayerLoginStatus();
     if(t_loginState == PlayerNotLoginUser)
     {
@@ -65,7 +69,8 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
         Logger::GetLogger()->Debug("not login role exit");
         return;
     }
-
+    conn->ChangePlayerLoginStatus(PlayerNotLoginUser);
+    conn->UnlockLoginStatus();
     hf_int32 roleid = ((*smap)[conn].m_roleid);
 
     //将玩家当前数据写进数据库,(位置，任务进度等)
@@ -91,6 +96,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     SessionMgr::Instance()->NickSockErase((*smap)[conn].m_RoleBaseInfo.Nick);
     SessionMgr::Instance()->RoleSockErase(roleid);
     SessionMgr::Instance()->SessionsErase(conn);
+
 
     ///////////////////////////////////////////////////
 //    SessionMgr::SessionMap::iterator it = smap->find(conn);

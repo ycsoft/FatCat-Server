@@ -75,8 +75,16 @@ public:
     }
 
     void ChangePlayerLoginStatus(hf_uint8 status)
+    {        
+        m_LoginStatus = status;        
+    }
+    void LockLoginStatus()
     {
-        m_LoginStatus = status;
+        m_LoginStatusMtx.lock();
+    }
+    void UnlockLoginStatus()
+    {
+        m_LoginStatusMtx.unlock();
     }
 
     boost::mutex          m_write_lock;
@@ -97,6 +105,7 @@ private:
     //发送缓冲区
     hf_char                 m_send_buf[TCP_BUFFER_SIZE];
     hf_uint8                m_LoginStatus;  //0表示未登录用户，1表示已经登录用户，未登录角色， 2表示已经登录角色
+    boost::mutex          m_LoginStatusMtx;
     //
     //设置读写锁，保证通过网络传输的包的完整性。
     //一旦发生异常，及时将锁释放，否则会造成死锁
