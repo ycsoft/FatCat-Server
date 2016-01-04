@@ -162,6 +162,7 @@ public:
         hf_float dz = monster.Target_z - monster.Current_z;
 
         monster.Direct = CalculationDirect(dx, dz);
+        monster.ActID = Action_Walk;
         startTime = currentTime;
 //        hf_float dis = sqrt(dx*dx + dz*dz);
         aimTime = currentTime + (sqrt(dx*dx + dz*dz) / ((hf_double)monster.MoveRate/100 * MonsterMoveDistance)/* + MonsterStopTime*/);

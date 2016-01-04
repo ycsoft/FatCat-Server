@@ -426,7 +426,7 @@ void Monster::Monsteractivity()
                 if(((*smap)[role_it->second].m_roleInfo.HP) == 0)
                 {
                     //确定新的追击目标，如果仇恨值都为0，则返回起始追击点
-                    DeleteOldSearchNewAim(&it->second, currentTime, t_startDis, roleid);
+                    SearchNewAim(&it->second, currentTime, t_startDis, roleid);
                     continue;
                 }
 
@@ -498,11 +498,12 @@ void Monster::Monsteractivity()
                 }
 
                 STR_PackMonsterAction monsterAction(t_monster->MonsterID, Action_Attack);
-                role_it->second->Write_all(&monsterAction, sizeof(STR_PackMonsterAction));
+                SendMonsterActionToViewRole(&monsterAction);
+//                role_it->second->Write_all(&monsterAction, sizeof(STR_PackMonsterAction));
                 //发送怪物产生的伤害给玩家
                 role_it->second->Write_all(&t_damageData, sizeof(STR_PackDamageData));
 
-                if((*smap)[role_it->second].m_roleInfo.HP >= t_damageData.Damage)
+                if((*smap)[role_it->second].m_roleInfo.HP > t_damageData.Damage)
                 {
                     (*smap)[role_it->second].m_roleInfo.HP -= t_damageData.Damage;
                     hf_uint32 playerHP = (*smap)[role_it->second].m_roleInfo.HP;
@@ -647,6 +648,20 @@ void Monster::SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt)
     }
 }
 
+//发送变化的怪物动作给可视范围内的玩家
+void Monster::SendMonsterActionToViewRole(STR_PackMonsterAction* monster)
+{
+    _umap_viewRole* t_viewRole = &(*m_monsterViewRole)[monster->monsterID];
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    for(_umap_viewRole::iterator it = t_viewRole->begin(); it != t_viewRole->end(); it++)
+    {
+        _umap_roleSock::iterator iter = t_roleSock->find(it->first);
+        if(iter != t_roleSock->end())
+        {
+            iter->second->Write_all(monster, sizeof(STR_PackMonsterAction));
+        }
+    }
+}
 //发送施法效果给周围玩家
 void Monster::SendSkillEffectToMonsterViewRole(STR_PackSkillAimEffect* skillEffect)
 {
@@ -701,6 +716,7 @@ void  Monster::SearchNewAim(STR_MonsterInfo* monster, hf_double currentTime, hf_
     Logger::GetLogger()->Debug("monster kill role,view role size %u",viewRole->size());
     for(_umap_viewRole::iterator it = viewRole->begin(); it != viewRole->end(); it++)
     {
+        printf("it->first : %u\n", it->first);
         if(it->first == hatredID)
         {
             it->second = 0;
@@ -730,7 +746,7 @@ void Monster::DeleteOldSearchNewAim(STR_MonsterInfo* monster, hf_double currentT
     hf_uint32 roleid = 0;
     _umap_viewRole* viewRole = &(*m_monsterViewRole)[monster->monster.MonsterID];
 
-    Logger::GetLogger()->Debug("monster kill role,view role size %u",viewRole->size());
+    Logger::GetLogger()->Debug("hatredID exit,monster search new role,view role size %u",viewRole->size());
     for(_umap_viewRole::iterator it = viewRole->begin(); it != viewRole->end();)
     {
         if(it->first == hatredID)

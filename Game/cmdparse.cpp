@@ -268,7 +268,11 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         srv->RunTask(boost::bind(&GameChat::Chat, t_gameChat, conn, t_chat));
         break;
     }
-
+    case 1000:
+    {
+        conn->Write_all(buf, sizeof(STR_PackHead) + len);
+        break;
+    }
 //    case FLAG_TradeOper:
 //    {
 //        STR_PackRequestOper* t_oper = (STR_PackRequestOper*)srv->malloc();

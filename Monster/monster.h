@@ -106,6 +106,8 @@ public:
     //发送伤害给可是范围内的玩家
     void SendMonsterHPToViewRole(STR_PackMonsterAttrbt* monsterBt);
 
+    //发送变化的怪物动作给可视范围内的玩家
+    void SendMonsterActionToViewRole(STR_PackMonsterAction* monster);
     //发送施法效果给周围玩家
     void SendSkillEffectToMonsterViewRole(STR_PackSkillAimEffect* skillEffect);
 

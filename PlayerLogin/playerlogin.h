@@ -11,6 +11,8 @@ public:
     PlayerLogin();
     ~PlayerLogin();
 
+    //玩家返回角色列表，保存已登录角色的数据
+    void ReturnRoleListSaveData(TCPConnection::Pointer conn);
     //保存玩家角色退出数据，并发送下线通知给其他玩家
     void SavePlayerOfflineData(TCPConnection::Pointer conn);
 

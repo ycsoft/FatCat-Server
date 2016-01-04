@@ -43,8 +43,9 @@ bool DiskDBManager::Connect()
 
 //    m_PGconn = PQconnectdb("hostaddr = 127.0.0.1 port = 5432 dbname = my_database user = postgres password = postgres connect_timeout = 1");
 
-    m_PGconn = PQconnectdb("hostaddr = 139.196.165.107 port = 5433 dbname = game user = game password = houfang2015 connect_timeout = 1");
+//    m_PGconn = PQconnectdb("hostaddr = 139.196.165.107 port = 5433 dbname = game user = game password = houfang2015 connect_timeout = 1");
 
+    m_PGconn = PQconnectdb("host = localhost dbname = my_database user = postgres password = postgres");
     if(PQstatus(m_PGconn) != CONNECTION_OK)
     {
         printf("PQconnectdb error\n");

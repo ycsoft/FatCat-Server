@@ -855,8 +855,6 @@ void GameTask::SendPlayerViewTask(TCPConnection::Pointer conn)
         }
 
         memcpy(buff + sizeof(STR_PackHead) + size*sizeof(STR_TaskProfile), &(*m_taskProfile)[it->first], sizeof(STR_TaskProfile));
-
-        printf("taskStatus:%d\n", (*m_taskProfile)[it->first].Status);
         size++;
         if(size == (CHUNK_SIZE - sizeof(STR_PackHead))/sizeof(STR_TaskProfile))
         {

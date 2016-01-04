@@ -12,7 +12,7 @@
 
 #include "postgresqlstruct.h"
 #include "./../NetWork/tcpconnection.h"
-#include "log.h"
+//#include "log.h"
 #include "cmdtypes.h"
 
 using boost::asio::ip::tcp;
@@ -160,6 +160,15 @@ public:
         }
     }
 
+    void SendPositionToViewRole(STR_PackPlayerPosition* pos)
+    {
+        STR_PackOtherPlayerPosition OtherPos(m_roleid, pos);
+        for(_umap_roleSock::iterator it = m_viewRole->begin(); it != m_viewRole->end(); it++)
+        {
+            it->second->Write_all(&OtherPos, sizeof(STR_PackOtherPlayerPosition));
+        }
+    }
+
     typedef boost::array<char,40>    Buff;
     Buff                    m_usrid;             //用户名
 //    Buff                    m_nick;              //昵称
@@ -202,21 +211,12 @@ public:
     typedef boost::shared_ptr<SessionMap>           SessionPointer;
     typedef boost::shared_ptr<SessionMgr>            Pointer;
 
-//    typedef boost::unordered_map<tcp::socket*, TCPConnection::Pointer > sockMap;
-
     typedef boost::unordered_map<string,TCPConnection::Pointer> _umap_nickSock;
     typedef boost::shared_ptr<_umap_nickSock> umap_nickSock;
 
 
 
-//    sockMap     m_sockMap;
 
-//    void    SaveSession(TCPConnection::Pointer sock,Session ss)
-//    {
-//        (*m_sessions)[sock] = ss;
-////           SessionMgr::SessionMap *ssmap = m_sessions.get();
-////            (*ssmap)[sock] = ss;
-//    }
      void    SaveSession(TCPConnection::Pointer sock,char *name)
      {
 //         Session s;
@@ -315,38 +315,36 @@ public:
         return m_recoveryHPMagic;
     }
 
-//    void SessionsAdd(TCPConnection::Pointer conn, Session& s)
-//    {
-//        m_sessionsMtx.lock();
-////        cout << conn->socket().native_handle() << endl;
-//        cout << "m_sessions add start:" << m_sessions->size() << endl;
-//        (*m_sessions)[conn] = s;
-//        cout << "m_sessions add end:" << m_sessions->size() << endl;
-//        m_sessionsMtx.unlock();
-//    }
+    void SessionsAdd(TCPConnection::Pointer conn, hf_char* name)
+    {
+        m_sessionsMtx.lock();
+        memcpy(&(*m_sessions)[conn].m_usrid[0], name, 32);
+        (*m_sessions)[conn].m_roleid = 0;
+        Logger::GetLogger()->Debug("m_sessions add end:%d",m_sessions->size());
+        m_sessionsMtx.unlock();
+    }
 
     void SessionsErase(TCPConnection::Pointer conn)
     {
         m_sessionsMtx.lock();
-        cout << "m_sessions delete start:" << m_sessions->size() << endl;
         m_sessions->erase(conn);
-        cout << "m_sessions delete end:" << m_sessions->size() << endl;
+        Logger::GetLogger()->Debug("m_sessions delete end:%d",m_sessions->size());
         m_sessionsMtx.unlock();
     }
 
     void RoleSockAdd(hf_uint32 roleid, TCPConnection::Pointer conn)
     {
         m_roleMtx.lock();
-        cout << "addstart" << m_roleSock->size() << endl;
         (*m_roleSock)[roleid] = conn;
-        cout << "add end" << m_roleSock->size() << endl;
+        Logger::GetLogger()->Debug("m_roleSock add end:%d",m_roleSock->size());
         m_roleMtx.unlock();
     }
 
     void RoleSockErase(hf_uint32 roleid)
     {
-        m_roleMtx.lock();
+        m_roleMtx.lock();       
         m_roleSock->erase(roleid);
+        Logger::GetLogger()->Debug("m_roleSock delete end:%d",m_roleSock->size());
         m_roleMtx.unlock();
     }
 
@@ -354,6 +352,7 @@ public:
     {
         m_nickMtx.lock();
         (*m_nickSock)[nick] = conn;
+        Logger::GetLogger()->Debug("m_nickSock add end:%d",m_nickSock->size());
         m_nickMtx.unlock();
     }
 
@@ -361,6 +360,7 @@ public:
     {
         m_nickMtx.lock();
         m_nickSock->erase(nick);
+        Logger::GetLogger()->Debug("m_nickSock delete end:%d",m_nickSock->size());
         m_nickMtx.unlock();
     }
 
@@ -368,6 +368,7 @@ public:
     {
         m_nameMtx.lock();
         (*m_nameSock)[name] = conn;
+        Logger::GetLogger()->Debug("m_nameSock add end:%d", m_nameSock->size());
         m_nameMtx.unlock();
     }
 
@@ -375,6 +376,7 @@ public:
     {
         m_nameMtx.lock();
         m_nameSock->erase(name);
+        Logger::GetLogger()->Debug("m_nameSock delete end:%d", m_nameSock->size());
         m_nameMtx.unlock();
     }
 

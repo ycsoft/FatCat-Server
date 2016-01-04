@@ -59,12 +59,13 @@ public:
     //用户位置移动
     static void PlayerMove(TCPConnection::Pointer conn, STR_PackPlayerPosition* pos)
     {
-//        cout << "player move " << pos->Pos_x << "," << pos->Pos_y << "," << pos->Pos_z << endl;
         SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
         memcpy(&((*smap)[conn].m_position), pos, sizeof(STR_PackPlayerPosition));
-        conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
+//        conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
         //给可视范围内的玩家发送位置
-        BroadCastUserPosition(conn, pos);
+        Session* sess = &(*smap)[conn];
+        sess->SendPositionToViewRole(pos);
+//        BroadCastUserPosition(conn, pos);
         STR_PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;
         hf_float dx = startPos->Pos_x - pos->Pos_x,
             dy = startPos->Pos_y - pos->Pos_y,
@@ -145,8 +146,8 @@ public:
             return;
         }
 
-        conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
-        //给可视范围内的玩家发送位置
+//        conn->Write_all(pos, sizeof(STR_PackPlayerPosition));
+        //给可视范围内的玩家发送位置       
         BroadCastUserPosition(conn, pos);
 
         STR_PlayerStartPos* startPos = &(*smap)[conn].m_StartPos;

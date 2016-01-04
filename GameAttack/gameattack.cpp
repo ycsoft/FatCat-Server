@@ -233,6 +233,7 @@ void GameAttack::CommonAttackMonster(TCPConnection::Pointer conn, STR_PackUserAt
 
     STR_PackDamageData t_damageData;
     umap_playerViewMonster t_viewMonster = (*smap)[conn].m_viewMonster;
+    cout << "t_playerViewMonster->size()" << t_viewMonster->size() << endl;
     _umap_playerViewMonster::iterator it = t_viewMonster->find(t_attack->AimID);
     if(it == t_viewMonster->end())
     {
@@ -456,10 +457,9 @@ void GameAttack::DamageDealWith(TCPConnection::Pointer conn, STR_PackDamageData*
     ((*monsterViewRole)[t_monsterBt.MonsterID])[roleid] += damage->Damage;
     hf_uint32 t_hatredValue = ((*monsterViewRole)[t_monsterBt.MonsterID])[roleid];
 
-    printf("roleid:%d,hatredvalue:%d\n", roleid, t_hatredValue);
+    printf("roleid:%d,hatredvalue:%d\n", roleid, t_hatredValue);\
     if(monster->hatredRoleid != roleid)
     {
-        Logger::GetLogger()->Debug("change hatredRole:change before role:%u,value:%u\n",monster->hatredRoleid, ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid]);
         if((monster->hatredRoleid != 0 && t_hatredValue > ((*monsterViewRole)[t_monsterBt.MonsterID])[monster->hatredRoleid]) || monster->hatredRoleid == 0)
         {
             if(monster->aimTime - timep > 0.002) //时间大于0.002秒时，重新确定时间和位置点

@@ -81,18 +81,27 @@ HEADERS += \
 
 
 
+INCLUDEPATH += ./LIBS/boost_1_58_0 \
+./LIBS/threadpool-0_2_5-src/threadpool/boost
 
-INCLUDEPATH += /home/hf02/soft/boost_1_58_0
-INCLUDEPATH += /home/hf02/soft/threadpool-0_2_5-src/threadpool/boost
+#LIBS += ./LIBS/libhiredis.a \
+#./LIBS/libpq.so \
+#./LIBS/libboost_system.a \
+#./LIBS/libboost_thread.a \
+#./LIBS/libboost_libboost_log.a \
+#./LIBS/liblog4c.a
 
+#INCLUDEPATH += /home/hf02/soft/boost_1_58_0
+#INCLUDEPATH += /home/hf02/soft/threadpool-0_2_5-src/threadpool/boost
 
 LIBS += /home/hf02/soft/hiredis-master/libhiredis.a
 LIBS += /usr/lib64/libpq.so
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_system.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_thread.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_log.a
-
 LIBS += /usr/local/lib/liblog4c.a
+
+
 #QMAKE_LFLAGS += -pthread
 
 #DISTFILES += \

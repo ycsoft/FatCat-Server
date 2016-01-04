@@ -75,13 +75,10 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_u
                 break;
             }
             memcpy(&head, m_buf + currentPos, sizeof(STR_PackHead));
-            if(head.Len > 100)
+            if(head.Len > 512)
             {
-                Logger::GetLogger()->Debug("Client head Disconnected");
+                Logger::GetLogger()->Debug("Client head.len > 512 Disconnected");
                 Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-                SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-                SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
-                SessionMgr::Instance()->SessionsErase(shared_from_this());
             }
             if(currentPos + sizeof(STR_PackHead) + head.Len == m_dataPos) //最后一个包
             {
@@ -130,22 +127,20 @@ void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_u
     else if ( size == 0 || ec == boost::asio::error::eof || ec == boost::asio::error::shut_down)
     {
         Logger::GetLogger()->Debug("Client head Disconnected");
-        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
-        SessionMgr::Instance()->NameSockErase(&(*smap)[shared_from_this()].m_usrid[0]);
-        SessionMgr::Instance()->SessionsErase(shared_from_this());
+        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this());
     }
 }
 
 
 void TCPConnection::CallBack_Write(const boost::system::error_code &code, hf_uint16 transfferd)
 {
-    m_write_lock.unlock();
+
     if ( code ||  transfferd == 0 )
       {
         Logger::GetLogger()->Debug("Send Data to Player Error");
-        return;
+        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );    
       }
+    m_write_lock.unlock();
 }
 
 //判断玩家是否登录角色
