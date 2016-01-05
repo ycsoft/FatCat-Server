@@ -188,7 +188,7 @@ hf_uint8 OperationGoods::PickUpcommonGoods(TCPConnection::Pointer conn, STR_Loot
                 conn->Write_all (&t_packGoods, sizeof(STR_PackGoods));
 
                  t_post->PushUpdateGoods(roleid, &(*iter), PostUpdate); //将新买的物品添加到list
-                 t_pickResult.Count = lootGoods->Count;
+                 t_pickResult.Count += lootGoods->Count;
                  t_pickResult.Result = PICK_SUCCESS;
                  conn->Write_all(&t_pickResult, sizeof(STR_PackPickGoodsResult));
 
@@ -197,14 +197,12 @@ hf_uint8 OperationGoods::PickUpcommonGoods(TCPConnection::Pointer conn, STR_Loot
             }
             else //这个位置存放不下，存满当前位置，继续查找新位置
             {
+                lootGoods->Count -= GOODSMAXCOUNT - iter->Count;
                 t_pickResult.Count += GOODSMAXCOUNT - iter->Count;
-
                 iter->Count = GOODSMAXCOUNT;
-                lootGoods->Count -= t_pickResult.Count;
 
                 STR_PackGoods t_packGoods(&(*iter));
                 conn->Write_all (&t_packGoods, sizeof(STR_PackGoods));
-
 
                 t_post->PushUpdateGoods(roleid, &(*iter), PostUpdate); //
             }
