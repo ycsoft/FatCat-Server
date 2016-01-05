@@ -60,6 +60,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
     if(t_loginState == PlayerNotLoginUser)
     {
         Logger::GetLogger()->Debug("not login user exit");
+        conn->UnlockLoginStatus();
         return;
     }
     else if(t_loginState == PlayerLoginUser)
@@ -67,6 +68,7 @@ void PlayerLogin::SavePlayerOfflineData(TCPConnection::Pointer conn)
         SessionMgr::Instance()->NameSockErase(&(*smap)[conn].m_usrid[0]);
         SessionMgr::Instance()->SessionsErase(conn);
         Logger::GetLogger()->Debug("not login role exit");
+        conn->UnlockLoginStatus();
         return;
     }
     conn->ChangePlayerLoginStatus(PlayerNotLoginUser);
