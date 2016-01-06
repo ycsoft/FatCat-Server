@@ -169,6 +169,20 @@ public:
         return m_monsterViewRole;
     }
 
+    void MonsterViewAddRole(hf_uint32 monsterID, hf_uint32 roleid)
+    {
+        m_monsterViewMtx.lock();
+        ((*m_monsterViewRole)[monsterID])[roleid] = 0;
+        m_monsterViewMtx.unlock();
+    }
+
+    void MonsterViewDeleteRole(hf_uint32 monsterID, hf_uint32 roleid)
+    {
+        m_monsterViewMtx.lock();
+        (*m_monsterViewRole)[monsterID].erase(roleid);
+        m_monsterViewMtx.unlock();
+    }
+
 private:
     umap_monsterInfo                m_monsterBasic;     //怪物基本信息
     umap_monsterAttackInfo*         m_monsterAttack;    //怪物攻击信息
@@ -179,6 +193,7 @@ private:
     umap_monsterLoot*               m_monsterLoot;      //怪物掉落物品
 
     umap_monsterViewRole            m_monsterViewRole;  //怪物可视范围内的玩家
+    boost::mutex                    m_monsterViewMtx;   //操作怪物可视范围内的玩家锁
 };
 
 

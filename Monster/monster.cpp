@@ -148,6 +148,7 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
     hf_uint16 popcount = 0;
 
     hf_double currentTime = GetCurrentTime();
+    hf_uint32 roleid = (*smap)[conn].m_roleid;
     for(_umap_monsterInfo::iterator it = m_monsterBasic->begin(); it != m_monsterBasic->end(); it++)
     {
         hf_uint32 monsterID = it->second.monster.MonsterID;
@@ -171,10 +172,7 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
             (*t_playerViewMonster)[monsterID] = monsterID;  //保存为新看到的怪
             //在怪物可视范围内的玩家保存到怪物可视范围内
 
-            _umap_viewRole* t_roleSock = &(*m_monsterViewRole)[monsterID];
-            hf_uint32 roleid = (*smap)[conn].m_roleid;
-
-            (*t_roleSock)[roleid] = 0;
+            MonsterViewAddRole(monsterID, roleid);
             memcpy(comebuff + sizeof(STR_PackHead) + sizeof(STR_MonsterBasicInfo)*pushcount, &t_monsterBasicInfo, sizeof(STR_MonsterBasicInfo));
             pushcount++;
 
@@ -195,9 +193,7 @@ void Monster::PushViewMonsters( TCPConnection::Pointer conn)
             {
                 continue;
             }
-
-            _umap_viewRole* t_roleSock = &(*m_monsterViewRole)[monsterID];
-            t_roleSock->erase((*smap)[conn].m_roleid);
+            MonsterViewDeleteRole(monsterID, roleid);
 
             t_playerViewMonster->erase(monsterID);
             //保存离开视野范围的怪
