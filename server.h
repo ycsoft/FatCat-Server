@@ -1,9 +1,10 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <boost/threadpool.hpp>
+#include <threadpool.hpp>
 #include <boost/bind.hpp>
 #include <boost/pool/pool.hpp>
+#include <boost/lockfree/queue.hpp>
 
 #include "Game/cmdtypes.h"
 
@@ -19,6 +20,9 @@ class GameAttack;
 class GameInterchange;
 class OperationGoods;
 class OperationPostgres;
+class CmdParse;
+class GameChat;
+
 
 using namespace boost::threadpool;
 
@@ -116,6 +120,22 @@ public:
     {
         return m_operationPostgres;
     }
+//    CmdParse* GetCmdParse()
+//    {
+//        return m_cmdParse;
+//    }
+
+    GameChat* GetGameChat()
+    {
+        return m_gameChat;
+    }
+
+    void PushPackage(STR_Package package)
+    {
+        m_package->push(package);
+    }
+
+    void PopPackage();
 
 private:
     Server();
@@ -134,6 +154,10 @@ private:
     GameInterchange                 *m_gameInterchange;
     OperationGoods                  *m_operationGoods;
     OperationPostgres               *m_operationPostgres;
+//    CmdParse                        *m_cmdParse;
+    GameChat                        *m_gameChat;
+
+    boost::lockfree::queue<STR_Package>            *m_package;
 
 };
 

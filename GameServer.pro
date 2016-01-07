@@ -26,7 +26,13 @@ SOURCES += main.cpp \
     TeamFriend/teamfriend.cpp \
     GameInterchange/gameinterchange.cpp \
     OperationGoods/operationgoods.cpp \
-    OperationPostgres/operationpostgres.cpp
+    OperationPostgres/operationpostgres.cpp \
+    Game/cmdparse.cpp \
+#    Monster/monsterstruct.cpp
+    GameChat/gamechat.cpp \
+    fileOperation/fileoperation.cpp \
+    PlayerTrading/playertrading.cpp \
+    Game/log.cpp \
 
 
 
@@ -35,9 +41,9 @@ include(deployment.pri)
 qtcAddDeployment()
 
 HEADERS += \
-    Game/cmdparse.hpp \
+#    Game/cmdparse.hpp \
     Game/cmdtypes.h \
-    Game/log.hpp \
+#    Game/log.hpp \
     Game/packheadflag.h \
     Game/postgresqlstruct.h \
     Game/session.hpp \
@@ -63,19 +69,40 @@ HEADERS += \
     TeamFriend/teamfriend.h \
     GameInterchange/gameinterchange.h \
     OperationGoods/operationgoods.h \
-    OperationPostgres/operationpostgres.h
+    OperationPostgres/operationpostgres.h \
+    Game/cmdparse.h \
+    Monster/monsterstruct.h \
+    GameChat/gamechat.h \
+    fileOperation/fileoperation.h \
+    PlayerTrading/playertrading.h \
+    Game/log.h \
+#    Game/log.h
 
 
 
 
-INCLUDEPATH += /home/hf02/soft/boost_1_58_0
-INCLUDEPATH += /home/hf02/soft/threadpool-0_2_5-src/threadpool
+INCLUDEPATH += ./LIBS/boost_1_58_0 \
+./LIBS/threadpool-0_2_5-src/threadpool/boost
 
+#LIBS += ./LIBS/libhiredis.a \
+#./LIBS/libpq.so \
+#./LIBS/libboost_system.a \
+#./LIBS/libboost_thread.a \
+#./LIBS/libboost_libboost_log.a \
+#./LIBS/liblog4c.a
 
-LIBS+= /home/hf02/soft/hiredis-master/libhiredis.a
+#INCLUDEPATH += /home/hf02/soft/boost_1_58_0
+#INCLUDEPATH += /home/hf02/soft/threadpool-0_2_5-src/threadpool/boost
+
+LIBS += /home/hf02/soft/hiredis-master/libhiredis.a
 LIBS += /usr/lib64/libpq.so
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_system.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_thread.a
 LIBS += /home/hf02/soft/boost_1_58_0/stage/lib/libboost_log.a
+LIBS += /usr/local/lib/liblog4c.a
 
-QMAKE_LFLAGS += -pthread
+
+#QMAKE_LFLAGS += -pthread
+
+#DISTFILES += \
+#    Game/log4crc

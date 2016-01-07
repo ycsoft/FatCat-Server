@@ -1,9 +1,10 @@
 #include "gameinterchange.h"
-#include "memManage/diskdbmanager.h"
-#include "utils/stringbuilder.hpp"
-#include "Game/log.hpp"
-#include "server.h"
-#include "OperationPostgres/operationpostgres.h"
+#include "./../memManage/diskdbmanager.h"
+#include "./../utils/stringbuilder.hpp"
+#include "./../Game/log.h"
+#include "./../server.h"
+#include "./../OperationPostgres/operationpostgres.h"
+#include "./../GameTask/gametask.h"
 
 #define Result_Accept 1        //接受交易
 #define Result_Reject 2         //拒绝交易
@@ -71,6 +72,11 @@ void GameInterchange::operRequest(TCPConnection::Pointer conn, operationRequest*
 
     (*sp)[conn].m_interchage->goInChange();          //进入交易状态
     (*sp)[partnerConn].m_interchage->goInChange();          //服务器设定对方也进入交易状态 ，避免竞争
+    (*sp)[conn].m_interchage->roleId = (*sp)[conn].m_roleid;  //保存自己的角色id
+    (*sp)[partnerConn].m_interchage->roleId = (*sp)[partnerConn].m_roleid;  //对方保存自己的角色id
+    (*sp)[conn].m_interchage->partnerConn = partnerConn; //互相保存对方的连接
+    (*sp)[partnerConn].m_interchage->partnerConn = conn;  //互相保存对方的连接
+
     operReq->RoleID =  (*sp)[conn].m_roleid;                        // 向对方转发请求
     partnerConn->Write_all((char*)operReq, sizeof(operationRequest));
     srv->free(operReq);
@@ -102,10 +108,10 @@ void GameInterchange::operResponse(TCPConnection::Pointer conn,  operationReques
 
     if(operReq->operResult == Result_Accept)                                                                                   //如果答复同意交易，则设置交易标志
     {
-        (*sp)[conn].m_interchage->roleId = (*sp)[conn].m_roleid;  //保存自己的角色id
-        (*sp)[partnerConn].m_interchage->roleId = (*sp)[partnerConn].m_roleid;  //对方保存自己的角色id
-        (*sp)[conn].m_interchage->partnerConn = partnerConn; //互相保存对方的连接
-        (*sp)[partnerConn].m_interchage->partnerConn = conn;  //互相保存对方的连接
+//        (*sp)[conn].m_interchage->roleId = (*sp)[conn].m_roleid;  //保存自己的角色id
+//        (*sp)[partnerConn].m_interchage->roleId = (*sp)[partnerConn].m_roleid;  //对方保存自己的角色id
+//        (*sp)[conn].m_interchage->partnerConn = partnerConn; //互相保存对方的连接
+//        (*sp)[partnerConn].m_interchage->partnerConn = conn;  //互相保存对方的连接
     }
     else if(operReq->operResult == Result_Reject || operReq->operResult == Result_RejectTimeOut)                           //拒绝
     {
@@ -166,23 +172,44 @@ void GameInterchange::operChanges(TCPConnection::Pointer conn, interchangeOperGo
     Server* srv = Server::GetInstance();
 
     SessionMgr::SessionPointer sp = SessionMgr::Instance()->GetSession();
-    _umap_roleGoods::iterator iterRoleGoods = (*sp)[conn].m_playerGoods->find(oper->goodsId);
-    if(iterRoleGoods == (*sp)[conn].m_playerGoods->end())            //玩家选择的物品在服务器中不存在属于异常情况，忽略异常情况，服务器不做响应
+
+    if(oper->goodsId>=min_EquipMentId && oper->goodsId <=max_EquipMentId)
     {
-        return;
-    }
-    vector<STR_Goods>::iterator iterGoods = iterRoleGoods->second.begin();
-    for(; iterGoods != iterRoleGoods->second.end(); ++iterGoods)
-    {
-        if(iterGoods->Position == oper->position&&iterGoods->Count == oper->goodsCount) //位置信息和数量同时对应，则是找到玩家选择的物品
+        _umap_roleEqu::iterator iterRoleGoods = (*sp)[conn].m_playerEqu->find(oper->goodsId);
+        if(iterRoleGoods == (*sp)[conn].m_playerEqu->end())            //玩家选择的物品在服务器中不存在属于异常情况，忽略异常情况，服务器不做响应
+        {
+            return;
+        }
+
+        if(iterRoleGoods->second.goods.Position == oper->position&&iterRoleGoods->second.goods.Count == oper->goodsCount) //位置信息和数量同时对应，则是找到玩家选择的物品
         {
             (*sp)[conn].m_goodsPosition[oper->position] = POS_LOCKED;       //背包中找到该物品，则设定对该物品不能做其它操作
-            break;
+        }
+        else
+        {
+            return;
         }
     }
-    if(iterGoods == iterRoleGoods->second.end())                                    //背包中未找到该物品，属于异常情况，忽略异常情况
+    else
     {
-        return;
+        _umap_roleGoods::iterator iterRoleGoods = (*sp)[conn].m_playerGoods->find(oper->goodsId);
+        if(iterRoleGoods == (*sp)[conn].m_playerGoods->end())            //玩家选择的物品在服务器中不存在属于异常情况，忽略异常情况，服务器不做响应
+        {
+            return;
+        }
+        vector<STR_Goods>::iterator iterGoods = iterRoleGoods->second.begin();
+        for(; iterGoods != iterRoleGoods->second.end(); ++iterGoods)
+        {
+            if(iterGoods->Position == oper->position&&iterGoods->Count == oper->goodsCount) //位置信息和数量同时对应，则是找到玩家选择的物品
+            {
+                (*sp)[conn].m_goodsPosition[oper->position] = POS_LOCKED;       //背包中找到该物品，则设定对该物品不能做其它操作
+                break;
+            }
+        }
+        if(iterGoods == iterRoleGoods->second.end())                                    //背包中未找到该物品，属于异常情况，忽略异常情况
+        {
+            return;
+        }
     }
 
     boost::shared_ptr<Interchange> interchange = (*sp)[conn].m_interchage;
@@ -417,6 +444,16 @@ void GameInterchange::operProCheckChange(TCPConnection::Pointer conn,  interchan
     conn->Write_all((char*)&resp, sizeof(interchangeOperPro));
     partnerConn->Write_all((char*)&resp, sizeof(interchangeOperPro));
 
+    GameTask* t_task = srv->GetGameTask();
+    for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
+    {
+          t_task->UpdateCollectGoodsTaskProcess(conn,iter->TypeID);
+    }
+    for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
+    {
+          t_task->UpdateCollectGoodsTaskProcess(conn,iter->TypeID);
+    }
+
     interchange->clear();                          //交易完毕 恢复到原来状态
     pInterchange->clear();  //交易完毕 恢复到原来状态
 }
@@ -436,6 +473,10 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
     for(auto iter = interchange->changes.begin(); iter != interchange->changes.end();++iter)
     {
         _umap_roleGoods::iterator iterGoods = (*sp)[conn].m_playerGoods->find(iter->GoodsID);
+        if(iterGoods == (*sp)[conn].m_playerGoods->end())
+        {
+            continue;
+        }
         for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
         {
             if(iterIn->Position == iter->Position)
@@ -444,7 +485,7 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
                 {
                     (*sp)[conn].m_goodsPosition[iter->Position] = POS_EMPTY;
                     opg->PushUpdateGoods(interchange->roleId,&(*iter),PostDelete);
-                    (*sp)[conn].m_playerGoods->erase(iter->GoodsID);
+//                    (*sp)[conn].m_playerGoods->erase(iter->GoodsID);
                     break;
                 }
 
@@ -468,6 +509,10 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
     for(auto iter = pInterchange->changes.begin(); iter != pInterchange->changes.end();++iter)
     {
         _umap_roleGoods::iterator iterGoods = (*sp)[partnerConn].m_playerGoods->find(iter->GoodsID);
+        if(iterGoods == (*sp)[partnerConn].m_playerGoods->end())
+        {
+            continue;
+        }
         for(auto iterIn = iterGoods->second.begin(); iterIn != iterGoods->second.end(); ++iterIn)
         {
             if(iterIn->Position == iter->Position)
@@ -477,7 +522,7 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
 
                     (*sp)[partnerConn].m_goodsPosition[iter->Position] = POS_EMPTY;
                     opg->PushUpdateGoods(pInterchange->roleId,&(*iter),PostDelete);
-                    (*sp)[partnerConn].m_playerGoods->erase(iter->GoodsID);
+//                    (*sp)[partnerConn].m_playerGoods->erase(iter->GoodsID);
                     break;
                 }
                 opg->PushUpdateGoods(pInterchange->roleId,&(*iter),PostDelete);
@@ -523,13 +568,15 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
 
         if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
         {
-            (*((*sp)[partnerConn].m_playerGoods))[iter->GoodsID] = vec;
-            STR_Equipment equip = (*((*sp)[conn].m_playerEquAttr))[iter->GoodsID];
-            interchange->vecEqui.push_back(equip);
-            (*((*sp)[partnerConn].m_playerEquAttr))[iter->GoodsID] = equip;
-            (*sp)[conn].m_playerEquAttr->erase(iter->GoodsID);
 
-            opg->PushUpdateEquAttr(pInterchange->roleId,&equip,PostUpdate);
+            STR_EquipmentAttr equAttr = (*((*sp)[conn].m_playerEqu))[iter->GoodsID].equAttr;
+            interchange->vecEqui.push_back(equAttr);
+            STR_PlayerEqu equ;
+            equ.goods = goods;
+            equ.equAttr = equAttr;
+            (*((*sp)[partnerConn].m_playerEqu))[iter->GoodsID]  = equ;
+            (*sp)[conn].m_playerEqu->erase(iter->GoodsID);
+            opg->PushUpdateEquAttr(pInterchange->roleId,&equAttr,PostUpdate);
             continue;
         }
 
@@ -570,12 +617,14 @@ void GameInterchange::operDoChange(TCPConnection::Pointer conn)  //交换双方�
 
         if(iter->GoodsID>=min_EquipMentId && iter->GoodsID <=max_EquipMentId)   //装备
         {
-            (*((*sp)[conn].m_playerGoods))[iter->GoodsID] = vec;
-            STR_Equipment equip = (*((*sp)[partnerConn].m_playerEquAttr))[iter->GoodsID];
-            (*((*sp)[conn].m_playerEquAttr))[iter->GoodsID] = equip;
-            pInterchange->vecEqui.push_back(equip);
-            (*sp)[partnerConn].m_playerEquAttr->erase(iter->GoodsID);
-            opg->PushUpdateEquAttr(interchange->roleId,&equip,PostUpdate);
+            STR_EquipmentAttr equAttr = (*((*sp)[partnerConn].m_playerEqu))[iter->GoodsID].equAttr;
+            pInterchange->vecEqui.push_back(equAttr);
+            STR_PlayerEqu equ;
+            equ.goods = goods;
+            equ.equAttr = equAttr;
+            (*((*sp)[conn].m_playerEqu))[iter->GoodsID] = equ;
+            (*sp)[partnerConn].m_playerEqu->erase(iter->GoodsID);
+            opg->PushUpdateEquAttr(interchange->roleId,&equAttr,PostUpdate);
             continue;
         }
 
@@ -683,7 +732,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
 
     //向对方发送本方交易中装备的属性
 
-    head.Len = interchange->vecEqui.size()*sizeof(STR_Equipment);
+    head.Len = interchange->vecEqui.size()*sizeof(STR_EquipmentAttr);
     if(head.Len != 0)       //如果交易中有装备
     {
         head.Flag = FLAG_EquGoodsAttr;
@@ -692,7 +741,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
 
         for(int i = 0; i < interchange->vecEqui.size(); ++i)
         {
-            memcpy(bufToPartner+sizeof(STR_PackHead)+sizeof(STR_Equipment)*i,&(interchange->vecEqui[i]),sizeof(STR_Equipment));
+            memcpy(bufToPartner+sizeof(STR_PackHead)+sizeof(STR_EquipmentAttr)*i,&(interchange->vecEqui[i]),sizeof(STR_EquipmentAttr));
         }
         partnerConn->Write_all(bufToPartner, sizeof(STR_PackHead)+head.Len);   //本方交易的物品是装备，要向对方发送属性信息
     }
@@ -712,7 +761,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
     }
 
     //向本方发送对方交易中装备的属性
-    head.Len = pInterchange->vecEqui.size()*sizeof(STR_Equipment);
+    head.Len = pInterchange->vecEqui.size()*sizeof(STR_EquipmentAttr);
     cout<<"                   head.len2    "<<head.Len<<endl;
     if(head.Len != 0)      //如果交易中有装备
     {
@@ -721,7 +770,7 @@ void GameInterchange::operReport(TCPConnection::Pointer conn)   //交易报告 �
         memcpy(bufToConn,&head,sizeof(head));
         for(int i = 0; i < pInterchange->vecEqui.size(); ++i)
         {
-            memcpy(bufToConn+sizeof(STR_PackHead)+sizeof(STR_Equipment)*i,&(pInterchange->vecEqui[i]),sizeof(STR_Equipment));
+            memcpy(bufToConn+sizeof(STR_PackHead)+sizeof(STR_EquipmentAttr)*i,&(pInterchange->vecEqui[i]),sizeof(STR_EquipmentAttr));
         }
         conn->Write_all(bufToConn, sizeof(STR_PackHead)+head.Len);  //对方交易的如果是装备，则向本方发送装备属性信息
     }
@@ -820,6 +869,32 @@ void GameInterchange::operProCancelChange(TCPConnection::Pointer conn,interchang
     {
         (*sp)[partnerConn].m_goodsPosition[iter->Position] = POS_NONEMPTY;
     }
+    interchange->clear();           //清除交易状态
+    pInterchange->clear();             //对方清除交易状态
+    srv->free(oper);
+}
+
+void GameInterchange::operProCancelRequest(TCPConnection::Pointer conn,interchangeOperPro*  oper)
+{
+
+    Server* srv = Server::GetInstance();
+    SessionMgr::SessionPointer sp = SessionMgr::Instance()->GetSession();
+    boost::shared_ptr<Interchange> interchange = (*sp)[conn].m_interchage;
+    TCPConnection::Pointer partnerConn = interchange->partnerConn;
+
+    auto iter = sp->find(partnerConn);
+
+    if(iter == sp->end())    //对方离线
+    {
+        interchange->clear();           //清除交易状态
+        srv->free(oper);
+        return;
+    }
+
+    //对方在线
+    boost::shared_ptr<Interchange> pInterchange = (*sp)[partnerConn].m_interchage;
+    partnerConn->Write_all((char*)oper, sizeof(interchangeOperPro));   //转发取消交易的包
+
     interchange->clear();           //清除交易状态
     pInterchange->clear();             //对方清除交易状态
     srv->free(oper);

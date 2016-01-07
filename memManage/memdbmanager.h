@@ -13,6 +13,7 @@ public:
     MemDBManager();
     ~MemDBManager();
     bool Connect(Configuration con);
+    bool Connect();
     bool Disconnect();
     /**
      * @brief Set

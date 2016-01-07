@@ -1,40 +1,13 @@
-﻿
+﻿#include "./../server.h"
+#include "./../Game/postgresqlstruct.h"
+#include "./../PlayerLogin/playerlogin.h"
+#include "./../Game/cmdparse.h"
+#include "./../Game/session.hpp"
 
-#include "server.h"
 #include "tcpconnection.h"
-#include "Game/postgresqlstruct.h"
-
-#include "Game/cmdparse.hpp"
-
-#include "Game/session.hpp"
-
-#include "Game/log.hpp"
-
-
-//size_t hash_value(  TCPConnection &conn)
-//{
-//    size_t seed = 0;
-//    boost::hash_combine(seed, conn.socket().native_handle());
-//    return seed;
-//}
-//size_t hash_value(  TCPConnection::Pointer conn)
-//{
-//    size_t seed = 0;
-//    boost::hash_combine(seed, conn->socket().native_handle());
-//    return seed;
-//}
-//bool operator ==( TCPConnection::Pointer p1, TCPConnection::Pointer p2)
-//{
-//    return p1->socket().native_handle() == p2->socket().native_handle();
-//}
-
-//bool operator ==( TCPConnection &p1, TCPConnection &p2)
-//{
-//    return p1.socket().native_handle() == p2.socket().native_handle();
-//}
 
 TCPConnection::TCPConnection(boost::asio::io_service &io)
-    :m_socket(io)
+    :m_socket(io),m_dataPos(0),m_LoginStatus(PlayerNotLoginUser)
 {
 
 }
@@ -47,7 +20,7 @@ TCPConnection::~TCPConnection()
 
 void TCPConnection::Start()
 {
-    ReadHead();
+    ReadSome();
 }
 
 int TCPConnection::Write_all(void *buff, int size)
@@ -56,9 +29,13 @@ int TCPConnection::Write_all(void *buff, int size)
     {
         STR_PackHead t_packHead;
         memcpy(&t_packHead, buff, sizeof(STR_PackHead));
-        cout << "发送数据大于1024" << size << "Flag:" << t_packHead.Flag << ",Len" << t_packHead.Len << endl;
+        Logger::GetLogger()->Error("send data :%u,flag:%u,len:%u\n",size, t_packHead.Flag, t_packHead.Len);
         return 0;
     }
+//    STR_PackHead t_packHead;
+//    memcpy(&t_packHead, buff, sizeof(STR_PackHead));
+//    Logger::GetLogger()->Error("send data :%u,flag:%u,len:%u\n",size, t_packHead.Flag, t_packHead.Len);
+
     m_write_lock.lock();
 
     //将要发送的数据拷贝至发送缓冲区，防止数据丢失
@@ -68,88 +45,125 @@ int TCPConnection::Write_all(void *buff, int size)
                               boost::asio::placeholders::bytes_transferred()
                               )
                             );
+    return 0;
 }
 
-void TCPConnection::ReadHead()
+void TCPConnection::ReadSome()
 {
-
-        m_read_lock.lock();
-
-        boost::asio::async_read(m_socket,boost::asio::buffer(m_buf,sizeof(STR_PackHead)),
-                                boost::bind(&TCPConnection::CallBack_Read_Head,
+        m_socket.async_read_some(boost::asio::buffer(m_buf + m_dataPos,TCP_BUFFER_SIZE - m_dataPos),
+                                boost::bind(&TCPConnection::CallBack_Read_Some,
                                             shared_from_this(),
                                             boost::asio::placeholders::error(),
                                             boost::asio::placeholders::bytes_transferred()));
-
-
-
-}
-void TCPConnection::ReadBody()
-{
-    STR_PackHead *pack = (STR_PackHead*)m_buf;
-    hf_uint16           len = /*ntohs*/(pack->Len);
-//    hf_uint16           flag = /*ntohs*/(pack->Flag);
-    if(len >= 1024)
-    {
-        m_read_lock.unlock();
-        SessionMgr::Instance()->RemoveSession(shared_from_this());
-        return;
-    }
-    boost::asio::async_read(m_socket,boost::asio::buffer(m_buf+sizeof(STR_PackHead),len),
-                            boost::bind(&TCPConnection::CallBack_Read_Body,
-                                        shared_from_this(),
-                                        boost::asio::placeholders::error(),
-                                        boost::asio::placeholders::bytes_transferred()));
 }
 
-void TCPConnection::CallBack_Read_Head(const boost::system::error_code &ec,size_t size)
+void TCPConnection::CallBack_Read_Some(const boost::system::error_code &ec, hf_uint16 size)
 {
     if ( !ec )
-     {
-        ReadBody();
+    {
+//        Logger::GetLogger()->Debug("size:%u",size);
+
+        m_dataPos += size;
+        hf_uint16 currentPos = 0;
+        STR_PackHead head;
+        SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
+        while(currentPos < m_dataPos)
+        {
+            if(m_dataPos < sizeof(STR_PackHead))
+            {
+                Logger::GetLogger()->Debug("datalen:%u",m_dataPos);
+                break;
+            }
+            memcpy(&head, m_buf + currentPos, sizeof(STR_PackHead));
+            if(head.Len > 512)
+            {
+                Logger::GetLogger()->Debug("Client head.len > 512 Disconnected");
+                Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
+            }
+            if(currentPos + sizeof(STR_PackHead) + head.Len == m_dataPos) //最后一个包
+            {
+                memcpy(m_pack.data, m_buf + currentPos, sizeof(STR_PackHead) + head.Len);
+                hf_uint8 value = JudgePlayerLogin(head.Flag);
+                if(value == 2)
+                {
+                   m_pack.roleid = (*smap)[shared_from_this()].m_roleid;
+                   Server::GetInstance()->PushPackage(m_pack);
+                }
+                else if(value == 1)//未登录角色
+                {
+                   CommandParseLogin(shared_from_this(), m_pack.data);
+                }
+                m_dataPos = 0;
+                break;
+            }
+            else if(currentPos + sizeof(STR_PackHead) + head.Len < m_dataPos)  //未处理的数据长度多于一个包
+            {
+                memcpy(m_pack.data, m_buf + currentPos, sizeof(STR_PackHead) + head.Len);
+                hf_uint8 value = JudgePlayerLogin(head.Flag);
+                if(value == 2)
+                {
+                   m_pack.roleid = (*smap)[shared_from_this()].m_roleid;
+                   Server::GetInstance()->PushPackage(m_pack);
+                }
+                else if(value == 1)//未登录角色
+                {
+                   CommandParseLogin(shared_from_this(), m_pack.data);
+                }
+                currentPos += sizeof(STR_PackHead) + head.Len;
+                continue;
+            }
+            else //不够一个包的长度
+            {
+                Logger::GetLogger()->Debug("you wei jie xi de bao currentPos:%u,m_dataPos:%u,head.len:%u,head.flag:%u",currentPos,m_dataPos,head.Len, head.Flag);
+                hf_char buff[TCP_BUFFER_SIZE] = { 0 };
+                memcpy(buff, m_buf + currentPos, m_dataPos - currentPos);
+                memcpy(m_buf, buff, TCP_BUFFER_SIZE);
+                m_dataPos -= currentPos;
+                break;
+            }
+        }
+        ReadSome();
       }
     else if ( size == 0 || ec == boost::asio::error::eof || ec == boost::asio::error::shut_down)
     {
         Logger::GetLogger()->Debug("Client head Disconnected");
-        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
-        SessionMgr::Instance()->RemoveSession(shared_from_this());
-
-        m_read_lock.unlock();
-    }
-}
-void TCPConnection::CallBack_Read_Body(const boost::system::error_code &ec, size_t size)
-{
-    if ( ! ec )
-    {
-        Server  *srv = Server::GetInstance();
-        char *buf = (char*)srv->malloc();
-        memcpy(buf,m_buf,size + sizeof(STR_PackHead));
-        //srv->RunTask(boost::bind(&CommandParse,&m_socket,buf));
-        CommandParse(shared_from_this(),buf);
-        srv->free(buf);
-
-        //至此，已处理完一个完整数据包
-        m_read_lock.unlock();
-        ReadHead();
-    }
-    else if ( size == 0 || ec == boost::asio::error::eof || ec == boost::asio::error::shut_down)
-    {
-        Logger::GetLogger()->Debug("Client body Disconnected");
-//        int fd = m_socket.native_handle();
-        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );
-        Server::GetInstance()->GetPlayerLogin()->DeleteNameSock(shared_from_this() );
-        SessionMgr::Instance()->RemoveSession(shared_from_this());
-        m_read_lock.unlock();
+        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this());
     }
 }
 
-void TCPConnection::CallBack_Write(const boost::system::error_code &code, size_t transfferd)
+
+void TCPConnection::CallBack_Write(const boost::system::error_code &code, hf_uint16 transfferd)
 {
-    m_write_lock.unlock();
+
     if ( code ||  transfferd == 0 )
       {
         Logger::GetLogger()->Debug("Send Data to Player Error");
-        return;
+        Server::GetInstance()->GetPlayerLogin()->SavePlayerOfflineData(shared_from_this() );    
       }
+    m_write_lock.unlock();
 }
+
+//判断玩家是否登录角色
+hf_uint8 TCPConnection::JudgePlayerLogin(hf_uint8 flag)
+{
+    if(m_LoginStatus == PlayerNotLoginUser) //未登录用户名，只能登录或注册用户
+    {
+        if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+            return 1;
+        else
+            return 0;
+    }
+    else if(m_LoginStatus == PlayerLoginUser)//未登录角色，只能登录或注册或删除角色
+    {
+        if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
+            return 1;
+        else
+            return 0;
+    }
+    else
+    {
+        return 2;
+    }
+}
+
+

@@ -1,138 +1,240 @@
 #include "operationpostgres.h"
-#include "PlayerLogin/playerlogin.h"
-
+#include "./../PlayerLogin/playerlogin.h"
+#include "./../server.h"
+#include "./../memManage/diskdbmanager.h"
 
 OperationPostgres::OperationPostgres():
-    m_UpdateMoney(new list<UpdateMoney>),
-    m_UpdateLevel(new list<UpdateLevel>),
-    m_UpdateExp(new list<UpdateExp>),
-    m_UpdateGoods(new list<UpdateGoods>),
-    m_UpdateEquAttr(new list<UpdateEquAttr>),
-    m_UpdateTask(new list<UpdateTask>)
+    m_UpdateMoney(new boost::lockfree::queue<UpdateMoney>(100)),
+    m_UpdateLevel(new boost::lockfree::queue<UpdateLevel>(100)),
+    m_UpdateExp(new boost::lockfree::queue<UpdateExp>(100)),
+    m_UpdateGoods(new boost::lockfree::queue<UpdateGoods>(100)),
+    m_UpdateEquAttr(new boost::lockfree::queue<UpdateEquAttr>(100)),
+    m_UpdateTask(new boost::lockfree::queue<UpdateTask>(100)),
+    m_UpdateCompleteTask(new boost::lockfree::queue<UpdateCompleteTask>(100))
 {
-    m_upEquFlag = 0;
-    m_upLevelFlag = 0;
-    m_upExpFlag = 0;
-    m_upGoodsFlag = 0;
-    m_upEquFlag = 0;
-    m_upTaskFlag = 0;
+
 }
 
 OperationPostgres::~OperationPostgres()
 {
-
+    delete m_UpdateMoney;
+    delete m_UpdateLevel;
+    delete m_UpdateExp;
+    delete m_UpdateGoods;
+    delete m_UpdateEquAttr;
+    delete m_UpdateTask;
+    delete m_UpdateCompleteTask;
 }
 
 //该函数负责实时将玩家数据写入数据库
-void OperationPostgres::UpdatePlayerData()
+void OperationPostgres::UpdatePostgresData()
 {
+    UpdateMoney t_updateMoney;
+    UpdateLevel t_updateLevel;
+    UpdateExp t_updateExp;
+    UpdateGoods t_updateGoods;
+    UpdateEquAttr t_updateEquAttr;
+    UpdateTask t_updateTask;
+    UpdateCompleteTask t_comTask;
+    hf_uint32 connectTime = 0;
     while(1)
     {
-        m_mtxUpMoney.lock();
-        for(list<UpdateMoney>::iterator it = m_UpdateMoney->begin(); it != m_UpdateMoney->end();)
+        if(m_UpdateMoney->pop(t_updateMoney))
+            PlayerLogin::UpdatePlayerMoney(&t_updateMoney);
+
+        if(m_UpdateLevel->pop(t_updateLevel))
+            PlayerLogin::UpdatePlayerLevel(&t_updateLevel);
+
+        if(m_UpdateExp->pop(t_updateExp))
+            PlayerLogin::UpdatePlayerExp(&t_updateExp);
+
+
+        if(m_UpdateGoods->pop(t_updateGoods))
         {
-            if(m_upMoneyFlag == 1)  //需要向list中插入数据，跳出执行下一个list
-                break;
-            list<UpdateMoney>::iterator _it = it;
-            it++;
-            PlayerLogin::UpdatePlayerMoney(&(*_it));
-            m_UpdateMoney->erase(_it);
+            if(t_updateGoods.Operate == PostUpdate)
+                PlayerLogin::UpdatePlayerGoods(t_updateGoods.RoleID, &t_updateGoods.Goods);
+            else if(t_updateGoods.Operate == PostInsert)
+                PlayerLogin::InsertPlayerGoods(t_updateGoods.RoleID, &t_updateGoods.Goods);
+            else if(t_updateGoods.Operate == PostDelete)
+                PlayerLogin::DeletePlayerGoods(t_updateGoods.RoleID, t_updateGoods.Goods.Position);
         }
-        m_mtxUpMoney.unlock();
 
-        m_mtxUpLevel.lock();
-        for(list<UpdateLevel>::iterator it = m_UpdateLevel->begin(); it != m_UpdateLevel->end();)
+        if(m_UpdateEquAttr->pop(t_updateEquAttr))
         {
-            if(m_upLevelFlag == 1)
-                break;
-            list<UpdateLevel>::iterator _it = it;
-            it++;
-            PlayerLogin::UpdatePlayerLevel(&(*_it));
-            m_UpdateLevel->erase(_it);
+            if(t_updateEquAttr.Operate == PostUpdate)
+                PlayerLogin::UpdatePlayerEquAttr(&t_updateEquAttr.EquAttr);
+            else if(t_updateEquAttr.Operate == PostInsert)
+                PlayerLogin::InsertPlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
+            else if(t_updateEquAttr.Operate == PostDelete)
+                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.EquAttr.EquID);
         }
-        m_mtxUpLevel.unlock();
 
-        m_mtxUpExp.lock();
-        for(list<UpdateExp>::iterator it = m_UpdateExp->begin(); it != m_UpdateExp->end();)
+        if(m_UpdateTask->pop(t_updateTask))
         {
-            if(m_upExpFlag == 1)
-                break;
-            list<UpdateExp>::iterator _it = it;
-            it++;
-            PlayerLogin::UpdatePlayerExp(&(*_it));
-            m_UpdateExp->erase(_it);
+            if(t_updateTask.Operate == PostUpdate)
+                PlayerLogin::UpdatePlayerTask(t_updateTask.RoleID, &t_updateTask.TaskProcess);
+            else if(t_updateTask.Operate == PostInsert)
+                PlayerLogin::InsertPlayerTask(t_updateTask.RoleID, &t_updateTask.TaskProcess);
+            else if(t_updateTask.Operate == PostDelete)
+                PlayerLogin::DeletePlayerTask(t_updateTask.RoleID, t_updateTask.TaskProcess.TaskID);
         }
-        m_mtxUpExp.unlock();
+
+        if(m_UpdateCompleteTask->pop(t_comTask))
+            PlayerLogin::InsertPlayerCompleteTask(t_comTask.RoleID, t_comTask.TaskID);
 
 
-        m_mtxUpGoods.lock();
-        for(list<UpdateGoods>::iterator it = m_UpdateGoods->begin(); it != m_UpdateGoods->end();)
+        usleep(1000);
+        if(connectTime++ == 300000)
         {
-            if(m_upGoodsFlag == 1)
-                break;
-            list<UpdateGoods>::iterator _it = it;
-            it++;
-            if(_it->Operate == PostUpdate)      //更新操作
+            if(Server::GetInstance()->getDiskDB()->GetSqlResult("select * from t_skillinfo where skillid = 0") == -1)
             {
-                PlayerLogin::UpdatePlayerGoods(_it->RoleID,&(_it->Goods));
+                printf("postgres break off\n");
             }
-            else if(_it->Operate == PostInsert) //插入操作
-            {
-                PlayerLogin::InsertPlayerGoods(_it->RoleID,&(_it->Goods));
-            }
-            else if(_it->Operate == PostDelete) //删除操作
-            {
-                PlayerLogin::DeletePlayerGoods(_it->RoleID, _it->Goods.Position);
-            }
-            m_UpdateGoods->erase(_it);
+            connectTime = 0;
         }
-        m_mtxUpGoods.unlock();
+    }
+}
 
-        m_mtxUpEqu.lock();
-        for(list<UpdateEquAttr>::iterator it = m_UpdateEquAttr->begin(); it != m_UpdateEquAttr->end();)
+void OperationPostgres::PopUpdateMoney()
+{
+    UpdateMoney t_updateMoney;
+    while(1)
+    {
+        if(m_UpdateMoney->pop(t_updateMoney))
         {
-            if(m_upEquFlag == 1)
-                break;
-            list<UpdateEquAttr>::iterator _it = it;
-            it++;
-            if(_it->Operate == PostUpdate)
-            {
-                PlayerLogin::UpdatePlayerEquAttr(_it->RoleID, &(_it->EquAttr));
-            }
-            else if(_it->Operate == PostInsert)
-            {
-                PlayerLogin::InsertPlayerEquAttr(_it->RoleID, &(_it->EquAttr));
-            }
-            else if(_it->Operate == PostDelete)
-            {
-                PlayerLogin::DeletePlayerEquAttr(_it->RoleID, _it->EquAttr.EquID);
-            }
-            m_UpdateEquAttr->erase(_it);
+            PlayerLogin::UpdatePlayerMoney(&t_updateMoney);
         }
-        m_mtxUpEqu.unlock();
-
-
-        m_mtxUpTask.lock();
-        for(list<UpdateTask>::iterator it = m_UpdateTask->begin(); it != m_UpdateTask->end();)
+        else
         {
-            if(m_upTaskFlag == 1)
-                break;
-            list<UpdateTask>::iterator _it = it;
-            it++;
-            if(_it->Operate == PostUpdate)
-            {
-                PlayerLogin::UpdatePlayerTask(_it->RoleID, &(_it->TaskProcess));
-            }
-            else if(_it->Operate == PostInsert)
-            {
-                PlayerLogin::InsertPlayerTask(_it->RoleID, &(_it->TaskProcess));
-            }
-            else if(_it->Operate == PostDelete)
-            {
-                PlayerLogin::DeletePlayerTask(_it->RoleID, _it->TaskProcess.TaskID);
-            }
-            m_UpdateTask->erase(_it);
+           usleep(1000);
         }
-        m_mtxUpTask.unlock();       
+    }
+}
+
+void OperationPostgres::PopUpdateLevel()
+{
+    UpdateLevel t_updateLevel;
+    while(1)
+    {
+        if(m_UpdateLevel->pop(t_updateLevel))
+        {
+            PlayerLogin::UpdatePlayerLevel(&t_updateLevel);
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
+
+void OperationPostgres::PopUpdateExp()
+{
+    UpdateExp t_updateExp;
+    while(1)
+    {
+        if(m_UpdateExp->pop(t_updateExp))
+        {
+            PlayerLogin::UpdatePlayerExp(&t_updateExp);
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
+
+
+void OperationPostgres::PopUpdateGoods()
+{
+    UpdateGoods t_updateGoods;
+    while(1)
+    {
+        if(m_UpdateGoods->pop(t_updateGoods))
+        {
+            cout << t_updateGoods.Goods.GoodsID << endl;
+            if(t_updateGoods.Operate == PostUpdate)
+            {
+                PlayerLogin::UpdatePlayerGoods(t_updateGoods.RoleID, &t_updateGoods.Goods);
+            }
+            else if(t_updateGoods.Operate == PostInsert)
+            {
+                PlayerLogin::InsertPlayerGoods(t_updateGoods.RoleID, &t_updateGoods.Goods);
+            }
+            else if(t_updateGoods.Operate == PostDelete)
+            {
+                PlayerLogin::DeletePlayerGoods(t_updateGoods.RoleID, t_updateGoods.Goods.Position);
+            }
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
+
+void OperationPostgres::PopUpdateEquAttr()
+{
+    UpdateEquAttr t_updateEquAttr;
+    while(1)
+    {
+        if(m_UpdateEquAttr->pop(t_updateEquAttr))
+        {
+            if(t_updateEquAttr.Operate == PostUpdate)
+            {
+                PlayerLogin::UpdatePlayerEquAttr(&t_updateEquAttr.EquAttr);
+            }
+            else if(t_updateEquAttr.Operate == PostInsert)
+            {
+                PlayerLogin::InsertPlayerEquAttr(t_updateEquAttr.RoleID, &t_updateEquAttr.EquAttr);
+            }
+            else if(t_updateEquAttr.Operate == PostDelete)
+            {
+                PlayerLogin::DeletePlayerEquAttr(t_updateEquAttr.EquAttr.EquID);
+            }
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
+
+void OperationPostgres::PopUpdateTask()
+{
+    UpdateTask t_updateTask;
+    while(1)
+    {
+        if(m_UpdateTask->pop(t_updateTask))
+        {
+            if(t_updateTask.Operate == PostUpdate)
+            {
+                PlayerLogin::UpdatePlayerTask(t_updateTask.RoleID, &t_updateTask.TaskProcess);
+            }
+            else if(t_updateTask.Operate == PostInsert)
+            {
+                PlayerLogin::InsertPlayerTask(t_updateTask.RoleID, &t_updateTask.TaskProcess);
+            }
+            else if(t_updateTask.Operate == PostDelete)
+            {
+                PlayerLogin::DeletePlayerTask(t_updateTask.RoleID, t_updateTask.TaskProcess.TaskID);
+            }
+        }
+        else
+        {
+            usleep(1000);
+        }
+    }
+}
+
+
+void OperationPostgres::PopUpdateCompleteTask()
+{
+    UpdateCompleteTask t_comTask;
+    while(1)
+    {
+        if(m_UpdateCompleteTask->pop(t_comTask))
+            PlayerLogin::InsertPlayerCompleteTask(t_comTask.RoleID, t_comTask.TaskID);
+        else
+            usleep(1000);
     }
 }

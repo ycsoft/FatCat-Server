@@ -18,6 +18,9 @@
 #include "GameAttack/gameattack.h"
 #include "GameInterchange/gameinterchange.h"
 #include "OperationGoods/operationgoods.h"
+#include "Game/cmdparse.h"
+#include "GameChat/gamechat.h"
+
 
 void CommandParse(TCPConnection::Pointer conn , void *reg)
 {
@@ -30,13 +33,14 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     Server *srv = Server::GetInstance();
 
     PlayerLogin* t_playerLogin = srv->GetPlayerLogin();
-    GameTask* t_task = srv->GetGameTask();
-    TeamFriend* t_teamFriend = srv->GetTeamFriend();
+//    GameTask* t_task = srv->GetGameTask();
+//    TeamFriend* t_teamFriend = srv->GetTeamFriend();
     GameAttack* t_gameAttack = srv->GetGameAttack();
     GameInterchange* t_gameInterchange = srv->GetGameInterchange();
     OperationGoods* t_operationGoods = srv->GetOperationGoods();
+    GameChat* t_gameChat = srv->GetGameChat();
 
-    SessionMgr::SessionMap *smap =  SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap =  SessionMgr::Instance()->GetSession();
     SessionMgr::SessionMap::iterator it = smap->find(conn);
     if(it == smap->end()) //未登录用户名，只能登录或注册用户
     {
@@ -45,28 +49,26 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     else
     {
-        hf_char *pname =  & ( (*smap)[conn].m_usrid[0]);
-        if(*pname == 0)  //未登录用户，用来判断用户被迫下线时，只保留链接的情形
+        //已经登录用户不能登录或注册用户，只能退出用户后再登录或注册用户
+        if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+            return;
+        if(it->second.m_roleid == 0) //未登录角色，只能登录或注册或删除角色
         {
-            if(flag != FLAG_PlayerLoginUserId && flag != FLAG_PlayerRegisterUserId)
-            {
+            if(flag != FLAG_PlayerLoginRole && flag != FLAG_PlayerRegisterRole && flag != FLAG_UserDeleteRole)
                 return;
-            }
         }
-        else
+        else //已经登录角色不能再登录或注册或删除角色，只能退出角色后再登录或注册或删除角色
         {
-            //已经登录用户不能登录或注册用户，只能退出用户后再登录或注册用户
-            if(flag == FLAG_PlayerLoginUserId || flag == FLAG_PlayerRegisterUserId)
+            if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
                 return;
-            if(it->second.m_roleid == 0) //未登录角色，只能登录或注册或删除角色
+            hf_uint32 hp = (*smap)[conn].m_roleInfo.HP;
+            if(hp == 0)
             {
-                if(flag != FLAG_PlayerLoginRole && flag != FLAG_PlayerRegisterRole && flag != FLAG_UserDeleteRole)
+                if(!(flag == FLAG_PlayerRevive || flag == FLAG_PlayerPosition))
                     return;
-            }
-            else //已经登录角色不能再登录或注册或删除角色，只能退出角色后再登录或注册或删除角色
-            {
-                if(flag == FLAG_PlayerLoginRole || flag == FLAG_PlayerRegisterRole || flag == FLAG_UserDeleteRole)
-                    return;
+
+//                if(flag != FLAG_PlayerRevive && flag != FLAG_PlayerPosition)
+//                    return;
             }
         }
     }
@@ -112,6 +114,13 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
         break;
     }
 
+    case FLAG_PlayerRevive:          //玩家复活   test
+    {
+        STR_PlayerRelive* reg = (STR_PlayerRelive*)(buf + sizeof(STR_PackHead));
+        srv->RunTask(boost::bind(&PlayerLogin::PlayerRelive, t_playerLogin, conn, reg->mode));
+        break;
+    }
+
     case FLAG_PlayerOffline:  //玩家下线，给其他玩家发送下线通知
     {
         Logger::GetLogger()->Info("User Position recv");
@@ -126,89 +135,147 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     {
         STR_PackPlayerPosition* reg = (STR_PackPlayerPosition*)srv->malloc();
         memcpy(reg, buf, len + sizeof(STR_PackHead));
+//        printf("接受到的玩家位置玩家方向：direct = %f,x=%f,y=%f,z=%f\n",reg->Direct, reg->Pos_x, reg->Pos_y, reg->Pos_z);
+
         srv->RunTask(boost::bind(UserPosition::PlayerMove, conn, reg));
+        break;
+    }
+
+    case FLAG_PlayerDirect:
+    {
+//        hf_float direct = 0/* *(hf_float*)buf*/;
+//        memcpy(&direct, buf + sizeof(STR_PackHead), 4);
+//        printf("%f\n", direct);
+//        srv->RunTask(boost::bind(UserPosition::PlayerDirectChange, conn, direct));
+
+//        printf("playerDirect:%f\n", *(hf_float*)(buf + sizeof(STR_PackHead)));
+        Server::GetInstance()->GetCmdParse()->PushPlayerDirectChange(conn, *(hf_float*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
+
+    case FLAG_PlayerAction:
+    {
+        hf_uint8 action = 0;
+        memcpy(&action, (buf + sizeof(STR_PackHead)), 1);
+//        printf("playerAction:%d\n", action);
+//        srv->RunTask(boost::bind(UserPosition::PlayerActionChange, conn, action));
+
+//        printf("playerAction:%d\n", *(hf_uint8*)(buf + sizeof(STR_PackHead)));
+         Server::GetInstance()->GetCmdParse()->PushPlayerActionChange(conn, *(hf_uint8*)(buf + sizeof(STR_PackHead)));
+
         break;
     }
     case FLAG_PlayerMove:    //玩家移动
     {
-        STR_PlayerMove* t_move = (STR_PlayerMove*)srv->malloc();
-        memcpy(t_move, buf + sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(UserPosition::PlayerPositionMove, conn, t_move));
+        Server::GetInstance()->GetCmdParse()->PushPlayerMove(conn, (STR_PlayerMove*)(buf + sizeof(STR_PackHead)));
+
+//        STR_PlayerMove* t_move = (STR_PlayerMove*)srv->malloc();
+//        memcpy(t_move, buf + sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(UserPosition::PlayerPositionMove, conn, t_move));
         break;
     }
     case FLAG_UserAskTask: //玩家请求接受任务数据
     {
         hf_uint32 taskID = ((STR_PackUserAskTask*)buf)->TaskID;
-        srv->RunTask(boost::bind(&GameTask::AskTask, t_task, conn, taskID));
+//        hf_uint32 roleid = (*smap)[conn].m_roleid;
+        Server::GetInstance()->GetCmdParse()->PushAskTask(conn, taskID);
+
+//        srv->RunTask(boost::bind(&GameTask::AskTask, t_task, conn, taskID));
         break;
     }
     case FLAG_QuitTask:   //玩家请求放弃任务
     {
         hf_uint32 taskID = ((STR_PackQuitTask*)buf)->TaskID;
-        srv->RunTask(boost::bind(&GameTask::QuitTask, t_task, conn, taskID));
+//        hf_uint32 roleid = (*smap)[conn].m_roleid;
+        Server::GetInstance()->GetCmdParse()->PushQuitTask(conn, taskID);
+
+//        srv->RunTask(boost::bind(&GameTask::QuitTask, t_task, conn, taskID));
         break;
     }
     case FLAG_AskFinishTask:  //玩家请求完成任务
     {
 
+        Server::GetInstance()->GetCmdParse()->PushAskFinishTask(conn, (STR_FinishTask*)(buf + sizeof(STR_PackHead)));
+
+//        STR_FinishTask* finishTask = (STR_FinishTask*)srv->malloc();
+//        memcpy(finishTask, buf + sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(&GameTask::AskFinishTask, t_task, conn, finishTask));
+        break;
+    }
+    case FLAG_TaskExeDlg:
+    {
+        Server::GetInstance()->GetCmdParse()->PushAskTaskExeDlg(conn, (STR_AskTaskExeDlg*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
+    case FLAG_TaskExeDlgFinish:
+    {
+        Server::GetInstance()->GetCmdParse()->PushAskTaskExeDlgFinish(conn, (STR_AskTaskExeDlg*)(buf + sizeof(STR_PackHead)));
         break;
     }
     case FLAG_AskTaskData:    //请求任务数据包
-    {
+    {               
         AskTaskData* t_ask = (AskTaskData*)(buf + sizeof(STR_PackHead));
-        hf_uint32 taskID = t_ask->TaskID;
-        switch(t_ask->Flag)
-        {
-        case FLAG_StartTaskDlg:
-        {
-            srv->RunTask(boost::bind(&GameTask::StartTaskDlg, t_task, conn, taskID));
-            break;
-        }
-        case FLAG_FinishTaskDlg:
-        {
-            srv->RunTask(boost::bind(&GameTask::FinishTaskDlg, t_task, conn, taskID));
-            break;
-        }
-        case FLAG_TaskDescription:
-        {
-            srv->RunTask(boost::bind(&GameTask::TaskDescription, t_task, conn, taskID));
-            break;
-        }
-        case FLAG_TaskAim:
-        {
-            srv->RunTask(boost::bind(&GameTask::TaskAim, t_task, conn, taskID));
-            break;
-        }
-        case FLAG_TaskReward:
-        {
-            srv->RunTask(boost::bind(&GameTask::TaskReward, t_task, conn, taskID));
-            break;
-        }
-        default:
-            break;
-        }
+        Server::GetInstance()->GetCmdParse()->PushAskTaskData(conn, t_ask->TaskID,t_ask->Flag);
+
+
+//        switch(t_ask->Flag)
+//        {
+//        case FLAG_TaskStartDlg:
+//        {
+//            srv->RunTask(boost::bind(&GameTask::StartTaskDlg, t_task, conn, taskID));
+//            break;
+//        }
+//        case FLAG_TaskFinishDlg:
+//        {
+//            srv->RunTask(boost::bind(&GameTask::FinishTaskDlg, t_task, conn, taskID));
+//            break;
+//        }
+//        case FLAG_TaskDescription:
+//        {
+//            srv->RunTask(boost::bind(&GameTask::TaskDescription, t_task, conn, taskID));
+//            break;
+//        }
+//        case FLAG_TaskAim:
+//        {
+//            srv->RunTask(boost::bind(&GameTask::TaskAim, t_task, conn, taskID));
+//            break;
+//        }
+//        case FLAG_TaskReward:
+//        {
+//            srv->RunTask(boost::bind(&GameTask::TaskReward, t_task, conn, taskID));
+//            break;
+//        }
+//        default:
+//            break;
+//        }
         break;
     }
     case FLAG_AddFriend:     //添加好友
     {
-        STR_PackAddFriend* t_add =(STR_PackAddFriend*)srv->malloc();
-        memcpy(t_add, buf, len + sizeof(STR_PackHead));
-        srv->RunTask(boost::bind(&TeamFriend::addFriend, t_teamFriend, conn, t_add));
+        Server::GetInstance()->GetCmdParse()->PushAddFriend(conn, (STR_PackAddFriend*)buf);
+
+//        STR_PackAddFriend* t_add =(STR_PackAddFriend*)srv->malloc();
+//        memcpy(t_add, buf, len + sizeof(STR_PackHead));
+//        srv->RunTask(boost::bind(&TeamFriend::addFriend, t_teamFriend, conn, t_add));
         break;
 
     }
     case FLAG_DeleteFriend:   //删除好友
-    {
+    {     
         STR_DeleteFriend* t_deleteFriend = (STR_DeleteFriend*)(buf + sizeof(STR_PackHead));
-        hf_uint32 friendID = t_deleteFriend->RoleID;
-        srv->RunTask(boost::bind(&TeamFriend::deleteFriend, t_teamFriend, conn, friendID));
+        Server::GetInstance()->GetCmdParse()->PushDeleteFriend(conn, t_deleteFriend->RoleID);
+
+//        hf_uint32 friendID = t_deleteFriend->RoleID;
+//        srv->RunTask(boost::bind(&TeamFriend::deleteFriend, t_teamFriend, conn, friendID));
         break;
     }
     case FLAG_AddFriendReturn:  //添加好友客户端返回
     {
-        STR_PackAddFriendReturn* t_AddFriend =(STR_PackAddFriendReturn*)srv->malloc();
-        memcpy(t_AddFriend, buf+sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(&TeamFriend::ReciveAddFriend, t_teamFriend, conn, t_AddFriend));
+        Server::GetInstance()->GetCmdParse()->PushAddFriendReturn(conn, (STR_PackAddFriendReturn*)buf);
+
+//        STR_PackAddFriendReturn* t_AddFriend =(STR_PackAddFriendReturn*)srv->malloc();
+//        memcpy(t_AddFriend, buf, len + sizeof(STR_PackHead));
+//        srv->RunTask(boost::bind(&TeamFriend::ReciveAddFriend, t_teamFriend, conn, t_AddFriend));
         break;
     }
     case FLAG_UserAttackAim:  //攻击目标
@@ -227,37 +294,73 @@ void CommandParse(TCPConnection::Pointer conn , void *reg)
     }
     case FLAG_PickGoods:      //捡物品
     {
-        STR_PickGoods* t_pick =(STR_PickGoods*)srv->malloc();
-        memcpy(t_pick, buf+sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(&OperationGoods::PickUpGoods, t_operationGoods, conn, len, t_pick));
+        Server::GetInstance()->GetCmdParse()->PushPickGoods(conn, (STR_PickGoods*)(buf + sizeof(STR_PackHead)));
+
+//        STR_PickGoods* t_pick =(STR_PickGoods*)srv->malloc();
+//        memcpy(t_pick, buf+sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(&OperationGoods::PickUpGoods, t_operationGoods, conn, len, t_pick));
         break;
     }
     case FLAG_RemoveGoods:  //丢弃物品
     {
-        STR_RemoveBagGoods* t_remove = (STR_RemoveBagGoods*)srv->malloc();
-        memcpy(t_remove, buf+sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(&OperationGoods::RemoveBagGoods, t_operationGoods, conn, t_remove));
+        Server::GetInstance()->GetCmdParse()->PushRemoveGoods(conn, (STR_RemoveBagGoods*)(buf + sizeof(STR_PackHead)));
+
+//        STR_RemoveBagGoods* t_remove = (STR_RemoveBagGoods*)srv->malloc();
+//        memcpy(t_remove, buf+sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(&OperationGoods::RemoveBagGoods, t_operationGoods, conn, t_remove));
         break;
     }
     case FLAG_MoveGoods:  //移动或分割物品
     {
-        STR_MoveBagGoods* t_move = (STR_MoveBagGoods*)srv->malloc();
-        memcpy(t_move, buf+sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(&OperationGoods::MoveBagGoods, t_operationGoods, conn, t_move));
+        Server::GetInstance()->GetCmdParse()->PushMoveGoods(conn, (STR_MoveBagGoods*)(buf + sizeof(STR_PackHead)));
+
+//        STR_MoveBagGoods* t_move = (STR_MoveBagGoods*)srv->malloc();
+//        memcpy(t_move, buf+sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(&OperationGoods::MoveBagGoods, t_operationGoods, conn, t_move));
         break;
     }
     case FLAG_BuyGoods:    //购买物品
     {
-        STR_BuyGoods* t_buy = (STR_BuyGoods*)srv->malloc();
-        memcpy(t_buy, buf + sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(&OperationGoods::BuyGoods, t_operationGoods, conn, t_buy));
+        Server::GetInstance()->GetCmdParse()->PushBuyGoods(conn, (STR_BuyGoods*)(buf + sizeof(STR_PackHead)));
+
+//        STR_BuyGoods* t_buy = (STR_BuyGoods*)srv->malloc();
+//        memcpy(t_buy, buf + sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(&OperationGoods::BuyGoods, t_operationGoods, conn, t_buy));
         break;
     }
     case FLAG_SellGoods:   //出售物品
     {
-        STR_PackSellGoods* t_sell = (STR_PackSellGoods*)srv->malloc();
-        memcpy(t_sell, buf + sizeof(STR_PackHead), len);
-        srv->RunTask(boost::bind(&OperationGoods::SellGoods, t_operationGoods, conn, t_sell));
+        Server::GetInstance()->GetCmdParse()->PushSellGoods(conn, (STR_SellGoods*)(buf + sizeof(STR_PackHead)));
+
+//        STR_SellGoods* t_sell = (STR_SellGoods*)srv->malloc();
+//        memcpy(t_sell, buf + sizeof(STR_PackHead), len);
+//        srv->RunTask(boost::bind(&OperationGoods::SellGoods, t_operationGoods, conn, t_sell));
+        break;
+    }
+    case FLAG_ArrangeBagGoods:
+    {
+        srv->RunTask(boost::bind(&OperationGoods::ArrangeBagGoods, t_operationGoods, conn));
+        break;
+    }
+
+    case FLAG_WearBodyEqu: //穿装备
+    {
+        Server::GetInstance()->GetCmdParse()->PushWearBodyEqu(conn, (STR_WearEqu*)(buf + sizeof(STR_PackHead)));
+        break;
+    }
+
+    case FLAG_TakeOffEqu:  //脱装备
+    {
+        hf_uint32 equid = *(hf_uint32*)(buf + sizeof(STR_PackHead));
+        Server::GetInstance()->GetCmdParse()->PushTakeOffBodyEqu(conn, equid);
+        break;
+    }
+
+    case FLAG_Chat:   //聊天 test
+    {
+        STR_PackRecvChat* t_chat = (STR_PackRecvChat*)srv->malloc();
+        memcpy(t_chat, buf, len +sizeof(STR_PackHead));
+        srv->RunTask(boost::bind(&GameChat::Chat, t_gameChat, conn, t_chat));
         break;
     }
     case FLAG_OperRequest:

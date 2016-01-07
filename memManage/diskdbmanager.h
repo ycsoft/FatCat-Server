@@ -5,7 +5,7 @@
 #include <boost/container/vector.hpp>
 
 #include "idbmanager.h"
-#include "Game/postgresqlstruct.h"
+#include "./../Game/postgresqlstruct.h"
 
 /**
  * @brief The DiskDbManager class
@@ -17,6 +17,7 @@ public:
     DiskDBManager();
     ~DiskDBManager();
     bool Connect(Configuration con);
+    bool Connect();
     bool Disconnect();
     /**
      * @brief Set 改变数据库内容
@@ -86,6 +87,13 @@ public:
      hf_int32 GetTaskDialogue(umap_dialogue* TaskDialogue);
 
      /**
+      * @brief GetTaskExeDialogue 得到任务执行对话
+      * @param TaskExeDialogue
+      * @return
+      */
+     hf_int32 GetTaskExeDialogue(umap_exeDialogue* TaskExeDialogue);
+
+     /**
       * @brief GetTaskDescription得到任务描述
       * @param TaskDesc
       * @return
@@ -129,7 +137,7 @@ public:
      hf_int32 GetRoleInfo(STR_RoleInfo* roleinfo, const hf_char* str);
 
      //查询玩家接取任务条件,查询角色经验
-     hf_int32 GetRoleExperience(RoleNick* nick, STR_PackRoleExperience* RoleExp, STR_RoleBasicInfo* RoleBaseInfo, const hf_char* str);
+     hf_int32 GetRoleExperience(STR_PackRoleExperience* RoleExp, const hf_char* str);
 
      //查询好友列表
      hf_int32 GetFriendList(umap_friendList t_friendList, const hf_char* str);
@@ -153,7 +161,7 @@ public:
      hf_int32 GetPlayerMoney(umap_roleMoney playerMoney, const hf_char* str);
 
      //查询玩家物品
-     hf_int32 GetPlayerGoods(umap_roleGoods playerGoods, const hf_char* str);
+     hf_int32 GetPlayerGoods(umap_roleGoods playerGoods, umap_roleEqu playerEqu, const hf_char* str);
 
      //查询玩家装备属性
      hf_int32 GetPlayerEqu(umap_roleEqu playerEqu, const hf_char* str);
@@ -165,12 +173,34 @@ public:
      hf_int32 GetNotPickGoods(umap_lootGoods lootGoods, const hf_char* str);
 
      //查询物品价格
-     hf_int32 GetGoodsPrice(umap_goodsPrice goodsPrice, const hf_char* str);
+     hf_int32 GetGoodsPrice(umap_goodsPrice* goodsPrice, const hf_char* str);
+     //查询消耗品价格
+     hf_int32 GetConsumableAttr(umap_consumable* consumable, const hf_char* str);
      //查询装备属性
-     hf_uint32 GetEquAttr(umap_equAttr* equAttr, const hf_char* str);
+     hf_int32 GetEquAttr(umap_equAttr* equAttr, const hf_char* str);
+
+     //查询数据库中装备现在的最大值
+     hf_int32 GetEquIDMaxValue();
+
+     //查询玩家身上穿戴的装备
+     hf_int32 GetUserBodyEqu(hf_char* buff, hf_char* str);
+
+     //查询角色身上穿戴的装备
+     hf_int32  GetRoleBodyEqu(STR_BodyEquipment* bodyEqu, hf_char* str);
+
+     //查询职业属性
+     hf_int32 GetJobAttribute(STR_RoleJobAttribute* jobAttr, hf_char* str);
+
+     //查询玩家基本信息
+     hf_int32 GetRoleBasicInfo(STR_RoleBasicInfo* basicinfo, hf_char* str);
+
+     //查询玩家已经完成的任务
+     hf_int32 GetPlayerCompleteTask(umap_completeTask completeTask, hf_char* str);
+
 private:
 
     PGconn *m_PGconn;
+    boost::mutex     m_mtx;
 
     bool        IsConnected();
 };

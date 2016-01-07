@@ -3,8 +3,10 @@
 
 #include <string.h>
 #include <vector>
+//#include <boost/thread/mutex.hpp>
+//#include <boost/atomic.hpp>
 
-#include "hf_types.h"
+#include "./../hf_types.h"
 #include "packheadflag.h"
 
 using namespace std;
@@ -24,13 +26,6 @@ typedef struct _STR_PackHead
     hf_uint16 Flag;              //标识位，用于记录数据包内容的类型，用以解析数据。
 }STR_PackHead;
 
-typedef struct _STR_PackAskTaskData
-{
-    hf_uint32  TaskID;  //目标任务
-    hf_uint16  Flag;    //请求得到的数据包标记
-}STR_PackAskTaskData;
-
-
 //任务概述
 typedef struct _STR_TaskProfile
 {
@@ -44,14 +39,25 @@ typedef struct _STR_TaskProfile
 }STR_TaskProfile;
 
 //任务对话数据
-typedef struct _STR_PackTaskDlg
+typedef struct _STR_TaskDlg
 {
-    hf_uint32           TaskID;
-    hf_uint16           StartLen;    //开始对话长度
-    hf_uint16           FinishLen;   //结束对话长度
-    hf_char             StartDialogue[512];  //任务开始对话
-    hf_char             FinishDialogue[512]; //任务结束对话
-}STR_PackTaskDlg;
+    hf_uint32  TaskID;
+    hf_uint16  StartLen;            //开始对话长度
+
+    hf_uint16  FinishLen;           //结束对话长度
+    hf_char    StartDialogue[512];  //任务开始对话
+
+    hf_char    FinishDialogue[512]; //任务结束对话
+}STR_TaskDlg;
+
+//任务执行对话
+typedef struct _STR_TaskExeDlg
+{
+    hf_uint32  TaskID;
+    hf_uint32  AimID;               //目标ID
+    hf_uint16  ExeLen;              //执行对话长度
+    hf_char    ExeDialogue[512];    //任务执行对话
+}STR_TaskExeDlg;
 
 //4.任务描述数据
 typedef struct _STR_PackTaskDescription
@@ -65,30 +71,24 @@ typedef struct _STR_PackTaskDescription
     _STR_PackTaskDescription()
     {
         bzero(&head,sizeof(_STR_PackTaskDescription));
-        head.Flag = /*htons*/(FLAG_TaskDescription);
-        head.Len = /*htons*/(sizeof(_STR_PackTaskDescription)-sizeof(STR_PackHead));
+        head.Flag = FLAG_TaskDescription;
+        head.Len = sizeof(_STR_PackTaskDescription)-sizeof(STR_PackHead);
     }
 }STR_PackTaskDescription;
 
-//5.任务目标数据
-typedef struct _STR_PackTaskAim
+
+//任务目标数据
+typedef struct _STR_TaskAim
 {
-    STR_PackHead        head;
     hf_uint32 TaskID;
     hf_uint32 AimID;              //任务目标ID
     hf_uint32 Amount;             //任务数量ID
     hf_uint8  ExeModeID;          //执行方式ID
+}STR_TaskAim;
 
-    _STR_PackTaskAim()
-    {
-        bzero(&head,sizeof(_STR_PackTaskAim));
-        head.Flag = /*htons*/(FLAG_TaskAim);
-        head.Len = /*htons*/(sizeof(_STR_PackTaskAim)-sizeof(STR_PackHead));
-    }
-}STR_PackTaskAim;
 
 //6.任务奖励数据
-typedef struct _STR_PackTaskReward
+typedef struct _STR_TaskReward
 {
     hf_uint32 TaskID;
     hf_uint32 Experience;            //奖励经验值
@@ -96,15 +96,15 @@ typedef struct _STR_PackTaskReward
     hf_uint32 SkillID;               //奖励技能ID
     hf_uint32 TitleID;               //奖励称号ID
     hf_uint8  Attribute;             //奖励属性点
-}STR_PackTaskReward;
+}STR_TaskReward;
 
 //7.物品奖励数据
-typedef struct _STR_PackGoodsReward
+typedef struct _STR_GoodsReward
 {
     hf_uint32  GoodsID;           //奖励物品ID
     hf_uint16  Count;             //奖励物品数量
     hf_uint8   Type;              //奖励类型，1为固定奖励，2为可选奖励
-}STR_PackGoodsReward;
+}STR_GoodsReward;
 
 //8.玩家请求接受任务数据
 typedef struct _STR_PackUserAskTask
@@ -115,8 +115,8 @@ typedef struct _STR_PackUserAskTask
     _STR_PackUserAskTask()
     {
         bzero(&head,sizeof(_STR_PackUserAskTask));
-        head.Flag = /*htons*/(FLAG_UserAskTask);
-        head.Len = /*htons*/(sizeof(_STR_PackUserAskTask)-sizeof(STR_PackHead));
+        head.Flag = FLAG_UserAskTask;
+        head.Len = sizeof(_STR_PackUserAskTask)-sizeof(STR_PackHead);
     }
 
 }STR_PackUserAskTask;
@@ -142,20 +142,28 @@ typedef struct _STR_PackAskResult
     _STR_PackAskResult()
     {
         bzero(&head,sizeof(_STR_PackAskResult));
-        head.Flag = /*htons*/(FLAG_AskResult);
-        head.Len = /*htons*/(sizeof(_STR_PackAskResult)-sizeof(STR_PackHead));
+        head.Flag = FLAG_AskResult;
+        head.Len = sizeof(_STR_PackAskResult)-sizeof(STR_PackHead);
     }
 }STR_PackAskResult;
 
 
 //任务执行对话
-typedef struct _STR_PackTaskExeDialogue
-{
-    hf_uint32 TaskID;
-    hf_uint32 AimID;
-    hf_uint32 ExeModeID;
-    hf_char   TaskExeDialogue[512];
-}STR_PackTaskExeDialogue;
+//typedef struct _STR_PackTaskExeDialogue
+//{
+//    STR_PackHead        head;
+//    _STR_PackTaskExeDialogue()
+//    {
+//        bzero(&head, sizeof(_STR_PackTaskExeDialogue));
+//        head.Flag = 0;
+//        head.Len = sizeof(_STR_PackTaskExeDialogue) - sizeof(STR_PackHead);
+//    }
+
+//    hf_uint32 TaskID;
+//    hf_uint32 AimID;
+//    hf_uint32 ExeModeID;
+//    hf_char   TaskExeDialogue[512];
+//}STR_PackTaskExeDialogue;
 
 //11 玩家请求完成任务数据
 typedef struct _STR_FinishTask
@@ -169,12 +177,13 @@ typedef struct _STR_PackFinishTaskResult
     _STR_PackFinishTaskResult()
     {
         bzero(&head, sizeof(_STR_PackFinishTaskResult));
-        head.Flag = FLAG_FinishTask;
+        head.Flag = FLAG_UserTaskResult;
         head.Len = sizeof(_STR_PackFinishTaskResult) - sizeof(STR_PackHead);
     }
 
     STR_PackHead head;
     hf_uint32 TaskID;
+    hf_uint8  Result;   //结果 1 成功,0 失败
 }STR_PackFinishTaskResult;
 
 //放弃任务 2015.05.06
@@ -190,28 +199,9 @@ typedef struct _STR_PackQuitTask
     }
 }STR_PackQuitTask;
 
-//12.玩家任务结果数据
-/*result
- * 0 成功
- * 1 失败，请选择奖励
- * 2 失败，奖励物品不符合
- */
-typedef struct _STR_PackUserTaskResult
-{
-    STR_PackHead        head;
-    hf_uint32           TaskID;
-    hf_uint8            Result;    //根据Result值判断成功或者失败原因
-
-    _STR_PackUserTaskResult()
-    {
-        bzero(&head,sizeof(_STR_PackUserTaskResult));
-        head.Flag = /*htons*/(FLAG_UserTaskResult);
-        head.Len = /*htons*/(sizeof(_STR_PackUserTaskResult)-sizeof(STR_PackHead));
-    }
-}STR_PackUserTaskResult;
-
 
 //13，怪物信息数据
+
 typedef struct _STR_MonsterBasicInfo
 {
     hf_uint32  MonsterID;          //怪物的唯一标识
@@ -229,18 +219,30 @@ typedef struct _STR_MonsterBasicInfo
     hf_uint32  MaxHP;              //最大血量
     hf_float   Direct;             //怪物朝向角度0...359
     hf_uint8   Level;              //怪物等级  2015.05.06
-    hf_uint8   RankID;             //类别ID    2015.05.20    
+    hf_uint8   RankID;             //类别ID    2015.05.20
     hf_uint8   ActID;              //怪物当前动作的索引
-    hf_uint8   Flag;               //是否显示，是否死亡后立即从怪物列表清除等等附加信息
+    hf_uint8   Flag;               //1主动攻击怪 2被动攻击怪
 }STR_MonsterBasicInfo;
 
-//保存怪物死亡结构
-typedef struct _MonsterDeath
+typedef struct _STR_PackMonsterBasicInfo
 {
-    hf_uint32                MonsterID;      //怪物ID
-    hf_uint32                SpawnsPos;      //刷怪点
-    hf_uint32                SpawnsTime;     //刷新时间
-}MonsterDeath;
+    _STR_PackMonsterBasicInfo(STR_MonsterBasicInfo* _monster)
+    {
+        bzero(&head, sizeof(_STR_PackMonsterBasicInfo));
+        head.Flag = FLAG_MonsterCome;
+        head.Len = sizeof(_STR_PackMonsterBasicInfo) - sizeof(STR_PackHead);
+        memcpy(&monster, _monster, sizeof(STR_MonsterBasicInfo));
+    }
+    STR_PackHead head;
+    STR_MonsterBasicInfo monster;
+}STR_PackMonsterBasicInfo;
+
+typedef struct _STR_Position
+{
+    hf_float             Come_x;
+    hf_float             Come_y;
+    hf_float             Come_z;
+}STR_Position;
 
 //怪物移动位置
 typedef struct _STR_MonsterMovePos
@@ -261,12 +263,14 @@ typedef struct _STR_MonsterMovePos
 typedef struct _STR_MonsterAttackInfo
 {
     hf_uint32 MonsterID;        //怪物ID
-    hf_uint32 PhysicalAttack;   //物品攻击
+    hf_uint32 PhysicalAttack;   //物理攻击
     hf_uint32 MagicAttack;      //魔法攻击
     hf_uint32 PhysicalDefense;  //物理防御
     hf_uint32 MagicDefense;     //魔法防御
-    hf_uint32 Hp;               //血量
-    hf_uint8  Level;            //等级
+    hf_float  Crit_Rate;        //暴击率
+    hf_float  Dodge_Rate;       //闪避率
+    hf_float  Hit_Rate;         //命中率
+//    hf_uint8  Level;            //等级
 }STR_MonsterAttackInfo;
 
 //14.怪物属性数据包 受攻击后怪物属性，暂时只有HP变化
@@ -290,11 +294,15 @@ typedef struct _STR_RoleAttribute
     STR_PackHead        head;
     hf_uint32 RoleID;
     hf_uint32 HP;
-    _STR_RoleAttribute()
+    hf_uint32 Magic;
+    _STR_RoleAttribute(hf_uint32 _RoleID, hf_uint32 _HP, hf_uint32 _Magic = 0)
     {
         bzero(&head,sizeof(_STR_RoleAttribute));
         head.Flag = /*htons*/(FLAG_RoleAttribute);
         head.Len = /*htons*/(sizeof(_STR_RoleAttribute)-sizeof(STR_PackHead));
+        RoleID = _RoleID;
+        HP = _HP;
+        Magic = _Magic;
     }
 }STR_RoleAttribute;
 
@@ -417,11 +425,11 @@ typedef struct _STR_BuyGoods
 }STR_BuyGoods;
 
 //将东西卖给商店
-typedef struct _STR_PackSellGoods
+typedef struct _STR_SellGoods
 {
     hf_uint32 GoodsID;
     hf_uint8  Position;
-}STR_PackSellGoods;
+}STR_SellGoods;
 
 //物品价格
 typedef struct _STR_GoodsPrice
@@ -435,7 +443,7 @@ typedef struct _STR_GoodsPrice
 typedef struct _STR_PickGoods
 {
     hf_uint32 LootGoodsID; //物品ID
-    hf_uint32 GoodsFlag;   //掉落者
+    hf_uint32 GoodsFlag;   //掉落者 怪物ID
 }STR_PickGoods;
 
 //19.玩家捡取物品结果数据包
@@ -447,22 +455,153 @@ typedef struct _STR_PickGoodsResult
     hf_uint8   Result;
 }STR_PickGoodsResult;
 
+typedef struct _STR_PackPickGoodsResult
+{
+    _STR_PackPickGoodsResult()
+    {
+        bzero(&head,sizeof(_STR_PackPickGoodsResult));
+        head.Len = sizeof(_STR_PackPickGoodsResult) - sizeof(STR_PackHead);
+        head.Flag = FLAG_PickGoodsResult;
+    }
+    _STR_PackPickGoodsResult(hf_uint32 _LootGoodsID, hf_uint32 _GoodsFlag, hf_uint16 _Count, hf_uint8 _Result)
+    {
+        bzero(&head,sizeof(_STR_PackPickGoodsResult));
+        head.Len = sizeof(_STR_PackPickGoodsResult) - sizeof(STR_PackHead);
+        head.Flag = FLAG_PickGoodsResult;
+        LootGoodsID = _LootGoodsID;
+        GoodsFlag  = _GoodsFlag;
+        Count = _Count;
+        Result = _Result;
+    }
+
+    STR_PackHead head;
+    hf_uint32  LootGoodsID;
+    hf_uint32  GoodsFlag;
+    hf_uint16  Count;
+    hf_uint8   Result;
+}STR_PackPickGoodsResult;
+
 //装备属性 <表结构>
 typedef struct _STR_EquipmentAttr
 {
-    hf_uint32 TypeID;             //类型ID
-    hf_uint16 PhysicalAttack;     //物理攻击
-    hf_uint16 PhysicalDefense;    //物理防御
-    hf_uint16 MagicAttack;        //魔法攻击
-    hf_uint16 MagicDefense;       //魔法防御
-    hf_uint16 AddHp;              //附加血量
-    hf_uint16 AddMagic;           //附加魔法值
-    hf_uint8  bodyPos;            //装备身体部位
-    hf_uint8  Grade;              //装备品级
-    hf_uint8  Level;              //装备等级
-    hf_uint8  Durability;         //耐久度
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_float  Crit_Rate;                //暴击率
+    hf_float  Dodge_Rate;               //闪避率
+    hf_float  Hit_Rate;                 //命中率
+    hf_float  Resist_Rate;              //抵挡率
+    hf_float  Caster_Speed;             //施法速度
+    hf_float  Move_Speed;               //移动速度
+    hf_float  Hurt_Speed;               //攻击速度
+    hf_float  RecoveryLife_Percentage;  //每秒恢复生命值百分比
+    hf_uint32 RecoveryLife_value;       //每秒恢复生命值
+    hf_float  RecoveryMagic_Percentage; //每秒恢复魔法值百分比
+    hf_uint32 RecoveryMagic_value;      //每秒恢复魔法值
+    hf_float  MagicHurt_Reduction;      //法术伤害减免
+    hf_float  PhysicalHurt_Reduction;   //物理伤害减免
+
+    hf_float  CritHurt;                 //暴击伤害          变
+    hf_float  CritHurt_Reduction;       //暴击伤害减免      变
+    hf_float  Magic_Pass;               //法透
+    hf_float  Physical_Pass;            //物透
+    hf_uint32 SuitSkillID;              //套装技能ID
+
+    hf_uint16 HP;                       //附加血量          变
+    hf_uint16 Magic;                    //附加魔法值        变
+    hf_uint16 PhysicalDefense;          //物理防御          变
+    hf_uint16 MagicDefense;             //魔法防御          变
+    hf_uint16 PhysicalAttack;           //物理攻击          变
+    hf_uint16 MagicAttack;              //魔法攻击          变
+
+    hf_uint16 Rigorous;                 //严谨    有可能变
+    hf_uint16 Will;                     //机变    有可能变
+    hf_uint16 Wise;                     //睿智    有可能变
+    hf_uint16 Mentality;                //心态    有可能变
+    hf_uint16 Physical_fitness;         //体能    有可能变
+
+    hf_uint8  JobID;                    //职业ID
+    hf_uint8  BodyPos;                  //装备身体部位
+    hf_uint8  Grade;                    //装备品级
+    hf_uint8  Level;                    //装备等级
+    hf_uint8  StrengthenLevel;          //强化等级         变
+    hf_uint8  MaxDurability;            //耐久度上限
+    hf_uint8  Durability;               //当前耐久度       变
 }STR_EquipmentAttr;
 
+typedef struct _STR_PackEquipmentAttr
+{
+    _STR_PackEquipmentAttr()
+    {
+        bzero(&head,sizeof(_STR_PackEquipmentAttr));
+        head.Len = sizeof(_STR_PackEquipmentAttr) - sizeof(STR_PackHead);
+        head.Flag = FLAG_EquGoodsAttr;
+    }
+    _STR_PackEquipmentAttr(STR_EquipmentAttr* _equAttr)
+    {
+        bzero(&head,sizeof(_STR_PackEquipmentAttr));
+        head.Len = sizeof(_STR_PackEquipmentAttr) - sizeof(STR_PackHead);
+        head.Flag = FLAG_EquGoodsAttr;
+        memcpy(&equAttr, _equAttr, sizeof(STR_EquipmentAttr));
+    }
+    STR_PackHead head;
+    STR_EquipmentAttr equAttr;
+}STR_PackEquipmentAttr;
+
+//生成时
+typedef struct _STR_PackCreateEqu
+{
+    _STR_PackCreateEqu()
+    {
+        bzero(&head,sizeof(_STR_PackCreateEqu));
+        head.Len = sizeof(_STR_PackCreateEqu) - sizeof(STR_PackHead);
+        head.Flag = FLAG_CreateEqu;
+    }
+    STR_PackHead head;
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_uint16 Rigorous;                 //严谨
+    hf_uint16 Will;                     //机变
+    hf_uint16 Wise;                     //睿智
+    hf_uint16 Mentality;                //心态
+    hf_uint16 Physical_fitness;         //体能
+}TR_PackCreateEqu;
+
+
+//强化时
+typedef struct _STR_PackStrengthenEqu
+{
+    _STR_PackStrengthenEqu()
+    {
+        bzero(&head,sizeof(_STR_PackStrengthenEqu));
+        head.Len = sizeof(_STR_PackStrengthenEqu) - sizeof(STR_PackHead);
+        head.Flag = FLAG_StrengthenEqu;
+    }
+    STR_PackHead head;
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_uint16 HP;                       //附加血量
+    hf_uint16 Magic;                    //附加魔法值
+    hf_uint16 PhysicalDefense;          //物理防御
+    hf_uint16 MagicDefense;             //魔法防御
+    hf_uint16 PhysicalAttack;           //物理攻击
+    hf_uint16 MagicAttack;              //魔法攻击
+    hf_uint8  StrengthenLevel;          //强化等级
+}STR_PackStrengthenEqu;
+
+//使用过程中变化
+typedef struct _STR_PackUseEqu
+{
+    _STR_PackUseEqu()
+    {
+        bzero(&head,sizeof(_STR_PackUseEqu));
+        head.Len = sizeof(_STR_PackUseEqu) - sizeof(STR_PackHead);
+        head.Flag = FLAG_UseEqu;
+    }
+    STR_PackHead head;
+    hf_uint32 EquID;
+    hf_uint32 TypeID;                   //类型ID
+    hf_uint8  Durability;               //耐久度
+}STR_PackUseEqu;
 
 //玩家普通物品数据包
 typedef struct _STR_Goods
@@ -472,22 +611,45 @@ typedef struct _STR_Goods
     hf_uint16 Count;     //数量
     hf_uint8  Position;  //位置
     hf_uint8  Source;    //来源  0 固有物品，1 来自交易，2 买的物品，3 捡的物品
-
 }STR_Goods;
 
-//玩家装备属性数据包
-typedef struct _STR_Equipment
+typedef struct _STR_PackGoods
 {
-    hf_uint32 EquID;              //物品ID
-    hf_uint32 TypeID;             //类型ID
-    hf_uint32 PhysicalAttack;     //物理攻击
-    hf_uint32 PhysicalDefense;    //物理防御
-    hf_uint32 MagicAttack;        //魔法攻击
-    hf_uint32 MagicDefense;       //魔法防御
-    hf_uint32 AddHp;              //附加血量
-    hf_uint32 AddMagic;           //附加魔法值
-    hf_uint8  Durability;         //耐久度
-}STR_Equipment;
+    _STR_PackGoods(STR_Goods* _goods)
+    {
+        head.Flag = FLAG_BagGoods;
+        head.Len = sizeof(_STR_PackGoods) - sizeof(STR_PackHead);
+        memcpy(&goods, _goods, sizeof(STR_Goods));
+    }
+
+    STR_PackHead head;
+    STR_Goods    goods;
+}STR_PackGoods;
+
+//玩家装备属性数据包
+//typedef struct _STR_Equipment
+//{
+//    hf_uint32 EquID;              //物品ID
+//    hf_uint32 TypeID;             //类型ID
+//    hf_uint32 PhysicalAttack;     //物理攻击
+//    hf_uint32 PhysicalDefense;    //物理防御
+//    hf_uint32 MagicAttack;        //魔法攻击
+//    hf_uint32 MagicDefense;       //魔法防御
+//    hf_uint32 AddHp;              //附加血量
+//    hf_uint32 AddMagic;           //附加魔法值
+//    hf_uint8  Durability;         //耐久度
+//}STR_Equipment;
+
+//玩家装备信息
+typedef struct _STR_PlayerEqu
+{
+    _STR_PlayerEqu()
+    {
+        memset(&goods, 0, sizeof(_STR_PlayerEqu));
+    }
+    STR_Goods goods;    //当Position为0时，表示穿在身上，不可操作
+    STR_EquipmentAttr equAttr;
+}STR_PlayerEqu;
 
 //玩家金币
 typedef struct _STR_PlayerMoney
@@ -495,6 +657,19 @@ typedef struct _STR_PlayerMoney
     hf_uint32 Count;    //数量
     hf_uint8  TypeID;   //类型
 }STR_PlayerMoney;
+
+typedef struct _STR_PackPlayerMoney
+{
+    _STR_PackPlayerMoney(STR_PlayerMoney* _money)
+    {
+        head.Flag = FLAG_PlayerMoney;
+        head.Len = sizeof(_STR_PackPlayerMoney) - sizeof(STR_PackHead);
+        memcpy(&money, _money, sizeof(STR_PlayerMoney));
+    }
+
+    STR_PackHead head;
+    STR_PlayerMoney money;
+}STR_PackPlayerMoney;
 
 //玩家位置
 typedef struct _STR_PackPlayerPosition
@@ -517,7 +692,7 @@ typedef struct _STR_PackPlayerPosition
 //其他玩家位置
 typedef struct _STR_OtherPlayerPosition
 {
-    hf_uint32     Roleid;     //角色名
+//    hf_uint32     Roleid;     //角色名
     hf_float      Pos_x;      //x坐标
     hf_float      Pos_y;
     hf_float      Pos_z;
@@ -529,12 +704,12 @@ typedef struct _STR_OtherPlayerPosition
 //其他玩家位置信息
 typedef struct _STR_PackOtherPlayerPosition
 {
-    _STR_PackOtherPlayerPosition(hf_uint32 roleid, STR_PackPlayerPosition* pos)
+    _STR_PackOtherPlayerPosition(hf_uint32 _roleid, STR_PackPlayerPosition* pos)
     {
         bzero(&head,sizeof(_STR_PackOtherPlayerPosition));
         head.Flag = FLAG_OtherPlayerPosition;
         head.Len = sizeof(_STR_PackOtherPlayerPosition)-sizeof(STR_PackHead);
-        OtherPos.Roleid = roleid;
+        roleid = _roleid;
         OtherPos.Pos_x = pos->Pos_x;
         OtherPos.Pos_y = pos->Pos_y;
         OtherPos.Pos_z = pos->Pos_z;
@@ -542,16 +717,98 @@ typedef struct _STR_PackOtherPlayerPosition
         OtherPos.ActID = pos->ActID;
     }
     STR_PackHead  head;
+    hf_uint32     roleid;
     STR_OtherPlayerPosition OtherPos;
 }STR_PackOtherPlayerPosition;
 
+
+typedef struct _STR_PackOtherPlayerDirect
+{
+    _STR_PackOtherPlayerDirect(hf_uint32 _roleid, hf_float _direct)
+    {
+        bzero(&head,sizeof(_STR_PackOtherPlayerDirect));
+        head.Flag = FLAG_PlayerDirect;
+        head.Len = sizeof(_STR_PackOtherPlayerDirect)-sizeof(STR_PackHead);
+        roleid = _roleid;
+        direct = _direct;
+    }
+    STR_PackHead head;
+    hf_uint32 roleid;
+    hf_float  direct;
+}STR_PackOtherPlayerDirect;
+
+typedef struct _STR_PackOtherPlayerAction
+{
+    _STR_PackOtherPlayerAction(hf_uint32 _roleid, hf_uint8 _action)
+    {
+        bzero(&head,sizeof(_STR_PackOtherPlayerAction));
+        head.Flag = FLAG_PlayerAction;
+        head.Len = sizeof(_STR_PackOtherPlayerAction)-sizeof(STR_PackHead);
+        roleid = _roleid;
+        action = _action;
+    }
+    STR_PackHead head;
+    hf_uint32 roleid;
+    hf_uint8  action;
+}STR_PackOtherPlayerAction;
+
+typedef struct _STR_PackMonsterDirect
+{
+    _STR_PackMonsterDirect(hf_uint32 _monsterID, hf_float _direct)
+    {
+        bzero(&head,sizeof(_STR_PackMonsterDirect));
+        head.Flag = FLAG_MonsterDirect;
+        head.Len = sizeof(_STR_PackMonsterDirect)-sizeof(STR_PackHead);
+        monsterID = _monsterID;
+        direct = _direct;
+    }
+    STR_PackHead head;
+    hf_uint32 monsterID;
+    hf_float  direct;
+}STR_PackMonsterDirect;
+
+typedef struct _STR_PackMonsterAction
+{
+    _STR_PackMonsterAction(hf_uint32 _monsterID, hf_uint8 _action)
+    {
+        bzero(&head,sizeof(_STR_PackMonsterAction));
+        head.Flag = FLAG_MonsterAction;
+        head.Len = sizeof(_STR_PackMonsterAction)-sizeof(STR_PackHead);
+        monsterID = _monsterID;
+        action = _action;
+    }
+    STR_PackHead head;
+    hf_uint32 monsterID;
+    hf_uint8  action;
+}STR_PackMonsterAction;
+
+
+typedef struct _STR_PosDis
+{
+    _STR_PosDis(hf_float _dis, hf_float _dx, hf_float _dz)
+        :dis(_dis), dx(_dx), dz(_dz)
+    {
+
+    }
+    _STR_PosDis()
+    {
+
+    }
+
+    hf_float dis;
+    hf_float dx;
+    hf_float dz;
+    hf_float Current_x;
+    hf_float Current_z;
+}STR_PosDis;
+
 //玩家刷新数据起始点
-typedef struct _PlayerStartPos
+typedef struct _STR_PlayerStartPos
 {
     hf_float Pos_x;
     hf_float Pos_y;
     hf_float Pos_z;
-}PlayerStartPos;
+}STR_PlayerStartPos;
 
 //玩家移动包
 typedef struct _STR_PlayerMove
@@ -625,6 +882,54 @@ typedef struct _STR_RoleBasicInfo
     hf_uint8  HairColor;     //发色
 }STR_RoleBasicInfo;
 
+typedef struct _STR_BodyEquipment
+{
+    hf_uint32  roleid;
+    //受到攻击时，头，上身，下身，鞋子，腰带的耐久度减小0.1，发出攻击时武器耐久度减小0.1
+    hf_uint32  Head;          //头部
+    hf_uint32  HeadType;
+    hf_uint32  UpperBody;     //上身
+    hf_uint32  UpperBodyType;
+    hf_uint32  Pants;         //下身
+    hf_uint32  PantsType;
+    hf_uint32  Shoes;         //鞋子
+    hf_int32   ShoesType;
+    hf_uint32  Belt;          //腰带
+    hf_uint32  BeltType;
+    hf_uint32  Neaklace;      //项链
+    hf_uint32  NeaklaceType;
+    hf_uint32  Bracelet;      //手镯
+    hf_uint32  BraceletType;
+    hf_uint32  LeftRing;      //左手戒指
+    hf_uint32  LeftRingType;
+    hf_uint32  RightRing;     //右手戒指
+    hf_uint32  RightRingType;
+    hf_uint32  Phone;         //手机
+    hf_uint32  PhoneType;
+    hf_uint32  Weapon;        //武器
+    hf_uint32  WeaponType;
+}STR_BodyEquipment;
+
+typedef struct _STR_PackBodyEquipment
+{
+    _STR_PackBodyEquipment(STR_BodyEquipment* _bodyEqu)
+        {
+            bzero(&head, sizeof(_STR_PackBodyEquipment));
+            head.Flag = FLAG_PlayerBodyEqu;
+            head.Len = sizeof(_STR_PackBodyEquipment) - sizeof(STR_PackHead);
+            memcpy(&bodyEqu, _bodyEqu, sizeof(STR_BodyEquipment));
+        }
+        STR_PackHead head;
+        STR_BodyEquipment bodyEqu;
+}STR_PackBodyEquipment;
+
+//穿装备
+typedef struct _STR_WearEqu
+{
+    hf_uint32 equid;
+    hf_uint8  pos;    //当为戒指时1表示左手，2表示右手 ，其它装备都为0
+}STR_WearEqu;
+
 typedef struct _STR_PackRoleBasicInfo
 {
     _STR_PackRoleBasicInfo()
@@ -645,6 +950,21 @@ typedef struct _STR_PlayerRegisterUserId
     hf_char Email[32];             //邮箱
 }STR_PlayerRegisterUserId;
 
+//角色职业属性
+typedef struct _STR_RoleJobAttribute
+{
+    hf_uint32 MaxHP;
+    hf_uint32 MaxMagic;
+    hf_uint32 PhysicalDefense;
+    hf_uint32 MagicDefense;
+    hf_uint32 PhysicalAttack;
+    hf_uint32 MagicAttack;
+    hf_uint16 Rigorous;
+    hf_uint16 Will;
+    hf_uint16 Wise;
+    hf_uint16 Mentality;
+    hf_uint16 Physical_fitness;
+}STR_RoleJobAttribute;
 
 typedef struct _STR_PlayerRegisterRole
 {
@@ -662,11 +982,21 @@ typedef struct _STR_PlayerRegisterRole
 }STR_PlayerRegisterRole;
 
 
+
+
 //角色编号
 typedef struct _STR_PlayerRole
 {
     hf_uint32 Role;  //角色编号
 }STR_PlayerRole;
+
+typedef struct _STR_OtherPlayerInfo
+{
+    hf_uint32 MaxHP;                 //最大生命值
+    hf_uint32 HP;                    //当前生命值
+    hf_uint32 MaxMagic;              //最大法力值
+    hf_uint32 Magic;                 //当前法力值
+}STR_OtherPlayerInfo;
 
 typedef struct _STR_PackRoleCome
 {
@@ -679,7 +1009,9 @@ typedef struct _STR_PackRoleCome
     STR_PackHead head;
     STR_RoleBasicInfo roleBasicInfo;
     STR_OtherPlayerPosition  otherRolePos;
+    STR_OtherPlayerInfo      otherPlayerInfo;
 }STR_PackRoleCome;
+
 
 //玩家离开可视范围
 typedef struct _STR_PackRoleLeave
@@ -713,10 +1045,14 @@ typedef struct _STR_PlayerLoginUserId
     hf_char password[32];
 }STR_PlayerLoginUserId;
 
-
+//玩家复活  test
+typedef struct _STR_PlayerRelive
+{
+    hf_uint16  mode;
+}STR_PlayerRelive;
 
 //表结构体
-//1.任务要求
+//任务要求
 typedef struct _STR_TaskPremise
 {
     hf_uint32  TaskID;               //任务ID
@@ -730,66 +1066,8 @@ typedef struct _STR_TaskPremise
     hf_uint8   JobID;                //职业ID，特定职业的任务
 }STR_TaskPremise;
 
-//3.任务对话
-typedef struct _T_TaskDialogue
-{
-    hf_uint32 TaskID;
-    hf_char   StartDialogue[256];     //任务开始对话
-    hf_char   FinishDialogue[256];    //任务完成对话
-}T_TaskDialogue;
 
-//4.任务描述
-typedef struct _T_TaskDescription
-{
-    hf_uint32 TaskID;
-    hf_uint32 Time;                   //时间 单位秒
-    hf_uint32 TaskPropsID;            //任务道具
-    hf_char   Description[256];       //任务描述
-}T_TaskDescription;
-
-//5.任务目标
-typedef struct _T_TaskAim
-{
-    hf_uint32 TaskID;
-    hf_uint32 AimID;                  //任务目标ID
-    hf_uint32 Amount;                 //任务数量
-    hf_uint8  ExeModeID;              //执行方式ID
-}T_TaskAim;
-
-//6.任务奖励
-typedef struct _T_TaskReward
-{
-    hf_uint32 TaskID;
-    hf_uint32 Experience;             //经验值
-    hf_uint32 Money;                  //金钱
-    hf_uint32 SkillID;                //技能ID
-    hf_uint32 TitleID;                //奖励称号
-    hf_uint8  Attribute;              //奖励属性点
-}T_TaskReward;
-
-//7.物品奖励
-typedef struct _T_GoodsReward
-{
-    hf_uint32  TaskID;
-    hf_uint32  GoodsID;              //奖励物品ID
-    hf_uint16  Count;                //奖励物品数量
-}T_GoodsReward;
-
-//8.职业类型
-typedef struct _T_JobType
-{
-    hf_uint8 JobID;                //玩家角色ID
-    hf_char  JobName[16];          //玩家名
-}T_JobType;
-
-//9.性别
-typedef struct _T_Gender
-{
-    hf_uint8 GenderID;
-    hf_char  Gender[4];
-}T_Gender;
-
-//10.任务接受方式
+//任务接受方式
 /*
 1	触发NPC
 2	NPC对话
@@ -799,13 +1077,13 @@ typedef struct _T_Gender
 6	邮件触发
 7	系统自动接取
 */
-typedef struct _T_TaskAcceptMode
+typedef struct _STR_TaskAcceptMode
 {
     hf_uint8 ModeID;
     hf_char  Mode[16];
-}T_TaskAcceptMode;
+}STR_TaskAcceptMode;
 
-//11.任务执行方式
+//任务执行方式
 /*
 1	打怪
 2	对话
@@ -816,13 +1094,13 @@ typedef struct _T_TaskAcceptMode
 7	选择
 8	地点触发对话
 */
-typedef struct _T_TaskExecuteMode
+typedef struct _STR_TaskExecuteMode
 {
     hf_uint8 ModeID;
     hf_char  Mode[16];
-}T_TaskExecuteMode;
+}STR_TaskExecuteMode;
 
-//12.任务交接方式
+//任务交接方式
 /*
 1	触发NPC
 2	NPC对话
@@ -831,11 +1109,11 @@ typedef struct _T_TaskExecuteMode
 5	特定地点使用物品
 6	自动完成
 */
-typedef struct _T_TaskFinishMode
+typedef struct _STR_TaskFinishMode
 {
     hf_uint8 ModeID;
     hf_char  Mode[16];
-}T_TaskFinishMode;
+}STR_TaskFinishMode;
 
 //怪物
 //怪物类型属性
@@ -850,26 +1128,28 @@ typedef struct _STR_MonsterType
     hf_uint32 MagicDefense;    //魔法防御
     hf_uint32 Attackrate;      //攻击速度
     hf_uint32 MoveRate;        //移动速度
-    hf_uint32 Experience;      //经验值
-    hf_uint32 Money;           //掉落金钱
+    hf_float  Crit_Rate;       //暴击率
+    hf_float  Dodge_Rate;      //闪避率
+    hf_float  Hit_Rate;        //命中率
     hf_uint8  RankID;          //怪物类别ID
     hf_uint8  Level;           //怪物等级
     hf_uint8  AttackTypeID;    //攻击类型ID
+//    hf_uint8  AttackRange;     //攻击距离
 }STR_MonsterType;
 
 //怪物类别
-typedef struct _T_MonsterRank
+typedef struct _STR_MonsterRank
 {
     hf_uint8 MonsterRankID;
     hf_char  MonsterRank[16];
-}T_MonsterRank;
+}STR_MonsterRank;
 
 //怪物攻击类型
-typedef struct _T_MonsterAttackType
+typedef struct _STR_MonsterAttackType
 {
     hf_uint8 AttackTypeID;
     hf_char  AttackType[16];
-}T_MonsterAttackType;
+}STR_MonsterAttackType;
 
 //怪物刷新位置
 typedef struct _STR_MonsterSpawns
@@ -908,6 +1188,12 @@ typedef struct _AskTaskData
     hf_uint16 Flag;
 }AskTaskData;
 
+typedef struct _STR_AskTaskExeDlg
+{
+    hf_uint32 TaskID;
+    hf_uint32 AimID;
+}STR_AskTaskExeDlg;
+
 typedef struct _RoleNick
 {
     _RoleNick()
@@ -921,71 +1207,94 @@ typedef struct _STR_TaskProcess
 {
     hf_uint32  TaskID;
     hf_uint32  AimID;             //任务目标
-    hf_uint16  AimCount;          //已完成任务目标数量
+    hf_uint16  FinishCount;       //已完成任务目标数量
     hf_uint16  AimAmount;         //任务目标总数
     hf_uint8   ExeModeID;         //执行方式
 }STR_TaskProcess;
 
-//玩家角色单个任务进度数据
 typedef struct _STR_PackTaskProcess
 {
-    STR_PackHead        head;
-    STR_TaskProcess       TaskProcess;
-
     _STR_PackTaskProcess()
     {
-        bzero(&head,sizeof(_STR_PackTaskProcess));
-        head.Flag = /*htons*/(FLAG_TaskProcess);
-        head.Len = /*htons*/(sizeof(_STR_PackTaskProcess)-sizeof(STR_PackHead));
+        bzero(&head, sizeof(_STR_PackTaskProcess));
+        head.Flag = FLAG_TaskProcess;
+        head.Len = sizeof(_STR_PackTaskProcess) - sizeof(STR_PackHead);
     }
+    _STR_PackTaskProcess(STR_TaskProcess* _process)
+    {
+        bzero(&head, sizeof(_STR_PackTaskProcess));
+        head.Flag = FLAG_TaskProcess;
+        head.Len = sizeof(_STR_PackTaskProcess) - sizeof(STR_PackHead);
+        memcpy(&process, _process, sizeof(STR_TaskProcess));
+    }
+
+    STR_PackHead head;
+    STR_TaskProcess process;
 }STR_PackTaskProcess;
+
+//typedef struct _STR_RoleInfo
+//{
+
+//}STR_RoleInfo;
+
 //角色信息
 typedef struct _STR_RoleInfo
 {
-    hf_uint32 Roleid;
-    hf_uint32 Rigorous;              //严谨
-    hf_uint32 Will;                  //机变
-    hf_uint32 Wise;                  //睿智
-    hf_uint32 Mentality;             //心态
-    hf_uint32 Physical_fitness;      //体能
+    _STR_RoleInfo()
+    {
 
-    hf_uint32 maxHP;    //最大生命值
-    hf_uint32 HP;       //当前生命值
-    hf_uint32 maxMagic; //最大法力值
-    hf_uint32 Magic;    //当前法力值
+    }
+    hf_uint32 MaxHP;                 //最大生命值   
+    hf_uint32 HP;                    //当前生命值
+    hf_uint32 MaxMagic;              //最大法力值
+    hf_uint32 Magic;                 //当前法力值
+    hf_uint32 PhysicalDefense;       //物理防御值
+    hf_uint32 MagicDefense;          //法力防御值
+    hf_uint32 PhysicalAttack;        //物理攻击力
+    hf_uint32 MagicAttack;           //法术攻击力
 
-    hf_uint16 Small_Universe;           //小宇宙
-    hf_uint16 maxSmall_Universe;        //最大小宇宙
+    //下面这9个字段的值确定固定不变，跟职业和等级无关
+    hf_float  Crit_Rate;             //暴击率 0.02
+    hf_float  Dodge_Rate;            //闪避率 0.05
+    hf_float  Hit_Rate;              //命中率 0.80
+    hf_float  Resist_Rate;           //抵挡率 0.05
+    hf_float  Caster_Speed;          //施法速度 1.00
+    hf_float  Move_Speed;            //移动速度 1.00  每秒移动的距离
+    hf_float  Hurt_Speed;            //攻击速度 1.00  每秒攻击的次数
+    hf_uint16 Small_Universe;        //当前小宇宙 在某个等级之后才会有值，假定60级之后会变为100，60级之前都为0
+    hf_uint16 maxSmall_Universe;     //最大小宇宙 100
+
+    //下面这10个字段的值从装备获得
     hf_float  RecoveryLife_Percentage;  //每秒恢复生命值百分比
     hf_uint32 RecoveryLife_value;       //每秒恢复生命值
     hf_float  RecoveryMagic_Percentage; //每秒恢复魔法值百分比
     hf_uint32 RecoveryMagic_value;      //每秒恢复魔法值
+    hf_float  MagicHurt_Reduction;      //法术伤害减免
+    hf_float  PhysicalHurt_Reduction;   //物理伤害减免
+    hf_float  CritHurt;                 //暴击伤害
+    hf_float  CritHurt_Reduction;       //暴击伤害减免
 
-    hf_uint32 PhysicalDefense;  //物理防御值
-    hf_uint32 MagicDefense;     //法力防御值
-    hf_uint32 PhysicalAttack;   //物理攻击力
-    hf_uint32 MagicAttack;      //法术攻击力
+    //从其他系统来
+    hf_float  Magic_Pass;               //法透
+    hf_float  Physical_Pass;            //物透
 
-    hf_float Crit_Rate;  //暴击率
-    hf_float Dodge_Rate; //闪避率
-    hf_float Hit_Rate;   //命中率
-    hf_float Resist_Rate; //抵挡率
-
-    hf_float Magic_Pass;             //法透
-    hf_float Physical_Pass;          //物透
-    hf_float MagicHurt_Reduction;    //法术伤害减免
-    hf_float PhysicalHurt_Reduction; //物理伤害减免
-    hf_float  CritHurt;              //暴击伤害
-    hf_float  CritHurt_Reduction;    //暴击伤害减免
-
-    hf_uint16 Hurt_Speed;          //攻击速度
-    hf_uint16 Caster_Speed;        //施法速度
-    hf_uint16 Move_Speed;          //移动速度
-
+    hf_uint16 Rigorous;                 //严谨
+    hf_uint16 Will;                     //机变
+    hf_uint16 Wise;                     //睿智
+    hf_uint16 Mentality;                //心态
+    hf_uint16 Physical_fitness;         //体能
 }STR_RoleInfo;
 
 typedef struct _STR_PackRoleInfo
 {
+    _STR_PackRoleInfo(STR_RoleInfo* _RoleInfo)
+    {
+        bzero(&head, sizeof(_STR_PackRoleInfo));
+        head.Flag = FLAG_RoreInfo;
+        head.Len = sizeof(_STR_PackRoleInfo) - sizeof(STR_PackHead);
+        memcpy(&RoleInfo, _RoleInfo, sizeof(STR_RoleInfo));
+    }
+
     _STR_PackRoleInfo()
     {
         bzero(&head, sizeof(_STR_PackRoleInfo));
@@ -996,21 +1305,36 @@ typedef struct _STR_PackRoleInfo
     STR_RoleInfo RoleInfo;
 }STR_PackRoleInfo;
 
+
 //攻击产生的伤害
 typedef struct _STR_PackDamageData
 {
-    STR_PackHead head;
-    hf_uint32    AimID;       //目标ID
-    hf_uint32    AttackID;    //攻击者ID
-    hf_uint32    Damage;      //伤害
-    hf_uint8     TypeID;      //伤害类型
-    hf_uint8     Flag;        //附加标记
+    _STR_PackDamageData(hf_uint32 _AimID, hf_uint32 _AttackID, hf_uint32 _Damage, hf_uint8 _TypeID, hf_uint8 _Flag)
+    {
+        bzero(&head,sizeof(_STR_PackDamageData));
+        head.Flag = FLAG_DamageData;
+        head.Len = sizeof(_STR_PackDamageData)-sizeof(STR_PackHead);
+
+        AimID = _AimID;
+        AttackID = _AttackID;
+        Damage = _Damage;
+        TypeID = _TypeID;
+        Flag = _Flag;
+    }
+
     _STR_PackDamageData()
     {
         bzero(&head,sizeof(_STR_PackDamageData));
         head.Flag = FLAG_DamageData;
         head.Len = sizeof(_STR_PackDamageData)-sizeof(STR_PackHead);
     }
+
+    STR_PackHead head;
+    hf_uint32    AimID;       //目标ID
+    hf_uint32    AttackID;    //攻击者ID
+    hf_uint32    Damage;      //伤害
+    hf_uint8     TypeID;      //伤害类型
+    hf_uint8     Flag;        //附加标记 暴击，闪避等
 } STR_PackDamageData;
 
 //玩家经验
@@ -1153,7 +1477,7 @@ typedef struct _STR_PackSkillInfo
     hf_uint32  SkillID;        //技能ID
     hf_uint32  UseGoodsID;     //消耗物品ID
     hf_uint32  UseMagic;       //消耗魔法值
-    hf_float   CoolTime;       //冷却时间
+    hf_float   CoolTime;       //冷却时间 冷却时间>施法时间+引导时间
     hf_float   CastingTime;    //施法时间
     hf_float   LeadTime;       //引导时间
     hf_uint32  PhysicalHurt;   //物理伤害
@@ -1225,6 +1549,34 @@ typedef struct _STR_PackSkillPosEffect
     hf_uint32    RoleID;    //施法者
 }STR_PackSkillPosEffect;
 
+
+typedef struct _STR_PackRecvChat
+{
+    _STR_PackRecvChat()
+    {
+        bzero(&head,sizeof(STR_PackHead));
+        head.Flag =  FLAG_Chat;
+        head.Len = sizeof(_STR_PackRecvChat)-sizeof(STR_PackHead);
+    }
+    STR_PackHead head;
+    hf_char  chatMessage[256];
+}STR_PackRecvChat;
+
+typedef struct _STR_PackSendChat
+{
+    _STR_PackSendChat(hf_char* _chatMessage, char* _userName)
+    {
+        bzero(&head,sizeof(STR_PackHead));
+        head.Flag =  FLAG_Chat;
+        head.Len = sizeof(_STR_PackSendChat)-sizeof(STR_PackHead);
+        memcpy(userName, _userName, 32);
+        memcpy(&chatMessage, _chatMessage, 256);
+    }
+    STR_PackHead head;
+    hf_char  userName[32];
+    hf_char  chatMessage[256];
+}STR_PackSendChat;
+
 //下面一些结构体为实时更新用户数据而定义
 ///////////////////////////////////////////////////////////////////////////
 typedef struct _UpdateMoney             //更新金钱
@@ -1234,6 +1586,11 @@ typedef struct _UpdateMoney             //更新金钱
     {
         memcpy(&Money, money, sizeof(STR_PlayerMoney));
     }
+    _UpdateMoney()
+    {
+
+    }
+
     hf_uint32 RoleID;
     STR_PlayerMoney Money;
 }UpdateMoney;
@@ -1244,6 +1601,10 @@ typedef struct _UpdateLevel             //更新等级
         :RoleID(roleid),Level(level)
     {
     }
+    _UpdateLevel()
+    {
+
+    }
     hf_uint32 RoleID;
     hf_uint8  Level;
 }UpdateLevel;
@@ -1252,6 +1613,9 @@ typedef struct _UpdateExp              //更新经验
 {
     _UpdateExp(hf_uint32 roleid, hf_uint32 exp)
         :RoleID(roleid),Exp(exp)
+    {
+    }
+    _UpdateExp()
     {
     }
     hf_uint32 RoleID;
@@ -1265,6 +1629,9 @@ typedef struct _UpdateGoods            //更新背包某位置的物品
     {
         memcpy(&Goods, goods, sizeof(STR_Goods));
     }
+    _UpdateGoods()
+    {
+    }
     hf_uint32 RoleID;
     STR_Goods Goods;
     hf_uint8  Operate;
@@ -1274,13 +1641,16 @@ typedef struct _UpdateGoods            //更新背包某位置的物品
 
 typedef struct _UpdateEquAttr        //更新某装备的属性
 {
-    _UpdateEquAttr(hf_uint32 roleid, STR_Equipment* equ, hf_uint8 operate)
+    _UpdateEquAttr(hf_uint32 roleid, STR_EquipmentAttr* equ, hf_uint8 operate)
         :RoleID(roleid),Operate(operate)
     {
-        memcpy(&EquAttr, equ, sizeof(STR_Equipment));
+        memcpy(&EquAttr, equ, sizeof(STR_EquipmentAttr));
+    }
+    _UpdateEquAttr()
+    {
     }
     hf_uint32 RoleID;
-    STR_Equipment EquAttr;
+    STR_EquipmentAttr EquAttr;
     hf_uint8  Operate;
 }UpdateEquAttr;
 
@@ -1292,10 +1662,109 @@ typedef struct _UpdateTask         //更新任务进度
     {
         memcpy(&TaskProcess, task, sizeof(STR_TaskProcess));
     }
+    _UpdateTask()
+    {
+    }
     hf_uint32     RoleID;
     STR_TaskProcess TaskProcess;
     hf_uint8  Operate;
 }UpdateTask;
+
+
+typedef struct _UpdateCompleteTask
+{
+    _UpdateCompleteTask(hf_uint32 _RoleID, hf_uint32 _TaskID)
+        :RoleID(_RoleID),TaskID(_TaskID)
+    {
+
+    }
+    _UpdateCompleteTask()
+    {
+
+    }
+
+    hf_uint32 RoleID;
+    hf_uint32 TaskID;
+}UpdateCompleteTask;
+
+
+typedef struct _STR_Consumable
+{
+    hf_uint32  GoodsID;          //物品ID
+    hf_uint32  HP;               //血量瞬间恢复值
+    hf_uint32  Magic;            //魔法值瞬间恢复值
+    hf_uint16  ColdTime;         //冷却时间
+    hf_uint16  StackNumber;      //堆叠数
+    hf_uint16  PersecondHP;      //每秒恢复血量值
+    hf_uint16  PersecondMagic;   //每秒恢复魔法值
+    hf_uint8   UserLevel;        //等级限制
+    hf_uint8   ContinueTime;     //持续时间
+    hf_uint8   Type;             //恢复类别
+}STR_Consumable;
+
+typedef struct _STR_UseBagGoods
+{
+    hf_uint32 goodsid;   //物品ID
+    hf_uint8  pos;       //在背包的位置
+}STR_UseBagGoods;
+
+
+typedef struct _STR_RecoveryHP
+{
+    _STR_RecoveryHP(hf_double _Timep, hf_uint16 _HP, hf_uint8 _Count)
+        :Timep(_Timep),HP(_HP),Count(_Count)
+    {
+
+    }
+    _STR_RecoveryHP()
+    {
+
+    }
+
+    hf_double Timep;    //下次恢复时间
+    hf_uint16 HP;       //恢复血量值
+    hf_uint8  Count;    //剩余恢复时间（次数） 1秒恢复1次
+}STR_RecoveryHP;
+
+typedef struct _STR_RecoveryMagic
+{
+    _STR_RecoveryMagic(hf_double _Timep, hf_uint16 _Magic, hf_uint8 _Count)
+        :Timep(_Timep),Magic(_Magic),Count(_Count)
+    {
+
+    }
+    _STR_RecoveryMagic()
+    {
+
+    }
+
+    hf_double Timep;    //下次恢复时间
+    hf_uint16 Magic;    //恢复魔法值
+    hf_uint8  Count;    //剩余恢复时间（次数） 1秒恢复1次
+}STR_RecoveryMagic;
+
+
+typedef struct _STR_RecoveryHPMagic
+{
+    _STR_RecoveryHPMagic(hf_double _Timep, hf_uint16 _HP, hf_uint16 _Magic, hf_uint8 _Count)
+        :Timep(_Timep),HP(_HP),Magic(_Magic),Count(_Count)
+    {
+
+    }
+    _STR_RecoveryHPMagic()
+    {
+
+    }
+
+    hf_double Timep;    //下次恢复时间
+    hf_uint16 HP;       //恢复血量值
+    hf_uint16 Magic;    //恢复魔法值
+    hf_uint8  Count;    //剩余恢复时间（次数） 1秒恢复1次
+}STR_RecoveryHPMagic;
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1337,15 +1806,68 @@ enum taskFinishMode
 //任务执行方式
 enum TaskExeMode
 {
-    EXE_attack_blame = 1,       // 打怪
+    EXE_attack_monster = 1,     //打怪
     EXE_dialogue,               //对话
-    EXE_collect_items,          //收集物品
-    EXE_use_items,              //使用物品
+    EXE_collect_goods,          //收集物品
+    EXE_use_goods,              //使用物品
     EXE_escort,                 //护送
     EXE_upgrade,                //升级
     EXE_choice,                 //选择
     EXE_email_dialogue          //地点触发对话
 };
+
+
+//请求
+typedef struct _STR_PackRequestOper
+{
+    _STR_PackRequestOper()
+    {
+        bzero(&head,sizeof(_STR_PackRequestOper));
+        head.Flag =  FLAG_OperRequest;
+        head.Len = sizeof(_STR_PackRequestOper)-sizeof(STR_PackHead);
+    }
+
+    _STR_PackRequestOper(hf_uint32 _RoleID, hf_uint8 _OperType)
+    {
+        bzero(&head,sizeof(_STR_PackRequestOper));
+        head.Flag =  FLAG_OperRequest;
+        head.Len = sizeof(_STR_PackRequestOper)-sizeof(STR_PackHead);
+        RoleID = _RoleID;
+        OperType = _OperType;
+    }
+
+    STR_PackHead head;
+    hf_uint32    RoleID;
+    hf_uint8     OperType;
+}STR_PackRequestOper;
+
+//请求返回结果
+typedef struct _STR_PackRequestReply
+{    
+    _STR_PackRequestReply()
+    {
+        bzero(&head,sizeof(_STR_PackRequestReply));
+        head.Flag =  FLAG_OperResult;
+        head.Len = sizeof(_STR_PackRequestReply)-sizeof(STR_PackHead);
+    }
+    _STR_PackRequestReply(hf_uint32 _RoleID, hf_uint8 _OperType, hf_uint8 _OperResult)
+    {
+        bzero(&head,sizeof(_STR_PackRequestReply));
+        head.Flag =  FLAG_OperResult;
+        head.Len = sizeof(_STR_PackRequestReply)-sizeof(STR_PackHead);
+
+        RoleID = _RoleID;
+        OperType = _OperType;
+        OperResult = _OperResult;
+    }
+
+    STR_PackHead head;
+    hf_uint32    RoleID;
+    hf_uint8     OperType;
+    hf_uint8     OperResult;
+}STR_PackRequestReply;
+
+
 
 typedef struct _operationRequest
 {

@@ -5,7 +5,7 @@
 #include "memManage/diskdbmanager.h"
 #include "memManage/memdbmanager.h"
 
-#include "Game/log.hpp"
+#include "Game/log.h"
 #include "Monster/monster.h"
 #include "PlayerLogin/playerlogin.h"
 #include "GameTask/gametask.h"
@@ -15,6 +15,9 @@
 #include "GameInterchange/gameinterchange.h"
 #include "OperationGoods/operationgoods.h"
 #include "OperationPostgres/operationpostgres.h"
+#include "Game/userposition.hpp"
+#include "GameChat/gamechat.h"
+#include "Game/cmdparse.h"
 
 #include "server.h"
 
@@ -24,7 +27,7 @@ Server* Server::m_instance = NULL;
 Server::Server() :
     m_MemDB(new MemDBManager),
     m_DiskDB(new DiskDBManager),
-    m_task_pool(20),
+    m_task_pool(ThreadCount),
     m_memory_factory(CHUNK_SIZE,CHUNK_COUNT),
     m_monster( new Monster()),
     m_playerLogin( new PlayerLogin),
@@ -33,44 +36,61 @@ Server::Server() :
     m_gameAttack(new GameAttack),
     m_gameInterchange(new GameInterchange),
     m_operationGoods(new OperationGoods),
-    m_operationPostgres(new OperationPostgres)
+    m_operationPostgres(new OperationPostgres),
+//    m_cmdParse(new CmdParse),
+    m_gameChat(new GameChat),
+    m_package(new boost::lockfree::queue<STR_Package>(PackageCount))
 {
 
 }
 
 Server::~Server()
 {
-
+    delete m_MemDB;
+    delete m_DiskDB;
+    delete m_monster;
+    delete m_playerLogin;
+    delete m_gameTask;
+    delete m_teamFriend;
+    delete m_gameAttack;
+    delete m_gameInterchange;
+    delete m_operationGoods;
+    delete m_operationPostgres;
+//    delete m_cmdParse;
+    delete m_gameChat;
 }
 
 
 void Server::InitDB()
 {
-    Configuration Diskcon;
+//    Configuration Diskcon;
     Configuration MemCon;
 
-    memset(&Diskcon, 0, sizeof(Diskcon));
+//    memset(&Diskcon, 0, sizeof(Diskcon));
     memset(&MemCon, 0, sizeof(MemCon));
-    Diskcon.ip = "127.0.0.1";
+//    Diskcon.ip = "139.196.165.107";
 //    Diskcon.ip = "10.183.100.13";
-    Diskcon.port = "5432";
-    Diskcon.dbName = "my_database";
-    Diskcon.user = "postgres";
-    Diskcon.password = "postgres";
+//    Diskcon.port = "5433";
+//    Diskcon.dbName = "game";
+//    Diskcon.user = "game";
+//    Diskcon.password = "houfang2015";
 
     MemCon.ip = "127.0.0.1";
     MemCon.port = "6379";
 
-   if(!m_DiskDB->Connect(Diskcon))
-   {
-        Logger::GetLogger()->Debug("Connect postgres error");
-   }
-
-//   if(!m_MemDB->Connect(MemCon))
+//   if(!m_DiskDB->Connect(Diskcon))
 //   {
-//       Logger::GetLogger()->Debug("Connect redis errorr");
+//        Logger::GetLogger()->Debug("Connect postgres error");
 //   }
 
+   if(!m_DiskDB->Connect())
+   {
+       Logger::GetLogger()->Debug("Connect postgres error");
+   }
+   if(!m_MemDB->Connect(MemCon))
+   {
+       Logger::GetLogger()->Debug("Connect redis errorr");
+   }
 
    m_monster->CreateMonster();
    m_monster->QueryMonsterLoot();
@@ -78,8 +98,25 @@ void Server::InitDB()
    m_gameTask->QueryTaskData();
    m_gameAttack->QuerySkillInfo();
    m_operationGoods->QueryGoodsPrice();
+   m_operationGoods->QueryConsumableAttr();
    m_operationGoods->QueryEquAttr();
+   m_operationGoods->SetEquIDInitialValue();
+   m_playerLogin->QueryRoleJobAttribute();
 
+
+   Server  *srv = Server::GetInstance();
+   GameAttack* t_attack = srv->GetGameAttack();
+   Monster* t_monster = srv->GetMonster();
+   OperationPostgres* t_opePost = srv->GetOperationPostgres();
+
+   srv->RunTask(boost::bind(&Server::PopPackage, srv));
+   srv->RunTask(boost::bind(&Monster::Monsteractivity, t_monster));
+   //技能伤害线程
+   srv->RunTask(boost::bind(&GameAttack::RoleSkillAttack, t_attack));
+   //删除过了时间的掉落物品
+   srv->RunTask(boost::bind(&GameAttack::DeleteOverTimeGoods, t_attack));
+   //操作数据库更新用户数据
+   srv->RunTask(boost::bind(&OperationPostgres::UpdatePostgresData, t_opePost));
 }
 
 //
@@ -108,3 +145,27 @@ Server* Server::GetInstance()
     return m_instance;
 }
 
+void Server::PopPackage()
+{
+    STR_Package pack;
+    umap_roleSock t_roleSock = SessionMgr::Instance()->GetRoleSock();
+    while(1)
+    {
+        if(m_package->pop(pack))
+        {
+            TCPConnection::Pointer conn = (*t_roleSock)[pack.roleid];
+            if(conn == NULL)
+            {
+                continue;
+            }
+            else
+            {
+                CommandParse(conn, pack.data);
+            }
+        }
+        else
+        {
+            usleep(100);
+        }
+    }
+}

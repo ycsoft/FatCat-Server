@@ -1,11 +1,11 @@
+#include <boost/lockfree/queue.hpp>
+
+#include "./../utils/stringbuilder.hpp"
+#include "./../memManage/diskdbmanager.h"
+#include "./../server.h"
+#include "./../Game/session.hpp"
+
 #include "teamfriend.h"
-#include "utils/stringbuilder.hpp"
-#include "memManage/diskdbmanager.h"
-#include "server.h"
-#include "Game/session.hpp"
-
-
-#include "boost/lockfree/queue.hpp"
 
 TeamFriend::TeamFriend()
 {
@@ -23,9 +23,9 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
     Server* srv = Server::GetInstance();
 
     STR_PackAddFriend t_addFriend;
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     t_addFriend.RoleID = (*smap)[conn].m_roleid;
-    memcpy(t_addFriend.Nick, &((*smap)[conn].m_nick[0]), 32);
+    memcpy(t_addFriend.Nick, ((*smap)[conn].m_RoleBaseInfo.Nick), 32);
 
     if(addFriend->RoleID >= 100000000) //按roleID添加好友（优先）
     {
@@ -68,7 +68,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
              {
                  hf_uint32 Requestroleid = (*smap)[conn].m_roleid;
                  hf_char   RequestNick[40] = { 0 };
-                 memcpy(RequestNick, &(*smap)[conn].m_nick[0], 32);
+                 memcpy(RequestNick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
                  sbd.Clear();
                  sbd << "insert into t_addFriend values(" << Requestroleid << ",'" << RequestNick << "'," << addroleid << ");";
                  Logger::GetLogger()->Debug(sbd.str());
@@ -93,7 +93,7 @@ void TeamFriend::addFriend(TCPConnection::Pointer conn, STR_PackAddFriend* addFr
 
 void TeamFriend::deleteFriend(TCPConnection::Pointer conn, hf_uint32  roleid)
 {
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_friendList friendList = (*smap)[conn].m_friendList;
 
     umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
@@ -145,7 +145,7 @@ void TeamFriend::deleteFriend(TCPConnection::Pointer conn, hf_uint32  roleid)
 void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendReturn* addFriend)
 {
     Server* srv = Server::GetInstance();
-    SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+    SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
     umap_roleSock roleSock = SessionMgr::Instance()->GetRoleSock();
     if(addFriend->value == 1) //同意添加
     {
@@ -183,7 +183,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
 
             //更新要添加的好友的在线好友列表
             t_friendInfo.RoleID = (*smap)[conn].m_roleid;
-            memcpy(t_friendInfo.Nick, &(*smap)[conn].m_nick[0], 32);
+            memcpy(t_friendInfo.Nick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
 
             friendList = (*smap)[it->second].m_friendList;
             (*friendList)[(*smap)[conn].m_roleid] = t_friendInfo;
@@ -191,7 +191,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
 
             //发送添加好友返回数据包
             addFriend->RoleID = (*smap)[conn].m_roleid;
-            memcpy(addFriend->Nick, &((*smap)[conn].m_nick[0]), 32);
+            memcpy(addFriend->Nick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
             it->second->Write_all(addFriend, sizeof(STR_PackAddFriend));
         }
     }
@@ -201,7 +201,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
         if(it != roleSock->end()) //在线
         {
             addFriend->RoleID = (*smap)[conn].m_roleid;
-            memcpy(addFriend->Nick, &((*smap)[conn].m_nick[0]), 32);
+            memcpy(addFriend->Nick, (*smap)[conn].m_RoleBaseInfo.Nick, 32);
             it->second->Write_all(addFriend, sizeof(STR_PackAddFriendReturn));
         }
     }
@@ -211,7 +211,7 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
 //玩家上线，发送离线的添加好友请求
  void TeamFriend::SendAskAddFriend(TCPConnection::Pointer conn)
  {
-     SessionMgr::SessionMap* smap = SessionMgr::Instance()->GetSession().get();
+     SessionMgr::SessionPointer smap = SessionMgr::Instance()->GetSession();
      hf_uint32 roleid = (*smap)[conn].m_roleid;
      StringBuilder sbd;
      sbd << "select requestroleid,requestnick from t_addFriend where addroleid = " << roleid << ";";
@@ -226,7 +226,6 @@ void TeamFriend::ReciveAddFriend(TCPConnection::Pointer conn, STR_PackAddFriendR
          STR_PackHead t_packHead;
          t_packHead.Flag = FLAG_AddFriend;
          t_packHead.Len = t_row*sizeof(STR_AddFriend);
-         cout << "离线好友请求:" << t_row << endl;
          hf_int32 i = 0;
          for(vector<STR_AddFriend>::iterator it = addFriend.begin(); it != addFriend.end(); it++)
          {
